@@ -11,5 +11,5 @@ void runPlotPrettyThings() {
   gSystem->Load("libAnitaEvent.so");
   gSystem->Load("libAnitaPlotter.so");
   gSystem->CompileMacro("plotPrettyThings.C","k");
-  plotPrettyThings(1028,1000,17); //Run,entry,antenna
+  plotPrettyThings(1028,146380,16); //Run,entry,antenna
 }

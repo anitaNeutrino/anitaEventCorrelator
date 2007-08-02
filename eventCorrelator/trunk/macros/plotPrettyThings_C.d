@@ -8,7 +8,7 @@ plotPrettyThings.o: /usr/local/root/include/RVersion.h
 plotPrettyThings.o: /usr/local/root/include/DllImport.h
 plotPrettyThings.o: /usr/local/root/include/Rtypeinfo.h
 plotPrettyThings.o: /usr/local/root/include/TGenericClassInfo.h
-plotPrettyThings.o: /home/rjn/anita/code/eventCorrelator/PrettyAnitaEvent.h
+plotPrettyThings.o: /home/rjn/anita/code/eventCorrelator/trunk/PrettyAnitaEvent.h
 plotPrettyThings.o: /home/rjn/anita/code/eventReaderRoot/trunk/UsefulAnitaEvent.h
 plotPrettyThings.o: /usr/local/root/include/TObject.h
 plotPrettyThings.o: /usr/local/root/include/TStorage.h
@@ -46,6 +46,7 @@ plotPrettyThings.o: /usr/local/root/include/TArrayS.h
 plotPrettyThings.o: /usr/local/root/include/TArrayI.h
 plotPrettyThings.o: /usr/local/root/include/TArrayF.h
 plotPrettyThings.o: /usr/local/root/include/Foption.h
+plotPrettyThings.o: /home/rjn/anita/code/eventCorrelator/trunk/CorrelationSummary.h
 plotPrettyThings.o: /home/rjn/anita/code/eventReaderRoot/trunk/AnitaGeomTool.h
 plotPrettyThings.o: /usr/local/root/include/TCanvas.h
 plotPrettyThings.o: /usr/local/root/include/TPad.h

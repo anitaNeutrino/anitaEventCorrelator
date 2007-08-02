@@ -23,5 +23,5 @@ then
     export LD_LIBRARY_PATH=${EVENT_READER_DIR}:usr/lib:${LD_LIBRARY_PATH}
 fi
 
-export PLOTTER_DIR=/home/rjn/anita/code/eventCorrelator
+export PLOTTER_DIR=/home/rjn/anita/code/eventCorrelator/trunk
 export LD_LIBRARY_PATH=${PLOTTER_DIR}:${LD_LIBRARY_PATH}
