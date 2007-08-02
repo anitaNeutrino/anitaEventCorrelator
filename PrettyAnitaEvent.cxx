@@ -823,7 +823,11 @@ CorrelationSummary *PrettyAnitaEvent::getCorrelationSummary(AnitaPol::AnitaPol_t
 	 }
       }
       theSum->maxCorVals[corInd]=theValues[maxIndex];
-      theSum->maxCorTimes[corInd]=theValues[maxIndex];
+      theSum->maxCorTimes[corInd]=theTimes[maxIndex];
+
+      std::cout << theSum->firstAnt[corInd] << "\t" << theSum->secondAnt[corInd]
+		<< "\t" << theSum->maxCorTimes[corInd] 
+		<< "\t" << theSum->maxCorVals[corInd] << std::endl;
 
       theSum->secondCorVals[corInd][0]=theSum->maxCorVals[corInd];
       theSum->secondCorTimes[corInd][0]=theSum->maxCorTimes[corInd];
