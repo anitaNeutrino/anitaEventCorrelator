@@ -3,7 +3,6 @@
 #include "RawAnitaEvent.h"
 #include "TimedAnitaHeader.h"
 #include "PrettyAnitaHk.h"
-#include "UsefulAdu5Pat.h"
 #include "CorrelationSummary.h"
 #include "TFile.h"
 #include "TTree.h"
@@ -17,26 +16,22 @@
 #include <iostream>
 #include <fstream>
 
-void plotPrettyThings(int run, int entry, int ant);
+void makeCorrelationTreeTest(int run, int entry, int ant);
 
   
-void plotPrettyThings(int run, int entry, int ant) {
+void makeCorrelationTreeTest(int run, int entry, int ant) {
 
   char eventName[FILENAME_MAX];
   char headerName[FILENAME_MAX];
   char hkName[FILENAME_MAX];
-  char gpsName[FILENAME_MAX];
-  sprintf(eventName,"/unix/anita1/webData/fullRoot/run%d/eventFile%d*.root",run,run);
-  sprintf(headerName,"/unix/anita1/webData/fullRoot/run%d/timedHeadFile%d.root",run,run);
-  sprintf(hkName,"/unix/anita1/webData/fullRoot/run%d/prettyHkFile%d.root",run,run);
-  sprintf(gpsName,"/unix/anita1/webData/fullRoot/run%d/gpsFile%d.root",run,run);
+  sprintf(eventName,"/unix/anita1/webData/firstDay/run%d/eventFile%d*.root",run,run);
+  sprintf(headerName,"/unix/anita1/webData/firstDay/run%d/timedHeadFile%d.root",run,run);
+  sprintf(hkName,"/unix/anita1/webData/firstDay/run%d/prettyHkFile%d.root",run,run);
 
   RawAnitaEvent *event = 0;
   TimedAnitaHeader *header =0;
   PrettyAnitaHk *hk = 0;
-  Adu5Pat *pat =0;
-
-
+  
   TChain *eventChain = new TChain("eventTree");
   eventChain->Add(eventName);
   eventChain->SetBranchAddress("event",&event);
@@ -49,10 +44,6 @@ void plotPrettyThings(int run, int entry, int ant) {
   TTree *prettyHkTree = (TTree*) fpHk->Get("prettyHkTree");
   prettyHkTree->SetBranchAddress("hk",&hk);
 
-  TFile *fpGps = new TFile(gpsName);
-  TTree *adu5PatTree = (TTree*) fpGps->Get("adu5PatTree");
-  adu5PatTree->SetBranchAddress("pat",&pat);
-
 
   //Friends only seem to work with TTree::Draw and similar commands
   //if you are manually calling GetEntry (i.e in a loop) you must call
@@ -64,11 +55,9 @@ void plotPrettyThings(int run, int entry, int ant) {
   eventChain->GetEntry(entry);
   headTree->GetEntry(entry);
   prettyHkTree->GetEntry(entry);
-  adu5PatTree->GetEntry(entry);
     
   
-  PrettyAnitaEvent realEvent(event,WaveCalType::kVTFullJWPlusFastClockZero,hk);
-  UsefulAdu5Pat usefulPat(pat);
+  PrettyAnitaEvent realEvent(event,WaveCalType::kVTFullJWPlus,hk);
   cout << realEvent.eventNumber << " " << header->eventNumber << endl;
 //   TGraph *gr = realEvent.getGraph(14,AnitaPol::kVertical);
 //   Double_t x,y;
@@ -79,28 +68,36 @@ void plotPrettyThings(int run, int entry, int ant) {
 //     cout << i << "\t" << x-lastx << endl;
 //     lastx=x;
 //   }
-  
-
+ 
 
 //  TCanvas *canWave = realEvent.getSixWaveformCanvas(ant, AnitaPol::kVertical);
-  TCanvas *canWave = realEvent.getTenWaveformCanvas(ant, AnitaPol::kVertical);
   //  TCanvas *canPower = realEvent.getSixPowerEnvelopeCanvas(ant, AnitaPol::kVertical);
-  TCanvas *canInter = realEvent.getSixInterpolatedCanvas(ant, AnitaPol::kVertical);
-  canInter->SetWindowSize(1200,400);
-
-
+  //  TCanvas *canInter = realEvent.getSixInterpolatedCanvas(ant, AnitaPol::kVertical);
   //  TCanvas *canFFT = realEvent.getSixFFTPowerCanvas(ant, AnitaPol::kVertical);
   //  TCanvas *canCor = realEvent.getSixCorrelationCanvas(ant, AnitaPol::kVertical);
   //  TCanvas *canElevenCor = realEvent.getElevenCorrelationCanvas(ant, AnitaPol::kVertical);
-  TCanvas *canElevenIntCor = realEvent.getElevenInterpolationCorrelationCanvas(ant, AnitaPol::kVertical);
-  //  TCanvas *canIntCor = realEvent.getSixInterpolatedCorrelationCanvas(ant, AnitaPol::kVertical);
+  //  TCanvas *canElevenIntCor = realEvent.getElevenInterpolationCorrelationCanvas(ant, AnitaPol::kVertical);
+ // TCanvas *canIntCor = realEvent.getSixInterpolatedCorrelationCanvas(ant, AnitaPol::kVertical);
   // 
-//   CorrelationSummary *corSum=realEvent.getCorrelationSummary(-1,AnitaPol::kVertical,1./(2.6*16.));
-//   //CorrelationSummary *corSum=realEvent.getCorrelationSummary(-1,AnitaPol::kVertical             );
-//   cout << "\n\n\n";
-//   for(int corInd=0;corInd<19;corInd++) {
-//      Double_t deltaTExpected=usefulPat.getDeltaTWillySeavey(corSum->firstAnt[corInd],corSum->secondAnt[corInd]);
-//      cout << corSum->firstAnt[corInd] << "\t" << corSum->secondAnt[corInd] << "\t" << deltaTExpected << "\t" << corSum->maxCorTimes[corInd] << "\t" << (corSum->maxCorTimes[corInd]-deltaTExpected) << "\n";
-//   }
+  CorrelationSummary *theCor=0;
+  TFile *fp = new TFile("corTest.root","RECREATE");
+  TTree *corTree = new TTree("corTree","Tree of Correlation Summaries");
+  corTree->Branch("cor","CorrelationSummary",&theCor);
+
+  
+  //  theCor=realEvent.getCorrelationSummary(AnitaPol::kVertical);
+  //  corTree->Fill();
+  //  delete theCor;
+
+  //  for(Double_t deltaT=1./2.6; deltaT>1./(2.6*32); deltaT/=2.6) {
+  for(double i=1;i<32;i+=1) {
+     Double_t deltaT= 1. / (2.6*i);
+     //     cout << deltaT << endl;
+     theCor =realEvent.getCorrelationSummary(AnitaPol::kVertical,deltaT);
+     corTree->Fill();     
+     delete theCor;
+  }
+  corTree->AutoSave();
+  fp->Close();
 }
 

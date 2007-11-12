@@ -20,8 +20,17 @@
 
 ClassImp(CorrelationSummary);
 
-CorrelationSummary::CorrelationSummary( int teventNumber, int tmaxAnt, int tsixAnts[])
-  : eventNumber(teventNumber),maxAntenna(tmaxAnt)
+CorrelationSummary::CorrelationSummary( )
+{
+
+}
+
+CorrelationSummary::~CorrelationSummary( )
+{
+
+}
+CorrelationSummary::CorrelationSummary( int teventNumber, int tcentreAnt, int tsixAnts[], double dt)
+   : eventNumber(teventNumber),centreAntenna(tcentreAnt),deltaT(dt)
 {
   for(int i=0;i<6;i++) 
     sixAnts[i]=tsixAnts[i];

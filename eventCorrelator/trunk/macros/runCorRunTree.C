@@ -1,6 +1,6 @@
 
 
-void runPlotPrettyThings() {
+void runCorRunTree() {
   //  gSystem->AddIncludePath(gSystem->ExpandPathName("-I${EVENT_READER_DIR}"));
   gSystem->AddIncludePath("-I${EVENT_READER_DIR}");
   gSystem->AddIncludePath("-I${PLOTTER_DIR}");
@@ -8,12 +8,11 @@ void runPlotPrettyThings() {
 			  
   gSystem->Load("libMathMore.so");
   gSystem->Load("libPhysics.so");
-  gSystem->Load("/usr/lib64/libfftw3.so");
-  //  gSystem->Load("/unix/anita/softwareSLC4/install/lib/libfftw3.so");
+  //  gSystem->Load("/usr/lib/libfftw3.so");
+  gSystem->Load("/unix/anita/softwareSLC4/install/lib/libfftw3.so");
   gSystem->Load("libAnitaEvent.so");
   gSystem->Load("libAnitaPlotter.so");
-  gSystem->CompileMacro("plotPrettyThings.C","k");
-  plotPrettyThings(1028,39824,6); //Run,entry,antenna
-  //  plotPrettyThings(1028,14289,16); //Run,entry,antenna
-   //  plotPrettyThings(1028,33995,28);
+  gSystem->CompileMacro("makeCorrelationRunTree.C","k");
+  makeCorrelationRunTree(1028,0,"/unix/anita1/rjn/corTree24"); 
+
 }
