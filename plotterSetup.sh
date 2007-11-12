@@ -18,10 +18,10 @@
 ##Event Reader Stuff
 if [ "$EVENT_READER_DIR" = "" ]
 then
-    export EVENT_READER_DIR=/home/rjn/anita/code/eventReaderRoot/trunk
+    export EVENT_READER_DIR=/home/rjn/anita/eventReaderRoot/trunk
     export ANITA_CALIB_DIR=${EVENT_READER_DIR}/calib
     export LD_LIBRARY_PATH=${EVENT_READER_DIR}:usr/lib:${LD_LIBRARY_PATH}
 fi
 
-export PLOTTER_DIR=/home/rjn/anita/code/eventCorrelator/trunk
+export PLOTTER_DIR=/home/rjn/anita/analysis/eventCorrelator/trunk
 export LD_LIBRARY_PATH=${PLOTTER_DIR}:${LD_LIBRARY_PATH}

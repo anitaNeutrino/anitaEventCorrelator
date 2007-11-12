@@ -19,31 +19,35 @@ class CorrelationSummary: public TObject
 
 
  public:
-  CorrelationSummary(int teventNumber, int tmaxAnt, int sixAnts[6]);
+   CorrelationSummary();
+   ~CorrelationSummary();
+  CorrelationSummary(int teventNumber, int tcentreAnt, int sixAnts[6], double deltaT=0);
   void fillErrorsAndFit();
   
 
 
   //Simple Event Characteristics
   int eventNumber;
-  int maxAntenna;
+  int centreAntenna;
   int sixAnts[6];
+  int nextFourAnts[4];
+  double deltaT;
 
 
   //Correlation Thingies
-  int firstAnt[11];
-  int secondAnt[11];
-  double maxCorVals[11]; //For the 3 top bottom pairs, 4 left-right pairs, 4 diagonal pairs 
-  double maxCorTimes[11];
-  double rmsCorVals[11]; //For the 3 top bottom pairs, 4 left-right pairs, 4 diagonal pairs 
+  int firstAnt[19];
+  int secondAnt[19];
+  double maxCorVals[19]; //For the 3 top bottom pairs, 4 left-right pairs, 4 diagonal pairs, plus the 4 'neighbour' + the 4 (next phi to neighbour)
+  double maxCorTimes[19];
+  double rmsCorVals[19]; //For the 3 top bottom pairs, 4 left-right pairs, 4 diagonal pairs 
 
 
-  double secondCorVals[11][2]; //Store both left and right vals
-  double secondCorTimes[11][2]; 
+  double secondCorVals[19][2]; //Store both left and right vals
+  double secondCorTimes[19][2]; 
 
   //Time Thingies
-  //  double deltaT[11]; is maxCorTimes
-  double deltaTErr[11];
+  //  double deltaT[19]; is maxCorTimes
+  double deltaTErr[19];
   
   //Fit Results
   double phiWave;
@@ -52,7 +56,7 @@ class CorrelationSummary: public TObject
   
 
 
-  ClassDef(CorrelationSummary,1);
+  ClassDef(CorrelationSummary,2);
 };
 
 
