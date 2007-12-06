@@ -855,7 +855,7 @@ void PrettyAnitaEvent::setStyleSixCanvas()
 
 void PrettyAnitaEvent::fillSixAntArrays(int ant, int topAnts[3], int bottomAnts[3])
 {
-
+   //   std::cerr << "fillSixAntArrays( " << ant << ")\n";
   int top=-1,bottom=-1;
   int leftTop=-1, rightTop=-1;
   int leftBottom=-1, rightBottom=-1;
@@ -923,6 +923,12 @@ int PrettyAnitaEvent::getPrettyColour(int index)
 //Putative Analysis methods
 int PrettyAnitaEvent::getMaxAntenna(AnitaPol::AnitaPol_t pol)
 {
+   return getMaxAntennaCorrelation(pol);
+}   
+
+
+int PrettyAnitaEvent::getMaxAntennaVSquared(AnitaPol::AnitaPol_t pol)
+{
    //Returns the antenna with the maximum power
    //Could consider changng this to make things better
    double maxVal=0;
@@ -939,6 +945,34 @@ int PrettyAnitaEvent::getMaxAntenna(AnitaPol::AnitaPol_t pol)
    }
    return maxAnt;
 }
+
+int PrettyAnitaEvent::getMaxAntennaCorrelation(AnitaPol::AnitaPol_t pol)
+{
+   //Returns the antenna with the biggest in the correlation with its azimuth partner antenna
+   double maxVal=0;
+   int maxAnt=0;
+   for(int ant=0;ant<16;ant++) {
+      //Loop over the top antennas
+      int otherAnt=AnitaGeomTool::getAzimuthPartner(ant);
+      int ciTop=AnitaGeomTool::getChanIndexFromAntPol(ant,pol);
+      int ciBottom=AnitaGeomTool::getChanIndexFromAntPol(otherAnt,pol);
+
+      TGraph *grCor = getCorrelation(ciTop,ciBottom);
+      Double_t peakVSq=FFTtools::getPeakSqVal(grCor);
+      if(peakVSq>maxVal) {
+	 maxVal=peakVSq;
+	 maxAnt=ant;
+	 Double_t maxTop=TMath::MaxElement(fNumPoints[ciTop],fVolts[ciTop]);
+	 Double_t maxBottom=TMath::MaxElement(fNumPoints[ciBottom],fVolts[ciBottom]);
+	 if(maxBottom>maxTop)
+	    maxAnt=otherAnt;
+      }
+      delete grCor;
+	 
+   }
+   return maxAnt;
+}
+
 
 CorrelationSummary *PrettyAnitaEvent::getCorrelationSummary(Int_t centreAnt,AnitaPol::AnitaPol_t pol, Double_t deltaT)
 {
