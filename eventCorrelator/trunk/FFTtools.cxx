@@ -798,3 +798,42 @@ TGraph *FFTtools::padWave(TGraph *grWave, Int_t padFactor) {
    delete [] paddedY;
    return grPadded;
 }
+
+TGraph *FFTtools::getSimplePowerEnvelopeGraph(TGraph *gr) {
+  Double_t *ySq = new Double_t [gr->GetN()];
+  Double_t *xOrig = new Double_t [gr->GetN()];
+  Double_t *yEnvelope = new Double_t[gr->GetN()];
+  Double_t *xEnvelope = new Double_t[gr->GetN()];
+  
+  Double_t x,y;
+  Int_t numPoints=0;
+  
+  for(int i=0;i<gr->GetN();i++) {
+    gr->GetPoint(i,x,y);
+    ySq[i]=y*y;
+    xOrig[i]=x;
+    if(i==1) {
+      if(ySq[0]>ySq[i]) {
+        yEnvelope[numPoints]=ySq[0];
+        xEnvelope[numPoints]=xOrig[0];
+        numPoints++;
+      }
+    }
+    else if(i==gr->GetN()-1 && ySq[i]>ySq[i-1]) {
+      yEnvelope[numPoints]=ySq[i];
+      xEnvelope[numPoints]=xOrig[i];
+      numPoints++;
+    }
+    else if(ySq[i-1]>ySq[i-2] && ySq[i-1]>ySq[i]) {
+      yEnvelope[numPoints]=ySq[i-1];
+      xEnvelope[numPoints]=xOrig[i-1];
+      numPoints++;
+    }
+  }                                  
+  TGraph *grEnvelope= new TGraph(numPoints,xEnvelope,yEnvelope);
+  delete [] ySq;
+  delete [] xOrig;
+  delete [] yEnvelope;
+  delete [] xEnvelope;
+  return grEnvelope;
+}
