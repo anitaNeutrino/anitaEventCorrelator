@@ -948,7 +948,7 @@ int PrettyAnitaEvent::getMaxAntennaVSquared(AnitaPol::AnitaPol_t pol)
 
 int PrettyAnitaEvent::getMaxAntennaCorrelation(AnitaPol::AnitaPol_t pol)
 {
-   //Returns the antenna with the biggest in the correlation with its azimuth partner antenna
+   //Returns the antenna with the lagest peak/rms in the correlation with its azimuth partner antenna
    double maxVal=0;
    int maxAnt=0;
    for(int ant=0;ant<16;ant++) {
@@ -957,15 +957,16 @@ int PrettyAnitaEvent::getMaxAntennaCorrelation(AnitaPol::AnitaPol_t pol)
       int ciTop=AnitaGeomTool::getChanIndexFromAntPol(ant,pol);
       int ciBottom=AnitaGeomTool::getChanIndexFromAntPol(otherAnt,pol);
 
-      TGraph *grCor = getCorrelation(ciTop,ciBottom);
-      Double_t peakVSq=FFTtools::getPeakSqVal(grCor);
-      if(peakVSq>maxVal) {
-	 maxVal=peakVSq;
+      TGraph *grCor = getCorrelation(ciTop,ciBottom);      
+      Double_t peak,rms;
+      FFTtools::getPeakRmsSqVal(grCor,peak,rms);
+      if(peak>maxVal) {
+	 maxVal=peak;
 	 maxAnt=ant;
 	 Double_t maxTop=TMath::MaxElement(fNumPoints[ciTop],fVolts[ciTop]);
 	 Double_t maxBottom=TMath::MaxElement(fNumPoints[ciBottom],fVolts[ciBottom]);
 	 if(maxBottom>maxTop)
-	    maxAnt=otherAnt;
+	   maxAnt=otherAnt;
       }
       delete grCor;
 	 
