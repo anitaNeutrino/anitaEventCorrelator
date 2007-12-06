@@ -102,7 +102,7 @@ void makeCorrelationRunTree(int run, int numEnts, char *outDir) {
      adu5PatTree->GetEntry(entry);
      
      
-     PrettyAnitaEvent realEvent(event,WaveCalType::kVTFullJWPlusClockZero,hk);
+     PrettyAnitaEvent realEvent(event,WaveCalType::kVTFullJWPlusFastClockZero,hk);
      UsefulAdu5Pat usefulPat(pat);
      usefulPat.getThetaAndPhiWaveWillySeavey(thetaWave,phiWave);
      int ant=realEvent.getMaxAntenna(AnitaPol::kVertical);
