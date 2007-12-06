@@ -8,7 +8,7 @@ include Makefile.arch
 
 #Site Specific  Flags
 SYSINCLUDES	= 
-SYSLIBS         = 
+SYSLIBS         = -L /unix/anita/software/install/lib/ -lgsl -L/home/rjn/thirdParty/lib -lprofiler -lunwind
 
 ifdef ANITA_UTIL_INSTALL_DIR
 ANITA_UTIL_LIB_DIR=${ANITA_UTIL_INSTALL_DIR}/lib
@@ -21,7 +21,7 @@ endif
 #Generic and Site Specific Flags
 CXXFLAGS     += $(ROOTCFLAGS) $(SYSINCLUDES) -I$(EVENT_READER_DIR) -I${ANITA_UTIL_INC_DIR}
 LDFLAGS      += $(ROOTLDFLAGS) -L$(EVENT_READER_DIR)
-LIBS          = $(ROOTLIBS) $(SYSLIBS)
+LIBS          = $(ROOTLIBS) -lMathMore $(SYSLIBS) -L$(EVENT_READER_DIR) -L$(ANITA_UTIL_LIB_DIR) -lAnitaEvent -lRootFftwWrapper -lfftw3
 GLIBS         = $(ROOTGLIBS) $(SYSLIBS)
 
 
@@ -41,6 +41,12 @@ plotDict.C: $(CLASS_HEADERS)
 	@ rm -f *Dict* 
 	rootcint $@ -c $(CXXFLAGS) $(CLASS_HEADERS) LinkDef.h
 
+progs: makeCorrelationRunTree
+
+
+makeCorrelationRunTree : $(ROOT_LIBRARY) makeCorrelationRunTree.$(SRCSUF)
+	@echo "<**Compiling**> "  
+	$(LD)  $(CXXFLAGS) $(LDFLAGS) makeCorrelationRunTree.$(SRCSUF) $(ROOT_LIBRARY) $(LIBS) -o $@
 
 
 #The library

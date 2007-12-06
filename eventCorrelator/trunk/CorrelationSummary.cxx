@@ -36,3 +36,11 @@ CorrelationSummary::CorrelationSummary( int teventNumber, int tcentreAnt, int ts
     sixAnts[i]=tsixAnts[i];
 
 }
+
+
+void CorrelationSummary::fillErrorsAndFit()
+{
+   //At some stage this should probably do something, otherwise it won't be much cop.
+
+
+}
