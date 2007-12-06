@@ -1,29 +1,28 @@
 
 #############################################################################
-####
+## Makefile -- New Version of my Makefile that works on both linux
+##              and mac os x
+## Ryan Nichol <rjn@hep.ucl.ac.uk>
+##############################################################################
+include Makefile.arch
+
+#Site Specific  Flags
+SYSINCLUDES	= -I/sw/include
+SYSLIBS         = -L/sw/lib
+
+#Generic and Site Specific Flags
+CXXFLAGS     += $(ROOTCFLAGS) $(SYSINCLUDES) -I$(EVENT_READER_DIR)
+LDFLAGS      += $(ROOTLDFLAGS) -L$(EVENT_READER_DIR)
+LIBS          = $(ROOTLIBS) $(SYSLIBS)
+GLIBS         = $(ROOTGLIBS) $(SYSLIBS)
 
 
-#Global Thingies
-CC 	= g++
-LD	= g++
-SOFLAGS	= -shared
-OBJSUF	= o
-SRCSUF	= cxx
-OPT	= -O2 -g --debug  -Wall -fPIC
-
-ROOTINCLUDES      = -I$(ROOTSYS)/include 
-INCLUDES	= -I$(EVENT_READER_DIR) -I/unix/anita/softwareSLC4/install/include
-CXXFLAGS	= $(EXCEPTION) $(OPT) $(CXXOPT) -fPIC $(INCLUDES) $(ROOTINCLUDES)
-
-ROOTLIBS      = -L$(ROOTSYS)/lib $(shell $(ROOTSYS)/bin/root-config --libs) -lMinuit -lTreePlayer -lMathMore
-ROOTGLIBS     = -L$(ROOTSYS)/lib $(shell $(ROOTSYS)/bin/root-config --glibs)
-LIBS		= -lz -lm $(ROOTLIBS) -lfftw3
-
+#Now the bits we're actually compiling
 
 
 #ROOT stuff
 
-ROOT_LIBRARY = libAnitaPlotter.so 
+ROOT_LIBRARY = libAnitaPlotter.${DLLSUF}
 LIB_OBJS = PrettyAnitaEvent.o FFTtools.o FFTWComplex.o CorrelationSummary.o UsefulAdu5Pat.o  plotDict.o
 CLASS_HEADERS =  PrettyAnitaEvent.h CorrelationSummary.h UsefulAdu5Pat.h
 
@@ -32,13 +31,25 @@ all : $(ROOT_LIBRARY)
 plotDict.C: $(CLASS_HEADERS)
 	@echo "Generating dictionary ..."
 	@ rm -f *Dict* 
-	rootcint $@ -c $(INCLUDES) $(CLASS_HEADERS) LinkDef.h
+	rootcint $@ -c $(CXXFLAGS) $(CLASS_HEADERS) LinkDef.h
 
 
 
+#The library
 $(ROOT_LIBRARY) : $(LIB_OBJS) 
 	@echo "Linking $@ ..."
-	$(LD) $(SOFLAGS) $(LDFLAGS) $(LIB_OBJS)  -o $@
+ifeq ($(PLATFORM),macosx)
+# We need to make both the .dylib and the .so
+	$(LD) $(SOFLAGS) $^ $(OutPutOpt) $@
+ifeq ($(MACOSX_MINOR),4)
+	ln -sf $@ $(subst .$(DLLSUF),.so,$@)
+else
+	$(LD) -bundle -undefined $(UNDEFOPT) $(LDFLAGS) $^ \
+	 $(OutPutOpt) $(subst .$(DLLSUF),.so,$@)
+endif
+else
+	$(LD) $(SOFLAGS) $(LDFLAGS) $(LIB_OBJS) -o $@
+endif
 
 %.$(OBJSUF) : %.$(SRCSUF)
 	@echo "<**Compiling**> "$<
@@ -54,4 +65,5 @@ clean:
 	@rm -f *.${OBJSUF}
 	@rm -f $(LIBRARY)
 	@rm -f $(ROOT_LIBRARY)
+	@rm -f $(subst .$(DLLSUF),.so,$(ROOT_LIBRARY))	
 	@rm -f $(TEST)

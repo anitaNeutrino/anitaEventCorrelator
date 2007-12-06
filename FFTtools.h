@@ -47,6 +47,9 @@ public:
     static Double_t sumVoltageSquared(TGraph *gr,Int_t firstBin,Int_t lastBin);
     static Double_t integrateVoltageSquared(TGraph *gr,Int_t firstBin,Int_t lastBin);
     static Int_t getPeakBin(TGraph *gr); 
+    
+    //Graph returning utility funcs
+    static TGraph *getSimplePowerEnvelopeGraph(TGraph *gr);
     static TGraph *smoothFFT(TGraph *gr,Int_t factor) ;
     static TGraph *subtractGraphs(TGraph *grA, TGraph *grB);
     static TGraph *divideGraphs(TGraph *grA, TGraph *grB);
