@@ -9,11 +9,17 @@ include Makefile.arch
 #Site Specific  Flags
 SYSINCLUDES	= 
 SYSLIBS         = 
-OUTLIBDIR          = /home/rjn/install/lib
-OUTINCDIR          = /home/rjn/install/includes
+
+ifdef ANITA_UTIL_INSTALL_DIR
+ANITA_UTIL_LIB_DIR=${ANITA_UTIL_INSTALL_DIR}/lib
+ANITA_UTIL_INC_DIR=${ANITA_UTIL_INSTALL_DIR}/includes
+else
+ANITA_UTIL_LIB_DIR=
+ANITA_UTIL_INC_DIR=
+endif
 
 #Generic and Site Specific Flags
-CXXFLAGS     += $(ROOTCFLAGS) $(SYSINCLUDES) -I$(EVENT_READER_DIR)
+CXXFLAGS     += $(ROOTCFLAGS) $(SYSINCLUDES) -I$(EVENT_READER_DIR) -I${ANITA_UTIL_INC_DIR}
 LDFLAGS      += $(ROOTLDFLAGS) -L$(EVENT_READER_DIR)
 LIBS          = $(ROOTLIBS) $(SYSLIBS)
 GLIBS         = $(ROOTGLIBS) $(SYSLIBS)
@@ -64,11 +70,11 @@ endif
 
 install: $(ROOT_LIBRARY)
 ifeq ($(PLATFORM),macosx)
-	@cp $(ROOT_LIBRARY) $(subst .$(DLLSUF),.so,$(ROOT_LIBRARY)) $(OUTLIBDIR)
+	cp $(ROOT_LIBRARY) $(subst .$(DLLSUF),.so,$(ROOT_LIBRARY)) $(ANITA_UTIL_LIB_DIR)
 else
-	@cp $(ROOT_LIBRARY) $(OUTLIBDIR)
+	cp $(ROOT_LIBRARY) $(ANITA_UTIL_LIB_DIR)
 endif
-	@cp  $(CLASS_HEADERS) $(OUTINCDIR)
+	cp  $(CLASS_HEADERS) $(ANITA_UTIL_INC_DIR)
 
 clean:
 	@rm -f *Dict*
