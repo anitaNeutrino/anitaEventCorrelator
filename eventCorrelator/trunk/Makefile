@@ -7,8 +7,10 @@
 include Makefile.arch
 
 #Site Specific  Flags
-SYSINCLUDES	= -I/sw/include
-SYSLIBS         = -L/sw/lib
+SYSINCLUDES	= 
+SYSLIBS         = 
+OUTLIBDIR          = /home/rjn/install/lib
+OUTINCDIR          = /home/rjn/install/includes
 
 #Generic and Site Specific Flags
 CXXFLAGS     += $(ROOTCFLAGS) $(SYSINCLUDES) -I$(EVENT_READER_DIR)
@@ -23,7 +25,7 @@ GLIBS         = $(ROOTGLIBS) $(SYSLIBS)
 #ROOT stuff
 
 ROOT_LIBRARY = libAnitaPlotter.${DLLSUF}
-LIB_OBJS = PrettyAnitaEvent.o FFTtools.o FFTWComplex.o CorrelationSummary.o UsefulAdu5Pat.o  plotDict.o
+LIB_OBJS = PrettyAnitaEvent.o CorrelationSummary.o UsefulAdu5Pat.o  plotDict.o
 CLASS_HEADERS =  PrettyAnitaEvent.h CorrelationSummary.h UsefulAdu5Pat.h
 
 all : $(ROOT_LIBRARY) 
@@ -59,6 +61,14 @@ endif
 	@echo "<**Compiling**> "$<
 	$(CXX) $(CXXFLAGS) $ -c $< -o  $@
 
+
+install: $(ROOT_LIBRARY)
+ifeq ($(PLATFORM),macosx)
+	@cp $(ROOT_LIBRARY) $(subst .$(DLLSUF),.so,$(ROOT_LIBRARY)) $(OUTLIBDIR)
+else
+	@cp $(ROOT_LIBRARY) $(OUTLIBDIR)
+endif
+	@cp  $(CLASS_HEADERS) $(OUTINCDIR)
 
 clean:
 	@rm -f *Dict*

@@ -1,6 +1,6 @@
 
 
-void runCorrTreeLoop() {
+void runCorrTreeLoopFast() {
   //  gSystem->AddIncludePath(gSystem->ExpandPathName("-I${EVENT_READER_DIR}"));
   gSystem->AddIncludePath("-I${EVENT_READER_DIR}");
   gSystem->AddIncludePath("-I${PLOTTER_DIR}");
@@ -12,7 +12,7 @@ void runCorrTreeLoop() {
   //  gSystem->Load("/unix/anita/softwareSLC4/install/lib/libfftw3.so");
   gSystem->Load("libAnitaEvent.so");
   gSystem->Load("libAnitaPlotter.so");
-  gSystem->CompileMacro("correlationTreeLoop.C","k");
+  gSystem->CompileMacro("correlationTreeLoopFast.C","k");
   correlationTreeLoop(1027);
   correlationTreeLoop(1028);
   //   plotPrettyThings(1028,146380,16); //Run,entry,antenna
