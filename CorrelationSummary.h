@@ -1,10 +1,10 @@
-//////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 /////  CorrelationSummary.h        ANITA Correlation Summary              /////
-/////                                                                    /////
-/////  Description:                                                      /////
+/////                                                                     /////
+/////  Description:                                                       /////
 /////     A simple class for storing correlation summary info for an event/////
-/////  Author: Ryan Nichol (rjn@hep.ucl.ac.uk)                           /////
-//////////////////////////////////////////////////////////////////////////////
+/////  Author: Ryan Nichol (rjn@hep.ucl.ac.uk)                            /////
+///////////////////////////////////////////////////////////////////////////////
 
 #ifndef CORRELATIONSUMMARY_H
 #define CORRELATIONSUMMARY_H
