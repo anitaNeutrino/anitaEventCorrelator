@@ -20,8 +20,8 @@ endif
 
 #Generic and Site Specific Flags
 CXXFLAGS     += $(ROOTCFLAGS) $(SYSINCLUDES) -I$(EVENT_READER_DIR) -I${ANITA_UTIL_INC_DIR}
-LDFLAGS      += $(ROOTLDFLAGS) -L$(EVENT_READER_DIR)
-LIBS          = $(ROOTLIBS) -lMathMore $(SYSLIBS) -L$(EVENT_READER_DIR) -L$(ANITA_UTIL_LIB_DIR) -lAnitaEvent -lRootFftwWrapper -lfftw3
+LDFLAGS      += -g $(ROOTLDFLAGS) -L$(EVENT_READER_DIR)
+LIBS          = $(ROOTLIBS) -lMathMore -lMinuit $(SYSLIBS) -L$(EVENT_READER_DIR) -L$(ANITA_UTIL_LIB_DIR) -lAnitaEvent -lRootFftwWrapper -lfftw3
 GLIBS         = $(ROOTGLIBS) $(SYSLIBS)
 
 
@@ -41,12 +41,20 @@ plotDict.C: $(CLASS_HEADERS)
 	@ rm -f *Dict* 
 	rootcint $@ -c $(CXXFLAGS) $(CLASS_HEADERS) LinkDef.h
 
-progs: makeCorrelationRunTree
+progs: makeCorrelationRunTree makeGoodCorrelationRunTree makeInitialGoodCorrelationRunTree
 
 
 makeCorrelationRunTree : $(ROOT_LIBRARY) makeCorrelationRunTree.$(SRCSUF)
 	@echo "<**Compiling**> "  
 	$(LD)  $(CXXFLAGS) $(LDFLAGS) makeCorrelationRunTree.$(SRCSUF) $(ROOT_LIBRARY) $(LIBS) -o $@
+
+makeGoodCorrelationRunTree : $(ROOT_LIBRARY) makeGoodCorrelationRunTree.$(SRCSUF)
+	@echo "<**Compiling**> "  
+	$(LD)  $(CXXFLAGS) $(LDFLAGS) makeGoodCorrelationRunTree.$(SRCSUF) $(ROOT_LIBRARY) $(LIBS) -o $@
+
+makeInitialGoodCorrelationRunTree : $(ROOT_LIBRARY) makeInitialGoodCorrelationRunTree.$(SRCSUF)
+	@echo "<**Compiling**> "  
+	$(LD)  $(CXXFLAGS) $(LDFLAGS) makeInitialGoodCorrelationRunTree.$(SRCSUF) $(ROOT_LIBRARY) $(LIBS) -o $@
 
 
 #The library

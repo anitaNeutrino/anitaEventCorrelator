@@ -17,19 +17,36 @@
 #include <iostream>
 #include <fstream>
 
-void plotPrettyThings(int run, int entry, int ant);
+void plotPrettyThings(int run, Long64_t entry, int ant);
 
+void plotPrettyThingsEventNumber(int run, int eventNumber, int ant);
+
+
+void plotPrettyThingsEventNumber(int run, int eventNumber, int ant)
+{
+  char headerName[FILENAME_MAX];    
+  sprintf(headerName,"/unix/anita1/newRootData/run%d/timedHeadFile%d.root",run,run);
+  TFile fp(headerName);
+  TTree *headTree = (TTree*) fp.Get("headTree");
+  headTree->BuildIndex("eventNumber");
+  Long64_t entry=headTree->GetEntryNumberWithIndex(eventNumber);
+  if(entry<0) {
+    std::cout << "Couldn't find event " << eventNumber << " in run " << run << "\n";
+    return;
+  }
+  plotPrettyThings(run,entry,ant);
+}
   
-void plotPrettyThings(int run, int entry, int ant) {
+void plotPrettyThings(int run, Long64_t entry, int ant) {
 
   char eventName[FILENAME_MAX];
   char headerName[FILENAME_MAX];
   char hkName[FILENAME_MAX];
   char gpsName[FILENAME_MAX];
-  sprintf(eventName,"/unix/anita1/webData/fullRoot/run%d/eventFile%d*.root",run,run);
-  sprintf(headerName,"/unix/anita1/webData/fullRoot/run%d/timedHeadFile%d.root",run,run);
-  sprintf(hkName,"/unix/anita1/webData/fullRoot/run%d/prettyHkFile%d.root",run,run);
-  sprintf(gpsName,"/unix/anita1/webData/fullRoot/run%d/gpsFile%d.root",run,run);
+  sprintf(eventName,"/unix/anita1/newRootData/run%d/eventFile%d*.root",run,run);
+  sprintf(headerName,"/unix/anita1/newRootData/run%d/timedHeadFile%d.root",run,run);
+  sprintf(hkName,"/unix/anita1/newRootData/run%d/prettyHkFile%d.root",run,run);
+  sprintf(gpsName,"/unix/anita1/newRootData/run%d/gpsFile%d.root",run,run);
 
   RawAnitaEvent *event = 0;
   TimedAnitaHeader *header =0;

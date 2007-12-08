@@ -27,18 +27,18 @@ ROOTGLIBS	:= $(shell $(ROOTCONFIG) --glibs)
 ifeq ($(ARCH),linuxx8664gcc)
 # AMD Opteron and Intel EM64T (64 bit mode) Linux with gcc 3.x
 CXX           = g++
-CXXFLAGS      += $(OPT2) -Wall -fPIC
+CXXFLAGS      += $(OPT2) -g -Wall -fPIC
 LD            = g++
-LDFLAGS       = $(OPT2)
+LDFLAGS       = $(OPT2) -g
 SOFLAGS       = -shared
 endif
 
 ifeq ($(ARCH),linux)
 # Linux with egcs, gcc 2.9x, gcc 3.x
 CXX           = g++
-CXXFLAGS      += $(OPT2) -Wall -fPIC
+CXXFLAGS      += $(OPT2) -g -Wall -fPIC
 LD            = g++
-LDFLAGS       = $(OPT2)
+LDFLAGS       = $(OPT2) -g
 SOFLAGS       = -shared
 endif
 
@@ -50,9 +50,9 @@ ifeq ($(MACOSX_MINOR),5)
 MACOSX_MINOR  = 4
 endif
 CXX           = g++
-CXXFLAGS      += $(OPT2) -pipe -Wall -W -Woverloaded-virtual
+CXXFLAGS      += $(OPT2) -g -pipe -Wall -W -Woverloaded-virtual
 LD            = g++
-LDFLAGS       = $(OPT2) -bind_at_load
+LDFLAGS       = $(OPT2) -g -bind_at_load
 # The SOFLAGS will be used to create the .dylib,
 # the .so will be created separately
 DLLSUF       = dylib

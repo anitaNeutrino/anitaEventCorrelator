@@ -20,11 +20,28 @@
 #include "TMath.h"
 #include "TStyle.h"
 #include "TVirtualFFT.h"
+#include "TMinuit.h"
 #include "Math/Interpolator.h"
 #include "Math/InterpolationTypes.h"
 
 
 ClassImp(PrettyAnitaEvent);
+
+
+//My incredibly dodgy approach to fitting with MINUIT that I'm going to call from within itself
+// this is horrible and dangerous and should never bve done, but hey ho there we go.
+void CorSumFCN(Int_t& npar, Double_t*gin,
+                       Double_t&f, Double_t* par, Int_t flag)
+{
+   //par[0] is phiWave
+   //par[1] is thetaWave
+   //par[2] is numAnts (11 or 19)
+
+  CorrelationSummary* myDodgyCorSumPtr = dynamic_cast<CorrelationSummary*>(gMinuit->GetObjectFit());
+  f=myDodgyCorSumPtr->getChiSquared(par[0],par[1],11);
+  //  std::cout << par[0] << "\t" << par[1] << "\t" << f << std::endl;
+}
+
 
 
 PrettyAnitaEvent::PrettyAnitaEvent(RawAnitaEvent *eventPtr,WaveCalType::WaveCalType_t calType, PrettyAnitaHk *theHk):UsefulAnitaEvent(eventPtr,calType,theHk) { }
@@ -748,11 +765,14 @@ TGraph *PrettyAnitaEvent::getInterpolatedGraph(int chanIndex, double deltaT) {
      tVec.push_back(fTimes[chanIndex][samp]);
      vVec.push_back(fVolts[chanIndex][samp]);
    }
+   if(tVec.size()==0) {
+     std::cout << "\n" << eventNumber << "\t" << chanIndex << "\t" << tVec.size() << "\t" << vVec.size() << "\t" << fNumPoints[chanIndex] << "\n";   
+   }
 
    ROOT::Math::Interpolator chanInterp(tVec,vVec,ROOT::Math::Interpolation::AKIMA);
    Double_t startTime=fTimes[chanIndex][0];
    Double_t lastTime=fTimes[chanIndex][fNumPoints[chanIndex]-1];
-  
+
 
    Double_t newTimes[8192];
    Double_t newVolts[8192];
@@ -822,6 +842,10 @@ TGraph *PrettyAnitaEvent::getCorrelation(int chanIndex1, int chanIndex2)
 
 TGraph *PrettyAnitaEvent::getCorrelationInterpolated(int chanIndex1, int chanIndex2, Double_t deltaT) 
 {
+  if(chanIndex1 <0 || chanIndex1>80)
+    std::cerr << "Invalid channel index:\t" << chanIndex1 << "\n";
+  if(chanIndex2 <0 || chanIndex2>80)
+    std::cerr << "Invalid channel index:\t" << chanIndex2 << "\n";
    TGraph *gr1 =getInterpolatedGraph(chanIndex1,deltaT);
    TGraph *gr2 = getInterpolatedGraph(chanIndex2,deltaT);
    TGraph *grCor = getCorrelation(gr1,gr2);
@@ -921,13 +945,13 @@ int PrettyAnitaEvent::getPrettyColour(int index)
 
 
 //Putative Analysis methods
-int PrettyAnitaEvent::getMaxAntenna(AnitaPol::AnitaPol_t pol)
+int PrettyAnitaEvent::getMaxAntenna(AnitaPol::AnitaPol_t pol, Double_t *peakPtr)
 {
-   return getMaxAntennaCorrelation(pol);
+   return getMaxAntennaCorrelation(pol, peakPtr);
 }   
 
 
-int PrettyAnitaEvent::getMaxAntennaVSquared(AnitaPol::AnitaPol_t pol)
+int PrettyAnitaEvent::getMaxAntennaVSquared(AnitaPol::AnitaPol_t pol, Double_t *peakPtr)
 {
    //Returns the antenna with the maximum power
    //Could consider changng this to make things better
@@ -943,10 +967,11 @@ int PrettyAnitaEvent::getMaxAntennaVSquared(AnitaPol::AnitaPol_t pol)
 	 }
       }
    }
+   if(peakPtr) *peakPtr=maxVal;
    return maxAnt;
 }
 
-int PrettyAnitaEvent::getMaxAntennaCorrelation(AnitaPol::AnitaPol_t pol)
+int PrettyAnitaEvent::getMaxAntennaCorrelation(AnitaPol::AnitaPol_t pol, Double_t *peakPtr)
 {
    //Returns the antenna with the lagest peak/rms in the correlation with its azimuth partner antenna
    double maxVal=0;
@@ -958,10 +983,12 @@ int PrettyAnitaEvent::getMaxAntennaCorrelation(AnitaPol::AnitaPol_t pol)
       int ciBottom=AnitaGeomTool::getChanIndexFromAntPol(otherAnt,pol);
 
       TGraph *grCor = getCorrelation(ciTop,ciBottom);      
-      Double_t peak,rms;
-      FFTtools::getPeakRmsSqVal(grCor,peak,rms);
-      if(peak>maxVal) {
-	 maxVal=peak;
+      Double_t *y = grCor->GetY();
+      Double_t peak=TMath::MaxElement(grCor->GetN(),y);
+      Double_t rms=TMath::RMS(grCor->GetN(),y);
+      //      FFTtools::getPeakRmsSqVal(grCor,peak,rms);
+      if((peak/rms)>maxVal) {
+	 maxVal=peak/rms;
 	 maxAnt=ant;
 	 Double_t maxTop=TMath::MaxElement(fNumPoints[ciTop],fVolts[ciTop]);
 	 Double_t maxBottom=TMath::MaxElement(fNumPoints[ciBottom],fVolts[ciBottom]);
@@ -971,6 +998,7 @@ int PrettyAnitaEvent::getMaxAntennaCorrelation(AnitaPol::AnitaPol_t pol)
       delete grCor;
 	 
    }
+   if(peakPtr) *peakPtr=maxVal;
    return maxAnt;
 }
 
@@ -1063,20 +1091,28 @@ CorrelationSummary *PrettyAnitaEvent::getCorrelationSummary(Int_t centreAnt,Anit
 	 grCor=getCorrelationInterpolated(ci1,ci2,deltaT);
       }
 
-      theSum->rmsCorVals[corInd]=grCor->GetRMS(2);
+      //      theSum->rmsCorVals[corInd]=grCor->GetRMS(2);
 
       double *theTimes = grCor->GetX();
       double *theValues = grCor->GetY();
       
-      double maxVal=0;
-      int maxIndex=0;
-      for(int i=0;i<grCor->GetN();i++) {
-	//	std::cout << i << "\t" << theTimes[i] << "\t" << theValues[i] << "\n";
-	 if(theValues[i]>maxVal) {
-	    maxVal=theValues[i];
-	    maxIndex=i;
-	 }
-      }
+      int numPoints=grCor->GetN();
+      double rmsVal=TMath::RMS(numPoints,theValues);
+      int maxIndex=TMath::LocMax(numPoints,theValues);;
+      double maxVal=theValues[maxIndex];;
+      //      Double_t maxVal,rmsVal;
+      //      Int_t maxIndex;
+      //      FFTtools::getPeakRmsRectified(grCor,maxVal,rmsVal,&maxIndex);
+
+      //      FFTtools::getPeakRmsSqVal(grCor,maxVal,rmsVal,&maxIndex);
+      //      for(int i=0;i<grCor->GetN();i++) {
+      //	std::cout << i << "\t" << theTimes[i] << "\t" << theValues[i] << "\n";
+      //	 if(theValues[i]>maxVal) {
+      //	    maxVal=theValues[i];
+      //	    maxIndex=i;
+      //	 }
+      //      }
+      theSum->rmsCorVals[corInd]=rmsVal;
       theSum->maxCorVals[corInd]=theValues[maxIndex];
       theSum->maxCorTimes[corInd]=theTimes[maxIndex];
 
@@ -1110,6 +1146,44 @@ CorrelationSummary *PrettyAnitaEvent::getCorrelationSummary(Int_t centreAnt,Anit
    }
 
    //Will add a call to
-   //theSum->fillErrorsAndFit()
+   theSum->fillErrorsAndFit();
+
+   //Set up MINUIT for the fit
+   static int firstTime=1;
+   if(firstTime) {
+      gMinuit = new TMinuit(2);
+      firstTime=0;
+   }
+   gMinuit->SetObjectFit(theSum);  
+   gMinuit->SetFCN(CorSumFCN);
+   double par[2]={theSum->fAntPhi[1][0],0};               // the start values
+   double stepSize[2]={0.01,0.01};          // step sizes 
+   double minVal[2]={0,-1*TMath::PiOver2()};            // minimum bound on parameter 
+   double maxVal[2]={TMath::TwoPi(),TMath::PiOver2()};            // maximum bound on parameter
+   char parName[2][20];
+   sprintf(parName[0],"phiWave");
+   sprintf(parName[1],"thetaWave");
+   for (int i=0; i<2; i++){
+      gMinuit->DefineParameter(i, parName[i], par[i], stepSize[i], minVal[i], maxVal[i]);
+   }
+   
+   Double_t phiWave,thetaWave;
+   Double_t phiWaveErr,thetaWaveErr;
+   //do the fit and get the answers
+   gMinuit->SetPrintLevel(-1);
+   gMinuit->Migrad();       // Minuit's best minimization algorithm   
+   gMinuit->GetParameter(0,phiWave,phiWaveErr);
+   gMinuit->GetParameter(1,thetaWave,thetaWaveErr);
+
+   Int_t npari,nparx,istat;
+   Double_t fmin,fedm,errdef;
+   gMinuit->mnstat(fmin,fedm,errdef,npari,nparx,istat);
+   //   std::cout << fmin << "\t" << fedm << "\t" << npari << "\t" << nparx 
+   //	     << "\t" << istat << std::endl;
+   theSum->setFitResults(phiWave,thetaWave,phiWaveErr,thetaWaveErr,fmin);
+
+
+
    return theSum;
 }
+
