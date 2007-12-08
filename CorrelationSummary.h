@@ -23,8 +23,10 @@ class CorrelationSummary: public TObject
    ~CorrelationSummary();
   CorrelationSummary(int teventNumber, int tcentreAnt, int sixAnts[6], double deltaT=0);
   void fillErrorsAndFit();
-  
-
+  Double_t getChiSquared(Double_t tPhiWave, Double_t tThetaWave, Int_t numAnts);
+  Double_t getDeltaTExpected(Double_t tPhiWave, Double_t tThetaWave, Int_t pairInd);
+  void setFitResults(Double_t tPhi, Double_t tTheta, Double_t tPhiErr, Double_t tThetaErr, Double_t tChiSq);
+ 
 
   //Simple Event Characteristics
   int eventNumber;
@@ -52,11 +54,20 @@ class CorrelationSummary: public TObject
   //Fit Results
   double phiWave;
   double thetaWave;
+  double phiWaveErr;
+  double thetaWaveErr;
+  double chiSq;
+  int ndf; //no frigging idea
+
+  //Antenna postion variables for use in fit
+  Double_t fAntPhi[19][2];
+  Double_t fAntR[19][2];
+  Double_t fAntZ[19][2];
   
   
 
 
-  ClassDef(CorrelationSummary,2);
+  ClassDef(CorrelationSummary,3);
 };
 
 

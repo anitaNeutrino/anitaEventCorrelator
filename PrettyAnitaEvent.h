@@ -25,9 +25,9 @@ class PrettyAnitaEvent: public UsefulAnitaEvent
 
 
   //Putative Analysis methods
-  int getMaxAntenna(AnitaPol::AnitaPol_t pol);
-  int getMaxAntennaVSquared(AnitaPol::AnitaPol_t pol);
-  int getMaxAntennaCorrelation(AnitaPol::AnitaPol_t pol);
+  int getMaxAntenna(AnitaPol::AnitaPol_t pol, Double_t *peakPtr=0);
+  int getMaxAntennaVSquared(AnitaPol::AnitaPol_t pol, Double_t *peakPtr=0);
+  int getMaxAntennaCorrelation(AnitaPol::AnitaPol_t pol, Double_t *peakPtr=0);
   CorrelationSummary *getCorrelationSummary(Int_t centreAnt,AnitaPol::AnitaPol_t pol,Double_t deltaT=0);
 
 
