@@ -55,6 +55,67 @@ void UsefulAdu5Pat::getThetaAndPhiWaveWillySeavey(Double_t &thetaWave, Double_t 
    return getThetaAndPhiWave(AnitaLocations::LONGITUDE_SURF_SEAVEY,AnitaLocations::LATITUDE_SURF_SEAVEY,AnitaLocations::ALTITUDE_SURF_SEAVEY,thetaWave,phiWave);
 }
 
+int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat)
+{
+  //returns 1 if successful, 0 is not possible
+  
+   Double_t thetaBalloon=fUPGeomTool->getThetaFromLat(TMath::Abs(latitude));
+   Double_t phiBalloon=fUPGeomTool->getPhiFromLon(longitude);
+   Double_t balloonHeight=fUPGeomTool->getGeoid(thetaBalloon)+altitude;
+
+   Double_t tempPhiWave=phiWave;
+   //Now need to take account of balloon heading
+   //Will have to check heading at some point
+   if(heading>=0 && heading<=360) {
+     //     tempPhiWave-=heading*TMath::DegToRad();
+     tempPhiWave=heading*TMath::DegToRad()-tempPhiWave;
+      if(tempPhiWave<0)
+	 tempPhiWave+=TMath::TwoPi();
+   }
+   
+   Double_t tempThetaWave=TMath::PiOver2()-thetaWave;
+
+   Double_t re=balloonHeight-altitude;
+   Double_t reh=balloonHeight;
+   Double_t costw=TMath::Cos(tempThetaWave);
+   Double_t sqrtArg=(reh*reh*costw*costw - (reh*reh-re*re));
+   if(sqrtArg<0) {
+     // No solution possible
+     return 0;
+   }
+   Double_t L=reh*costw - TMath::Sqrt(sqrtArg);
+   Double_t sinThetaL=L*TMath::Sin(tempThetaWave)/re;
+   Double_t sourceTheta=TMath::ASin(sinThetaL);
+
+   
+
+   //   Double_t sinSquiggle=(balloonHeight/tempRE)*TMath::Sin(tempThetaWave);
+   //   Double_t squiggle=TMath::ASin(sinSquiggle);
+   //   if(squiggle<0) squiggle+=TMath::Pi();
+   
+   //   Double_t sourceTheta=TMath::Pi()-tempThetaWave-squiggle;
+   //   std::cout << thetaWave*TMath::RadToDeg() << "\t" << L << "\t" << sourceTheta*TMath::RadToDeg() << "\t" << phiWave*TMath::RadToDeg() << std::endl;
+   //Start at ground below balloon
+   fSourcePos.SetX(0);
+   fSourcePos.SetY(0);
+   fSourcePos.SetZ(re);
+   
+   //Rotate to latitude relative to balloon
+   fSourcePos.RotateY(sourceTheta);   
+   //Rotate to longitude relative to balloon
+   fSourcePos.RotateZ(-1*tempPhiWave);
+
+   //Rotate to correct absolute values
+   fSourcePos.RotateY(thetaBalloon);
+   fSourcePos.RotateZ(phiBalloon);
+   //Goofy sign thing
+   //   fSourcePos.SetZ(-1*fSourcePos.Z());
+   
+   fUPGeomTool->getLonLat(fSourcePos,sourceLon,sourceLat);
+   sourceLat*=-1;
+   return 1;
+}
+
 
 void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave) {
    Double_t thetaBalloon=fUPGeomTool->getThetaFromLat(TMath::Abs(latitude));

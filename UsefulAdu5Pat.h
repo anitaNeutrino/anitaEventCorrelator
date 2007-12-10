@@ -25,6 +25,8 @@ class UsefulAdu5Pat: public Adu5Pat
   UsefulAdu5Pat(Adu5Pat *patPtr);
   ~UsefulAdu5Pat();
 
+
+  int getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat);
   void getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave);
   void getThetaAndPhiWaveWillySeavey(Double_t &thetaWave, Double_t &phiWave);
   Double_t getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt); 

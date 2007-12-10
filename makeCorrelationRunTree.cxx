@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     run=atoi(argv[1]);
   }
   std::cout << "Making correlation summary tree for run: " << run << "\n";
-  makeCorrelationRunTree(run,0,"/unix/anita1/rjn/testing");
+  makeCorrelationRunTree(run,0,"/unix/anita1/rjn/noCut");
 }
   
 void makeCorrelationRunTree(int run, int numEnts, char *outDir) {
