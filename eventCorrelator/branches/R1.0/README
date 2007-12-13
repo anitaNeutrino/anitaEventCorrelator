@@ -1,0 +1,9 @@
+//////////////////////////////////////////////////////////////////////////////
+////    eventCorrelator   -- December 2007                                ////
+////   Ryan Nichol (rjn@hep.ucl.ac.uk)                                   /////
+//////////////////////////////////////////////////////////////////////////////
+
+Introduction
+==============
+
+This is the new eventCorrelator it relies on libRootFftWrapper to do the correlations. The way that it expects to work is having ANITA_UTIL_INSTALL_DIR set and it expects to find libRootFftWraper.so in $(ANITA_UTIL_INSTALL_DIR)/lib. Of course any location that LD and gcc looks will work. 
