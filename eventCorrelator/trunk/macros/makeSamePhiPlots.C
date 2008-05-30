@@ -3,17 +3,26 @@
 void makeSamePhiPlots() 
 {
    gSystem->AddIncludePath("-I${EVENT_READER_DIR}");
-   gSystem->AddIncludePath("-I${PLOTTER_DIR}");
    //  cout << gSystem->GetIncludePath() <<endl;
    
    gSystem->Load("libMathMore.so");
-   gSystem->Load("/usr/lib64/libfftw3.so");
+   gSystem->Load("libMinuit.so");
+   gSystem->Load("/sw/lib/libfftw3.so");
    gSystem->Load("libAnitaEvent.so");
    gSystem->Load("libAnitaPlotter.so");
+
+   makeSamePhiPlotsFast("feedMinus0p2");
+}
+
+
+void makeSamePhiPlotsFast(char *dirName)
+{
+  char fileMatch[180];
+  sprintf(fileMatch,"%s/deltaTFileFast*",dirName);
    TChain *deltaTTree = new TChain("deltaTTree");
    //   TFile *fp = new TFile("deltaTFile1027.root");
    //   TTree *deltaTTree = (TTree*) fp->Get("deltaTTree");
-   deltaTTree->Add("deltaTFileClock*.root");
+   deltaTTree->Add(fileMatch);
    
    AnitaGeomTool *fGeomTool = AnitaGeomTool::Instance();
 

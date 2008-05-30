@@ -128,7 +128,7 @@ void correlationTreeLoop(int run) {
       if(antennaFlag!=1 || sgFreq!=-1) 
 	 continue;
 
-      //     cout << entry << "\t" << gpEntry << "\t" << header->triggerTime << "\t" << (UInt_t)gpTriggerTime << "\n";
+      //      cout << entry << "\t" << gpEntry << "\t" << triggerTime << "\t" << (UInt_t)gpTriggerTime << "\n";
      
       eventChain->GetEntry(entry);
       prettyHkTree->GetEntry(entry);

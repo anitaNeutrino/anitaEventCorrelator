@@ -7,21 +7,29 @@
 include Makefile.arch
 
 #Site Specific  Flags
-SYSINCLUDES	= 
-SYSLIBS         = -L /unix/anita/software/install/lib/ -lgsl -L/home/rjn/thirdParty/lib -lprofiler -lunwind
+SYSINCLUDES	= -I/sw/include
+SYSLIBS         = -L/sw/lib/ -lgsl 
+
+
 
 ifdef ANITA_UTIL_INSTALL_DIR
 ANITA_UTIL_LIB_DIR=${ANITA_UTIL_INSTALL_DIR}/lib
-ANITA_UTIL_INC_DIR=${ANITA_UTIL_INSTALL_DIR}/includes
+ANITA_UTIL_INC_DIR=${ANITA_UTIL_INSTALL_DIR}/include
+LD_ANITA_UTIL=-L$(ANITA_UTIL_LIB_DIR)
+INC_ANITA_UTIL=-I$(ANITA_UTIL_INC_DIR)
 else
 ANITA_UTIL_LIB_DIR=
 ANITA_UTIL_INC_DIR=
+ifdef EVENT_READER_DIR
+LD_ANITA_UTIL=-L$(EVENT_READER_DIR)
+INC_ANITA_UTIL=-I$(EVENT_READER_DIR)
+endif
 endif
 
 #Generic and Site Specific Flags
-CXXFLAGS     += $(ROOTCFLAGS) $(SYSINCLUDES) -I$(EVENT_READER_DIR) -I${ANITA_UTIL_INC_DIR}
-LDFLAGS      += -g $(ROOTLDFLAGS) -L$(EVENT_READER_DIR)
-LIBS          = $(ROOTLIBS) -lMathMore -lMinuit $(SYSLIBS) -L$(EVENT_READER_DIR) -L$(ANITA_UTIL_LIB_DIR) -lAnitaEvent -lRootFftwWrapper -lfftw3
+CXXFLAGS     += $(ROOTCFLAGS) $(SYSINCLUDES) $(INC_ANITA_UTIL)
+LDFLAGS      += -g $(ROOTLDFLAGS) 
+LIBS          = $(ROOTLIBS) -lMathMore -lMinuit $(SYSLIBS) $(LD_ANITA_UTIL) -lAnitaEvent -lRootFftwWrapper -lfftw3
 GLIBS         = $(ROOTGLIBS) $(SYSLIBS)
 
 
