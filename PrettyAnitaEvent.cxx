@@ -769,7 +769,7 @@ TGraph *PrettyAnitaEvent::getInterpolatedGraph(int chanIndex, double deltaT) {
      std::cout << "\n" << eventNumber << "\t" << chanIndex << "\t" << tVec.size() << "\t" << vVec.size() << "\t" << fNumPoints[chanIndex] << "\n";   
    }
 
-   ROOT::Math::Interpolator chanInterp(tVec,vVec,ROOT::Math::Interpolation::AKIMA);
+   ROOT::Math::Interpolator chanInterp(tVec,vVec,ROOT::Math::Interpolation::kAKIMA);
    Double_t startTime=fTimes[chanIndex][0];
    Double_t lastTime=fTimes[chanIndex][fNumPoints[chanIndex]-1];
 
