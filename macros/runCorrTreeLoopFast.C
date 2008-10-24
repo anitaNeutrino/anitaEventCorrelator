@@ -11,7 +11,7 @@ void runCorrTreeLoopFast() {
   gSystem->Load("/usr/lib64/libfftw3.so");
   //  gSystem->Load("/unix/anita/softwareSLC4/install/lib/libfftw3.so");
   gSystem->Load("libAnitaEvent.so");
-  gSystem->Load("libAnitaPlotter.so");
+  gSystem->Load("libAnitaCorrelator.so");
   gSystem->CompileMacro("correlationTreeLoopFast.C","k");
   correlationTreeLoop(1027);
   correlationTreeLoop(1028);
