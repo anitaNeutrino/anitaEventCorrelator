@@ -32,14 +32,14 @@ void getRelXYFromLatLong(float latitude, float longitude,
 void quickDirtyMapPlot() {
    
    TChain *sillyTree = new TChain("sillyTree");
-   sillyTree->Add("newClockNoCutFirstDay/sillyDST*");
-   //   sillyTree->Add("initial/sillyDST*");
+   //   sillyTree->Add("firstDay/sillyDST*");
+   sillyTree->Add("initial/sillyDST*");
    
    TCanvas *canMap=(TCanvas*)gROOT->FindObject("canMap");
    if(!canMap)
       canMap = new TCanvas("canMap","canMap",(int)xSize,(int)ySize);
    canMap->Clear();
-   canMap->SetLogz(1);
+   canMap->SetLogz();
    canMap->SetTopMargin(0);
    canMap->SetBottomMargin(0);
    canMap->SetLeftMargin(0);
@@ -51,43 +51,6 @@ void quickDirtyMapPlot() {
     }
    img->SetConstRatio(kFALSE);
    img->Draw("");
-   Int_t numEvents=sillyTree->Draw("sourceY:sourceX>>hMap(1000,,,1000,,)","chiSq<10","a col same");
-   cout << "Total:\t" << numEvents << endl;
-   
-   TCanvas *canLat = new TCanvas("canLat","canLat");
-   sillyTree->Draw("sourceLat:sourceLon>>hLat(1000,,,1000,,)","chiSq<10","col");
-
-   TCanvas *canMcMurdo = new TCanvas("canMcMurdo","canMcMurdo",(int)xSize,(int)ySize);
-   canMcMurdo->Clear();
-   canMcMurdo->SetLogz(1);
-   canMcMurdo->SetTopMargin(0);
-   canMcMurdo->SetBottomMargin(0);
-   canMcMurdo->SetLeftMargin(0);
-   canMcMurdo->SetRightMargin(0);
-   img->SetConstRatio(kFALSE);
-   img->Draw("");
-   Int_t numEventsMcMurdo=sillyTree->Draw("sourceY:sourceX>>hMap2(1000,,,1000,,)","chiSq<10   && sourceLon>164 && sourceLon<170","a col same");
-   sillyTree->Draw("balloonY:balloonX","chiSq<10   && sourceLon>164 && sourceLon<170","same");
-   cout << "McMurdo:\t" << numEventsMcMurdo << endl;
-
-
-   TCanvas *canTaylor = new TCanvas("canTaylor","canTaylor",(int)xSize,(int)ySize);
-   canTaylor->Clear();
-   canTaylor->SetLogz(1);
-   canTaylor->SetTopMargin(0);
-   canTaylor->SetBottomMargin(0);
-   canTaylor->SetLeftMargin(0);
-   canTaylor->SetRightMargin(0);
-   img->SetConstRatio(kFALSE);
-   img->Draw("");
-   Int_t numEventsTaylor=sillyTree->Draw("sourceY:sourceX>>hMap3(1000,,,1000,,)","chiSq<10   && sourceLon>156 && sourceLon<161","a col same");
-   sillyTree->Draw("balloonY:balloonX","chiSq<10   && sourceLon>156 && sourceLon<161","same");
-   cout << "Taylor:\t" << numEventsTaylor << endl;
-   
-   TCanvas *canTest= new TCanvas("canTest","canTest");
-   sillyTree->Draw("triggerTime>>htrig","chiSq<10   && sourceLon>156 && sourceLon<161","");
-
-
-   //   TCanvas *can = new TCanvas("can","can");
-   //   sillyTree->Draw("log10(chiSq)","");
+   Int_t numEvents=sillyTree->Draw("sourceY:sourceX>>h(500,,,500,,)","chiSq<10","a col same");
+   cout << numEvents << endl;
 }

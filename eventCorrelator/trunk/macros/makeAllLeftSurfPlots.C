@@ -9,7 +9,7 @@ void makeAllLeftSurfPlots()
    gSystem->Load("libMathMore.so");
    gSystem->Load("/usr/lib64/libfftw3.so");
    gSystem->Load("libAnitaEvent.so");
-   gSystem->Load("libAnitaPlotter.so");
+   gSystem->Load("libAnitaCorrelator.so");
    TChain *deltaTTree = new TChain("deltaTTree");
    //   TFile *fp = new TFile("deltaTFile1027.root");
    //   TTree *deltaTTree = (TTree*) fp->Get("deltaTTree");

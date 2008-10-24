@@ -11,7 +11,7 @@ void runPlotFakeThings() {
   gSystem->Load("/usr/lib64/libfftw3.so");
   //  gSystem->Load("/unix/anita/softwareSLC4/install/lib/libfftw3.so");
   gSystem->Load("libAnitaEvent.so");
-  gSystem->Load("libAnitaPlotter.so");
+  gSystem->Load("libAnitaCorrelator.so");
   gSystem->CompileMacro("plotFakePrettyThings.C","k");
   //  plotFakePrettyThings(0,16); //entry,antenna  
   plotFakePrettyThings(0,23); //entry,antenna

@@ -11,7 +11,7 @@ void runCorRunTree() {
   //  gSystem->Load("/usr/lib/libfftw3.so");
   gSystem->Load("/unix/anita/softwareSLC4/install/lib/libfftw3.so");
   gSystem->Load("libAnitaEvent.so");
-  gSystem->Load("libAnitaPlotter.so");
+  gSystem->Load("libAnitaCorrelator.so");
   gSystem->CompileMacro("makeCorrelationRunTree.C","k");
   makeCorrelationRunTree(1028,0,"/unix/anita1/rjn/corTree24"); 
 

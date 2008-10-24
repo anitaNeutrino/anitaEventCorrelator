@@ -10,7 +10,7 @@ void runCorTreeTest() {
   //  gSystem->Load("/usr/lib/libfftw3.so");
   gSystem->Load("/unix/anita/softwareSLC4/install/lib/libfftw3.so");
   gSystem->Load("libAnitaEvent.so");
-  gSystem->Load("libAnitaPlotter.so");
+  gSystem->Load("libAnitaCorrelator.so");
   gSystem->CompileMacro("makeCorrelationTreeTest.C","k");
   makeCorrelationTreeTest(1028,146380,16); //Run,entry,antenna
    //  plotPrettyThings(1028,33995,28);

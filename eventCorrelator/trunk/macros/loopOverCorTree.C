@@ -80,23 +80,53 @@ void loopOverCorTree(char *dirName, int run) {
 
   TFile *fpCor = new TFile(corName);
   TTree *corTree = (TTree*) fpCor->Get("corTree");
+  if(!corTree) return;
   corTree->SetBranchAddress("cor",&corSum);
 
+
+   TFile *fpGp = new TFile("/unix/anita/gpLogs/gp_log_all.root");
+   TTree *gpLogTree = (TTree*) fpGp->Get("gp_log");
+   Double_t gpTriggerTime;
+   Int_t antennaFlag, sgFreq, surfaceAtten;
+   Int_t boreholePulsePerSecond;
+   Double_t timeToGpLog;
+
+   gpLogTree->SetBranchAddress("trigger_time",&gpTriggerTime);
+   gpLogTree->SetBranchAddress("sg_freq",&sgFreq);
+   gpLogTree->SetBranchAddress("antenna",&antennaFlag);
+   gpLogTree->SetBranchAddress("surface_attenuation",&surfaceAtten);
+   gpLogTree->SetBranchAddress("borehole_pulses_per_second",&boreholePulsePerSecond);
+   gpLogTree->BuildIndex("trigger_time");
+
+
   Double_t balloonLat, balloonLon, balloonAlt, heading;
+  Double_t balloonX,balloonY;
   Double_t sourceLon,sourceLat,sourceX,sourceY,phiWave,thetaWave,phiWaveErr,thetaWaveErr;
   Double_t chiSq;
+  Int_t attFlag;
   Int_t eventNumber;
   UInt_t triggerTime,triggerTimeNs;
+
+  Int_t calibStatus,priority,syncSlipFlag,trigType,goodTimeFlag;
 
   TFile *fpOut = new TFile(outName,"RECREATE");
   TTree *sillyTree = new TTree("sillyTree","Tree of Reco Thingies");
   sillyTree->Branch("eventNumber",&eventNumber,"eventNumber/I");
   sillyTree->Branch("triggerTime",&triggerTime,"triggerTime/i");
   sillyTree->Branch("triggerTimeNs",&triggerTimeNs,"triggerTimeNs/i");
+  sillyTree->Branch("calibStatus",&calibStatus,"calibStatus/I");
+  sillyTree->Branch("priority",&priority,"priority/I");
+  sillyTree->Branch("syncSlipFlag",&syncSlipFlag,"syncSlipFlag/I");
+  sillyTree->Branch("trigType",&trigType,"trigType/I");
+  sillyTree->Branch("goodTimeFlag",&goodTimeFlag,"goodTimeFlag/I");
   sillyTree->Branch("balloonLat",&balloonLat,"balloonLat/D");
   sillyTree->Branch("balloonLon",&balloonLon,"balloonLon/D");
   sillyTree->Branch("balloonAlt",&balloonAlt,"balloonAlt/D");
-  sillyTree->Branch("heading",&heading,"heading/D");
+  sillyTree->Branch("balloonX",&balloonX,"balloonX/D");
+  sillyTree->Branch("balloonY",&balloonY,"balloonY/D");
+   sillyTree->Branch("heading",&heading,"heading/D");
+   sillyTree->Branch("attFlag",&attFlag,"attFlag/I");
+
   sillyTree->Branch("phiWave",&phiWave,"phiWave/D");
   sillyTree->Branch("thetaWave",&thetaWave,"thetaWave/D");
   sillyTree->Branch("phiWaveErr",&phiWaveErr,"phiWaveErr/D");
@@ -106,6 +136,14 @@ void loopOverCorTree(char *dirName, int run) {
   sillyTree->Branch("sourceX",&sourceX,"sourceX/D");
   sillyTree->Branch("sourceY",&sourceY,"sourceY/D");
   sillyTree->Branch("chiSq",&chiSq,"chiSq/D");
+
+  sillyTree->Branch("timeToGpLog",&timeToGpLog,"timeToGpLog/D");
+  sillyTree->Branch("gpTriggerTime",&gpTriggerTime,"gpTriggerTime/D");
+  sillyTree->Branch("gpSigFreq",&sgFreq,"gpSigFreq/I");
+  sillyTree->Branch("antennaFlag",&antennaFlag,"antennaFlag/I");
+  sillyTree->Branch("surfaceAtten",&surfaceAtten,"surfaceAtten/I");
+  sillyTree->Branch("boreholePPS",&boreholePulsePerSecond,"boreholePPS/I");
+  
 
   UInt_t numEntries=corTree->GetEntries();
 
@@ -130,18 +168,35 @@ void loopOverCorTree(char *dirName, int run) {
      headTree->GetEntry(mainEntry);
      adu5PatTree->GetEntry(mainEntry);
      
+     Long64_t gpEntry=gpLogTree->GetEntryNumberWithBestIndex(header->triggerTime);
+     if(gpEntry>-1)
+       gpLogTree->GetEntry(gpEntry);
+     else {
+       antennaFlag=-1;
+       boreholePulsePerSecond=0;
+     }
+       
+     timeToGpLog=header->triggerTime-gpTriggerTime;
 
 
-     if(corSum->chiSq<5000  && corSum->thetaWave>=0) {
+     if(corSum->thetaWave>=0) {
 	UsefulAdu5Pat usefulPat(pat);
 	int solved=usefulPat.getSourceLonAndLatAltZero(corSum->phiWave,corSum->thetaWave,
 						       sourceLon,sourceLat);
+
+	calibStatus=header->calibStatus;
+	priority=header->priority;
+	syncSlipFlag=header->otherFlag2;
+	trigType=header->trigType;
+	goodTimeFlag=header->goodTimeFlag;
 	eventNumber=corSum->eventNumber;
 	triggerTime=header->triggerTime;
 	triggerTimeNs=header->triggerTimeNs;
 	balloonLat=usefulPat.latitude;
 	balloonLon=usefulPat.longitude;
 	balloonAlt=usefulPat.altitude;
+	attFlag=usefulPat.attFlag;
+	getRelXYFromLatLong(balloonLat,balloonLon,balloonX,balloonY);
 	heading=usefulPat.heading;
 	phiWave=corSum->phiWave;
 	phiWaveErr=corSum->phiWaveErr;

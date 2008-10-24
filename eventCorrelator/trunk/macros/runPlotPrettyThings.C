@@ -3,7 +3,7 @@
 void runPlotPrettyThings() {
   //  gSystem->AddIncludePath(gSystem->ExpandPathName("-I${EVENT_READER_DIR}"));
   gSystem->AddIncludePath("-I${EVENT_READER_DIR}");
-  gSystem->AddIncludePath("-I${ANITA_UTIL_INSTALL_DIR}/include");
+  gSystem->AddIncludePath("-I${ANITA_UTIL_INSTALL_DIR}/includes");
   //  cout << gSystem->GetIncludePath() <<endl;
 			  
   gSystem->Load("libMathMore.so");
@@ -11,7 +11,7 @@ void runPlotPrettyThings() {
   gSystem->Load("/usr/lib64/libfftw3.so");
 
   gSystem->Load("libAnitaEvent.so");
-  gSystem->Load("libAnitaPlotter.so");
+  gSystem->Load("libAnitaCorrelator.so");
   gSystem->Load("libRootFftwWrapper.so");
   gSystem->CompileMacro("plotPrettyThings.C","k");
   plotPrettyThingsEventNumber(1032,612849,8); //Run,entry,antenna
