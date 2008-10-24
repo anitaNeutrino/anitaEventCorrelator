@@ -1,4 +1,3 @@
-
 #############################################################################
 ## Makefile -- New Version of my Makefile that works on both linux
 ##              and mac os x
@@ -7,8 +6,8 @@
 include Makefile.arch
 
 #Site Specific  Flags
-SYSINCLUDES	= -I/sw/include
-SYSLIBS         = -L/sw/lib/ -lgsl 
+SYSINCLUDES	=
+SYSLIBS         = 
 
 
 
@@ -18,33 +17,47 @@ ANITA_UTIL_INC_DIR=${ANITA_UTIL_INSTALL_DIR}/include
 LD_ANITA_UTIL=-L$(ANITA_UTIL_LIB_DIR)
 INC_ANITA_UTIL=-I$(ANITA_UTIL_INC_DIR)
 else
-ANITA_UTIL_LIB_DIR=
-ANITA_UTIL_INC_DIR=
+ANITA_UTIL_LIB_DIR=/usr/local/lib
+ANITA_UTIL_INC_DIR=/usr/local/include
+ifdef EVENT_READER_DIR
+LD_ANITA_UTIL=-L$(EVENT_READER_DIR)
+INC_ANITA_UTIL=-I$(EVENT_READER_DIR)
 ifdef EVENT_READER_DIR
 LD_ANITA_UTIL=-L$(EVENT_READER_DIR)
 INC_ANITA_UTIL=-I$(EVENT_READER_DIR)
 endif
 endif
 
-#Generic and Site Specific Flags
-CXXFLAGS     += $(ROOTCFLAGS) $(SYSINCLUDES) $(INC_ANITA_UTIL)
-LDFLAGS      += -g $(ROOTLDFLAGS) 
-LIBS          = $(ROOTLIBS) -lMathMore -lMinuit $(SYSLIBS) $(LD_ANITA_UTIL) -lAnitaEvent -lRootFftwWrapper -lfftw3
-GLIBS         = $(ROOTGLIBS) $(SYSLIBS)
+#Toggles the FFT functions on and off
+USE_FFT_TOOLS=1
 
+ifdef USE_FFT_TOOLS
+FFTLIBS = -lRootFftwWrapper -lfftw3
+FFTFLAG = -DUSE_FFT_TOOLS
+else
+FFTLIBS =
+FFTFLAG =
+endif
+
+#Generic and Site Specific Flags
+CXXFLAGS     += $(ROOTCFLAGS) $(FFTFLAG) $(SYSINCLUDES) $(INC_ANITA_UTIL)
+LDFLAGS      += -g $(ROOTLDFLAGS) 
+
+LIBS          = $(ROOTLIBS) -lMathMore -lMinuit $(SYSLIBS) $(LD_ANITA_UTIL) $(FFTLIBS)
+GLIBS         = $(ROOTGLIBS) $(SYSLIBS)
 
 #Now the bits we're actually compiling
 
 
 #ROOT stuff
 
-ROOT_LIBRARY = libAnitaPlotter.${DLLSUF}
-LIB_OBJS = PrettyAnitaEvent.o CorrelationSummary.o UsefulAdu5Pat.o  plotDict.o
+ROOT_LIBRARY = libAnitaCorrelator.${DLLSUF}
+LIB_OBJS = PrettyAnitaEvent.o CorrelationSummary.o UsefulAdu5Pat.o  correlatorDict.o
 CLASS_HEADERS =  PrettyAnitaEvent.h CorrelationSummary.h UsefulAdu5Pat.h
 
 all : $(ROOT_LIBRARY) 
 
-plotDict.C: $(CLASS_HEADERS)
+correlatorDict.C: $(CLASS_HEADERS)
 	@echo "Generating dictionary ..."
 	@ rm -f *Dict* 
 	rootcint $@ -c $(CXXFLAGS) $(CLASS_HEADERS) LinkDef.h
@@ -105,3 +118,4 @@ clean:
 	@rm -f $(ROOT_LIBRARY)
 	@rm -f $(subst .$(DLLSUF),.so,$(ROOT_LIBRARY))	
 	@rm -f $(TEST)
+	@rm -f makeGoodCorrelationRunTree makeInitialGoodCorrelationRunTree makeCorrelationRunTree

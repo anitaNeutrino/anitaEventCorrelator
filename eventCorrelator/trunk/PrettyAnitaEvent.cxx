@@ -765,7 +765,7 @@ TGraph *PrettyAnitaEvent::getInterpolatedGraph(int chanIndex, double deltaT) {
      tVec.push_back(fTimes[chanIndex][samp]);
      vVec.push_back(fVolts[chanIndex][samp]);
    }
-   if(tVec.size()==0) {
+   if(tVec.size()<100) {
      std::cout << "\n" << eventNumber << "\t" << chanIndex << "\t" << tVec.size() << "\t" << vVec.size() << "\t" << fNumPoints[chanIndex] << "\n";   
    }
 

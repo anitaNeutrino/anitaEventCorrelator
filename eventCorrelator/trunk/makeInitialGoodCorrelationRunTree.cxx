@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     run=atoi(argv[1]);
   }
   std::cout << "Making correlation summary tree for run: " << run << "\n";
-  makeCorrelationRunTree(run,0,"/unix/anita1/rjn/initialPeakCut5");
+  makeCorrelationRunTree(run,0,"/unix/anita1/rjn/initialNewClockNoCut");
 }
   
 void makeCorrelationRunTree(int run, int numEnts, char *outDir) {
@@ -102,7 +102,7 @@ void makeCorrelationRunTree(int run, int numEnts, char *outDir) {
      adu5PatTree->GetEntry(entry);
      
      
-     PrettyAnitaEvent realEvent(event,WaveCalType::kVTFullJWPlusFastClockZero,hk);
+     PrettyAnitaEvent realEvent(event,WaveCalType::kVTFullJWPlusFancyClockZero,hk);
      UsefulAdu5Pat usefulPat(pat);
      //     usefulPat.getThetaAndPhiWaveWillySeavey(thetaWave,phiWave);
      Double_t peak=0;
@@ -112,7 +112,7 @@ void makeCorrelationRunTree(int run, int numEnts, char *outDir) {
      //     std::cout << deltaT << std::endl;
      //     if(entry%100==0)
      //     std::cout << entry << "\t" << ant << "\t" << peak << std::endl; 
-     if(peak<5) continue;
+     //     if(peak<5) continue;
      //       std::cout << ant << "\t" << realEvent.getMaxAntenna(AnitaPol::kVertical) << std::endl;
      theCor =realEvent.getCorrelationSummary(ant,AnitaPol::kVertical,deltaT);
      corTree->Fill();     
