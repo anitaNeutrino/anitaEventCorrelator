@@ -723,71 +723,19 @@ TCanvas *PrettyAnitaEvent::getSixInterpolatedCanvas(int ant, AnitaPol::AnitaPol_
 
 
 TGraph *PrettyAnitaEvent::getSimplePowerEnvelopeGraph(int chanIndex) {
-  //Need to loop over each channel and form V^2 array and then loop
-  // over that array and pick only the channels that are larger than (or equal to their neighbours.
-  Double_t v2[NUM_SAMP];
-  Double_t vEnvelope[NUM_SAMP];
-  Double_t tEnvelope[NUM_SAMP];
-  Int_t numPoints=0;
-
-  for(int i=0;i<fNumPoints[chanIndex];i++) {
-    v2[i]=fVolts[chanIndex][i]*fVolts[chanIndex][i];
-    if(i==1) {
-      if(v2[0]>v2[i]) {
-	vEnvelope[numPoints]=v2[0];
-	tEnvelope[numPoints]=fTimes[chanIndex][0];
-	numPoints++;
-      }
-    }
-    else if(i==fNumPoints[chanIndex]-1 && v2[i]>v2[i-1]) {
-      vEnvelope[numPoints]=v2[i];
-      tEnvelope[numPoints]=fTimes[chanIndex][i];
-      numPoints++;
-    }
-    else if(v2[i-1]>v2[i-2] && v2[i-1]>v2[i]) {
-      vEnvelope[numPoints]=v2[i-1];
-      tEnvelope[numPoints]=fTimes[chanIndex][i-1];
-      numPoints++;
-    }
-  }				     
-  TGraph *grPower = new TGraph(numPoints,tEnvelope,vEnvelope);
-  return grPower;
-      
+   TGraph *grWave = getGraph(chanIndex);
+   TGraph *grPowerEnv = FFTtools::getSimplePowerEnvelopeGraph(grWave);
+   delete grWave;
+   return grPowerEnv;      
 }
 
 
 TGraph *PrettyAnitaEvent::getInterpolatedGraph(int chanIndex, double deltaT) {
-   //Will use the ROOT::Math::Interpolator function to do this.
-   std::vector<double> tVec;
-   std::vector<double> vVec;
-
-   for (int samp=0;samp<fNumPoints[chanIndex];samp++) {
-     tVec.push_back(fTimes[chanIndex][samp]);
-     vVec.push_back(fVolts[chanIndex][samp]);
-   }
-   if(tVec.size()<100) {
-     std::cout << "\n" << eventNumber << "\t" << chanIndex << "\t" << tVec.size() << "\t" << vVec.size() << "\t" << fNumPoints[chanIndex] << "\n";   
-   }
-
-   ROOT::Math::Interpolator chanInterp(tVec,vVec,ROOT::Math::Interpolation::kAKIMA);
-   Double_t startTime=fTimes[chanIndex][0];
-   Double_t lastTime=fTimes[chanIndex][fNumPoints[chanIndex]-1];
-
-
-   Double_t newTimes[8192];
-   Double_t newVolts[8192];
-   Int_t numPoints=0;
-   for(Double_t time=startTime;time<=lastTime;time+=deltaT) {
-      newTimes[numPoints]=time;
-      newVolts[numPoints]=chanInterp.Eval(time);
-      //      std::cout << numPoints << "\t" << newTimes[numPoints]
-      //		<< "\t" << newVolts[numPoints] << std::endl;
-	       
-      numPoints++;
-   }
-
-   TGraph *grInt = new TGraph(numPoints,newTimes,newVolts);
-   return grInt;
+   
+   TGraph *grWave = getGraph(chanIndex);
+   TGraph *grInt = FFTtools::getInterpolatedGraph(deltaT);
+   delete grWave;
+   return grInt;      
 }
 
 TGraph *PrettyAnitaEvent::getFFTMagnitude(int chanIndex)
