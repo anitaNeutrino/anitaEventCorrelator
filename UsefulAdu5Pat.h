@@ -65,6 +65,20 @@ class UsefulAdu5Pat: public Adu5Pat
     \return The plane wave crossing time difference between the two antennas (t_1-t_2).
   */
   Double_t getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt); 
+   //! Calculates the plane wave crossing time difference between two antennas for a given wave phi and theta - useful for testing prior to flight when heading etc not known/needed
+  /*!
+    \param ant1 The first antenna.
+    \param ant2 The second antenna.
+    \return The plane wave crossing time difference between the two antennas (t_1-t_2).
+  */
+  Double_t getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t phiWave, Double_t thetaWave);
+   //! Calculates the plane wave crossing time difference between two antennas for a given wave cos and sin of phi and theta - useful for testing prior to flight when heading etc not known/needed, quicker than the above method if calculating deltaT for many phi and theta values - no need to get cos and sin each time
+  /*!
+    \param ant1 The first antenna.
+    \param ant2 The second antenna.
+    \return The plane wave crossing time difference between the two antennas (t_1-t_2).
+  */
+  Double_t getDeltaTExpected(Int_t ant1,Int_t ant2,Double_t cosPhi,Double_t sinPhi,Double_t cosTheta,Double_t sinTheta);
    //! Calculates the plane wave crossing time difference between two antennas for the Williams Field seavey.
   /*!
     \param ant1 The first antenna.

@@ -46,6 +46,8 @@ void CorSumFCN(Int_t& npar, Double_t*gin,
 
 PrettyAnitaEvent::PrettyAnitaEvent(RawAnitaEvent *eventPtr,WaveCalType::WaveCalType_t calType, PrettyAnitaHk *theHk):UsefulAnitaEvent(eventPtr,calType,theHk) { }
 
+PrettyAnitaEvent::PrettyAnitaEvent(RawAnitaEvent *eventPtr,WaveCalType::WaveCalType_t calType,RawAnitaHeader *headPtr):UsefulAnitaEvent(eventPtr,calType,headPtr) { }
+
 
 TCanvas *PrettyAnitaEvent::getSixWaveformCanvas(int ant, AnitaPol::AnitaPol_t pol, TCanvas *incan) {
    char graphTitle[180];
@@ -733,7 +735,7 @@ TGraph *PrettyAnitaEvent::getSimplePowerEnvelopeGraph(int chanIndex) {
 TGraph *PrettyAnitaEvent::getInterpolatedGraph(int chanIndex, double deltaT) {
    
    TGraph *grWave = getGraph(chanIndex);
-   TGraph *grInt = FFTtools::getInterpolatedGraph(deltaT);
+   TGraph *grInt = FFTtools::getInterpolatedGraph(grWave,deltaT);
    delete grWave;
    return grInt;      
 }

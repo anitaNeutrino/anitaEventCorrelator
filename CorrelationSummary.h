@@ -70,7 +70,7 @@ class CorrelationSummary: public TObject
   double maxCorVals[19]; ///< The maximumn correlation value for each of the 19 possible correlations (3 up-down, 4 left-right, 4 diagonal, 4 outside-neighbour).
   double maxCorTimes[19]; ///< The time of the maximum correlation value for each of the 19 possible correlations (3 up-down, 4 left-right, 4 diagonal, 4 outside-neighbour).
   double rmsCorVals[19]; ///< The rms correlation value for each of the 19 possible correlations (3 up-down, 4 left-right, 4 diagonal, 4 outside-neighbour).
-s 
+
 
 
   double secondCorVals[19][2]; ///< The peak of the next highest correlation values (tore both left and right vals).
