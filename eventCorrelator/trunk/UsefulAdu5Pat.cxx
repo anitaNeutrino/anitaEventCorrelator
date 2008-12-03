@@ -117,6 +117,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWav
 }
 
 
+
 void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave) {
    Double_t thetaBalloon=fUPGeomTool->getThetaFromLat(TMath::Abs(latitude));
    Double_t phiBalloon=fUPGeomTool->getPhiFromLon(longitude);
@@ -170,6 +171,8 @@ void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, D
    fSourceAltitude=sourceAlt;
 }
 
+
+
 Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt)
 {
 
@@ -193,6 +196,47 @@ Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t source
    
    return  1e9*((TMath::Cos(fThetaWave) * (part1 - part2))/C_LIGHT);    //returns time in ns
 }
+
+
+Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t phiWave, Double_t thetaWave)
+{
+
+  if(fPhiWave!=phiWave || fThetaWave!=thetaWave){
+    fThetaWave=thetaWave;
+    fPhiWave=phiWave;
+  }
+
+   Double_t phi1=fUPGeomTool->getAntPhiPositionRelToAftFore(ant1);
+   Double_t r1=fUPGeomTool->getAntR(ant1);
+   Double_t z1=fUPGeomTool->getAntZ(ant1);
+
+   Double_t phi2=fUPGeomTool->getAntPhiPositionRelToAftFore(ant2);
+   Double_t r2=fUPGeomTool->getAntR(ant2);
+   Double_t z2=fUPGeomTool->getAntZ(ant2);
+
+   Double_t tanThetaW=TMath::Tan(fThetaWave);
+   Double_t part1=z1*tanThetaW - r1 * TMath::Cos(fPhiWave-phi1);
+   Double_t part2=z2*tanThetaW - r2 * TMath::Cos(fPhiWave-phi2);
+   
+   return  1e9*((TMath::Cos(fThetaWave) * (part1 - part2))/C_LIGHT);    //returns time in ns
+}
+
+
+
+Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1,Int_t ant2,Double_t cosPhi,Double_t sinPhi,Double_t cosTheta,Double_t sinTheta){
+  
+  Double_t x1,y1,z1;
+  fUPGeomTool->getAntXYZ(ant1,x1,y1,z1);
+
+  Double_t x2,y2,z2;
+  fUPGeomTool->getAntXYZ(ant2,x2,y2,z2);
+
+  Double_t part1 = x1*cosTheta*cosPhi + y1*cosTheta*sinPhi + z1*sinTheta;
+  Double_t part2 = x2*cosTheta*cosPhi + y2*cosTheta*sinPhi + z2*sinTheta;
+  return 1e9 * (part1 - part2) / C_LIGHT;
+
+}
+
 
 Double_t UsefulAdu5Pat::getDeltaTWillySeavey(Int_t ant1, Int_t ant2)
 {

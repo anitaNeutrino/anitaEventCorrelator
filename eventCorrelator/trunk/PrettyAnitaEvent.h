@@ -57,6 +57,8 @@ class PrettyAnitaEvent: public UsefulAnitaEvent
   */
   PrettyAnitaEvent(RawAnitaEvent *eventPtr,WaveCalType::WaveCalType_t calType, PrettyAnitaHk *theHk);
 
+  PrettyAnitaEvent(RawAnitaEvent *eventPtr,WaveCalType::WaveCalType_t calType, RawAnitaHeader *headPtr);
+
 
   //Putative Analysis methods
   //! Calls getMaxAntennaCorrelation
