@@ -1,6 +1,6 @@
 //////////////////////////////////
 ///// CrossCorrelation.C
-///// A function that does some cross correlations and
+///// A macro that does some cross correlations and
 ///// interferometric map calculations ... basics of this have been
 ///// stolen from Ryan
 ///// Author: Matthew Mottram
@@ -49,9 +49,9 @@ void startCorrelation(int run,int entry){
   RawAnitaHeader *hdPtr = 0;
   Adu5Pat *patPtr =0;
 
-  sprintf(headName,"/data/anita/palestine08/root/run%d/headFile%d.root",run,run);
-  sprintf(eventName,"/data/anita/palestine08/root/run%d/eventFile%d.root",run,run);
-  sprintf(gpsName,"/data/anita/palestine08/root/run%d/gpsFile%d.root",run,run);
+  sprintf(headName,"/TBdata/anita/antarctica08/root/run%d/headFile%d.root",run,run);
+  sprintf(eventName,"/TBdata/anita/antarctica08/root/run%d/eventFile%d.root",run,run);
+  sprintf(gpsName,"/TBdata/anita/antarctica08/root/run%d/gpsFile%d.root",run,run);
 
   TFile *eventFile = new TFile(eventName);
   TFile *headFile = new TFile(headName);
@@ -69,16 +69,25 @@ void startCorrelation(int run,int entry){
   headTree->GetEntry(entry);
   adu5PatTree->GetEntry(entry);
 
-  while(hdPtr->triggerTimeNs<649.5e6 || hdPtr->triggerTimeNs>650.5e6){
-    std::cout << "opened entry " << entry << " (event " << hdPtr->eventNumber << " with triggerTimeNs " << hdPtr->triggerTimeNs << std::endl;
-    entry++;
-    eventTree->GetEntry(entry);
-    headTree->GetEntry(entry);
-    adu5PatTree->GetEntry(entry);
-  }
- std::cout << "opened entry " << entry << " (event " << hdPtr->eventNumber << " with triggerTimeNs " << hdPtr->triggerTimeNs << std::endl;
-    entry++;
-    crossCorrelate(evPtr,hdPtr,patPtr);
+  int lastEvent;
+
+  //for(int phi=0;phi<16;phi++){
+    while(hdPtr->triggerTimeNs<349.99e6 || hdPtr->triggerTimeNs>350.005e6 || hdPtr->l3TrigPattern==0){
+      if(lastEvent==hdPtr->eventNumber){
+	std::cout << "no more entries in run" << std::endl;
+	return;
+      }
+      std::cout << "opened entry " << entry << " (event " << hdPtr->eventNumber << ") with triggerTimeNs " << hdPtr->triggerTimeNs << std::endl;
+      lastEvent=hdPtr->eventNumber;
+      entry++;
+      eventTree->GetEntry(entry);
+      headTree->GetEntry(entry);
+      adu5PatTree->GetEntry(entry);
+    }
+    //}
+  std::cout << "opened entry " << entry << " (event " << hdPtr->eventNumber << ") with triggerTimeNs " << hdPtr->triggerTimeNs << std::endl;
+  entry++;
+  crossCorrelate(evPtr,hdPtr,patPtr);
  
 }
 
@@ -102,7 +111,7 @@ void getTriggeredAnt(int triggeredPhi[16],int triggeredAnt[32]){
     phi=AnitaGeomTool::getPhiFromAnt(ant);
     if(triggeredPhi[phi]) triggeredAnt[ant]=1;
     else triggeredAnt[ant]=0;
-    //std::cout << "ant " << ant << " phi " << phi << " triggered? " << triggeredAnt[ant] << " " << triggeredPhi[phi] << std::endl;
+    std::cout << "ant " << ant << " phi " << phi << " triggered? " << triggeredAnt[ant] << " " << triggeredPhi[phi] << std::endl;
   }
 }
 
@@ -232,6 +241,7 @@ void crossCorrelate(RawAnitaEvent *evPtr,RawAnitaHeader *hdPtr,Adu5Pat *patPtr){
 
   sprintf(histName,"crossCorrCan");
   TCanvas *crossCorrCan = new TCanvas(histName,histName,800,400);
-  sumCrossCorrs->Draw("aitoff");
+  //sumCrossCorrs->Draw("aitoff");
+  sumCrossCorrs->Draw("colz");
 
 }
