@@ -52,5 +52,8 @@ void quickDirtyMapPlot() {
    img->SetConstRatio(kFALSE);
    img->Draw("");
    Int_t numEvents=sillyTree->Draw("sourceY:sourceX>>h(500,,,500,,)","chiSq<10","a col same");
+   //TMarker *marker = new TMarker(0.500303,0.52083,3);
+   //TMarker *marker = new TMarker(0.681,0.876202,3);
+   marker->Draw();
    cout << numEvents << endl;
 }
