@@ -27,18 +27,35 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TH2D.h"
+#include "TImage.h"
+#include "TMarker.h"
+#include "TLatex.h"
 
 #define NUM_BINS_THETA 90
-#define NUM_BINS_PHI 90
+#define NUM_BINS_PHI 180
 #define PI 3.14159265
 
 //runs from palestine to use: 3847 - 3853, 3793, 3797, 3798
 
 TGraph *getCorrelation(TGraph *gr1,TGraph *gr2);
 void getTriggeredPhi(RawAnitaHeader *hdPtr,int triggeredPhi[16]);
-void crossCorrelate(RawAnitaEvent *evPtr,RawAnitaHeader *hdPtr,Adu5Pat *patPtr);
+TH2D *crossCorrelate(RawAnitaEvent *evPtr,RawAnitaHeader *hdPtr,Adu5Pat *patPtr);
 void startCorrelation(int run,int entry);
 void setupCosSinArray(double thetaArray[NUM_BINS_THETA],double phiArray[NUM_BINS_PHI],double cosThetaArray[NUM_BINS_THETA],double sinThetaArray[NUM_BINS_THETA],double cosPhiArray[NUM_BINS_PHI],double sinPhiArray[NUM_BINS_PHI]);
+void getSignalDirection(TH2D *crossCorrelation,double &phi,double &theta);
+void plotAnitaEventMap(Adu5Pat *patPtr,double phi,double theta);
+void getRelXYFromLatLong(float latitude,float longitude,float &x,float &y);
+
+//for the map plot
+const float TrueScaleLat=71;
+const float CentralMeridian=0;
+const float RadiusOfEarth=6378.1e3; //Metres
+const float xOffest=375;
+const float yOffset=312.5;
+const float scale=271.5/2.19496e+06;
+const float xSize=750;
+const float ySize=625;
+
 
 void startCorrelation(int run,int entry){
 
@@ -67,9 +84,8 @@ void startCorrelation(int run,int entry){
 
   eventTree->GetEntry(entry);
   headTree->GetEntry(entry);
-  adu5PatTree->GetEntry(entry);
 
-  int lastEvent;
+  UInt_t lastEvent;
 
   //for(int phi=0;phi<16;phi++){
     while(hdPtr->triggerTimeNs<349.99e6 || hdPtr->triggerTimeNs>350.005e6 || hdPtr->l3TrigPattern==0){
@@ -86,9 +102,37 @@ void startCorrelation(int run,int entry){
     }
     //}
   std::cout << "opened entry " << entry << " (event " << hdPtr->eventNumber << ") with triggerTimeNs " << hdPtr->triggerTimeNs << std::endl;
+
+  //get the pat ptr that corresponds to the timing of the event
+  adu5PatTree->GetEntry(0);
+  Int_t firstPatTime = patPtr->realTime;
+  Int_t patEntry = hdPtr->realTime - firstPatTime;
+  adu5PatTree->GetEntry(patEntry);
+
+  if(patPtr->realTime != hdPtr->realTime){
+    std:: cout << "pat time doesn't match head time, pat realTime: " << patPtr->realTime << " head realTime: " << hdPtr->realTime << std::endl;
+    return;
+  }
+
   entry++;
-  crossCorrelate(evPtr,hdPtr,patPtr);
+  TH2D *crossCorrelation = crossCorrelate(evPtr,hdPtr,patPtr);
  
+  sprintf(headName,"crossCorrCan");
+  TCanvas *crossCorrCan = (TCanvas*)gROOT->FindObject(headName);
+  if(!crossCorrCan)
+    crossCorrCan = new TCanvas(headName,headName,800,400);
+  crossCorrCan->Clear();
+  //sumCrossCorrs->Draw("aitoff");
+  crossCorrelation->Draw("colz");
+
+  double theta,phi;
+
+  getSignalDirection(crossCorrelation,phi,theta);
+
+  //std::cout << "phi " << phi << " theta " << theta << std::endl;
+
+  plotAnitaEventMap(patPtr,phi,theta);
+
 }
 
 
@@ -130,7 +174,7 @@ void setupCosSinArray(double thetaArray[NUM_BINS_THETA],double phiArray[NUM_BINS
 }
 
 
-void crossCorrelate(RawAnitaEvent *evPtr,RawAnitaHeader *hdPtr,Adu5Pat *patPtr){
+TH2D *crossCorrelate(RawAnitaEvent *evPtr,RawAnitaHeader *hdPtr,Adu5Pat *patPtr){
 
   gStyle->SetPalette(1);
 
@@ -239,9 +283,122 @@ void crossCorrelate(RawAnitaEvent *evPtr,RawAnitaHeader *hdPtr,Adu5Pat *patPtr){
     }
   }
 
-  sprintf(histName,"crossCorrCan");
-  TCanvas *crossCorrCan = new TCanvas(histName,histName,800,400);
+  //sprintf(histName,"crossCorrCan");
+  //TCanvas *crossCorrCan = new TCanvas(histName,histName,800,400);
   //sumCrossCorrs->Draw("aitoff");
-  sumCrossCorrs->Draw("colz");
+  //sumCrossCorrs->Draw("colz");
 
+  return sumCrossCorrs;
+
+}
+
+
+
+void getSignalDirection(TH2D *crossCorrelation,double &phi,double &theta){
+
+  int x,y,z;
+  double phiUpCont,phiDownCont,thetaUpCont,thetaDownCont,phiMidCont,thetaMidCont,phiTotCont,thetaTotCont;
+  crossCorrelation->GetMaximumBin(x,y,z);
+
+  phiUpCont=crossCorrelation->GetXaxis()->GetBinCenter(x+1)*crossCorrelation->GetBinContent(x+1,y);
+  phiDownCont=crossCorrelation->GetXaxis()->GetBinCenter(x-1)*crossCorrelation->GetBinContent(x-1,y);
+  phiMidCont=crossCorrelation->GetXaxis()->GetBinCenter(x)*crossCorrelation->GetBinContent(x,y);
+
+  thetaUpCont=crossCorrelation->GetYaxis()->GetBinCenter(y+1)*crossCorrelation->GetBinContent(x,y+1);
+  thetaDownCont=crossCorrelation->GetYaxis()->GetBinCenter(y-1)*crossCorrelation->GetBinContent(x,y-1);
+  thetaMidCont=crossCorrelation->GetYaxis()->GetBinCenter(y)*crossCorrelation->GetBinContent(x,y);
+
+  phiTotCont=crossCorrelation->GetBinContent(x-1,y)+crossCorrelation->GetBinContent(x,y)+crossCorrelation->GetBinContent(x+1,y);
+  thetaTotCont=crossCorrelation->GetBinContent(x,y-1)+crossCorrelation->GetBinContent(x,y)+crossCorrelation->GetBinContent(x,y+1);
+
+  phi=(phiUpCont+phiMidCont+phiDownCont)/phiTotCont;
+  theta=(thetaUpCont+thetaMidCont+thetaDownCont)/thetaTotCont;
+
+}
+
+
+void plotAnitaEventMap(Adu5Pat *patPtr,double phi,double theta){
+
+  double sourceLon,sourceLat;
+  float xEvent,yEvent,xAnita,yAnita,anitaLat,anitaLon,anitaAlt;
+
+  anitaLat = patPtr->latitude;
+  anitaLon = patPtr->longitude;
+  anitaAlt = patPtr->altitude;
+
+  UsefulAdu5Pat usefulPat(patPtr);
+  int sourceLoc = usefulPat.getSourceLonAndLatAltZero(phi,theta,sourceLon,sourceLat);
+  TImage *map = TImage::Open("/home/anita/eventCorrelator/macros/antarcticaIceMap.png");
+
+  gStyle->SetMarkerColor(kBlack);
+  gStyle->SetTextSize(0.02);
+  TMarker *anitaPos = new TMarker(xAnita,yAnita,22);
+
+  getRelXYFromLatLong(anitaLat,anitaLon,xAnita,yAnita);
+  getRelXYFromLatLong(static_cast<float>(sourceLat),static_cast<float>(sourceLon),xEvent,yEvent);
+
+  TCanvas *canMap=(TCanvas*)gROOT->FindObject("canMap");
+  if(!canMap)
+     canMap = new TCanvas("canMap","canMap",(int)xSize,(int)ySize);
+  canMap->Clear();
+  canMap->SetLogz();
+  canMap->SetTopMargin(0);
+  canMap->SetBottomMargin(0);
+  canMap->SetLeftMargin(0);
+  canMap->SetRightMargin(0);
+
+  map->Draw("");
+  anitaPos->Draw("");
+
+  TLatex *positionLabel=0;
+  char label[FILENAME_MAX];
+
+  if(sourceLoc==0){
+    if(anitaAlt<0){
+      sprintf(label,"Could not get event position, ANITA below 0 altitude!");
+    }
+    else if(theta>0){
+      sprintf(label,"Pointing upwards!  Cannot locate source at ground position");
+    }
+    else{
+      sprintf(label,"Unkown error, cannot position source at 0 altitude");
+    }
+    positionLabel = new TLatex();
+    positionLabel->DrawLatex(0.05,0.95,label);
+    return;
+  }
+
+  TMarker *eventPos = new TMarker(xAnita,yAnita,29);
+
+  eventPos->Draw("");
+
+  sprintf(label,"ANITA location: lat %f; long %f; alt %f",anitaLat,anitaLon,anitaAlt);
+  positionLabel = new TLatex();
+  positionLabel->DrawLatex(0.05,0.97,label);
+  sprintf(label,"Event location: lat %f; long %f",sourceLat,sourceLon);
+  positionLabel->DrawLatex(0.05,0.94,label);
+
+  //std::cout << "anita lat " << anitaLat << " lon " << anitaLon << " alt " << anitaAlt << " x " << xAnita << " y " << yAnita << std::endl;
+  //std::cout << "source lat " << sourceLat << " lon " << sourceLon << " x " << xEvent << " y " << yEvent << std::endl;
+
+}
+
+
+
+void getRelXYFromLatLong(float latitude, float longitude,float &x, float &y)
+{
+    //Negative longitude is west
+ //    //All latitudes assumed south
+    float absLat=TMath::Abs(latitude);
+    float r=RadiusOfEarth*TMath::Cos((90.-TrueScaleLat)*TMath::DegToRad())*TMath::Tan((90-absLat)*TMath::DegToRad());
+    y=r*TMath::Cos(longitude*TMath::DegToRad());
+    x=r*TMath::Sin(longitude*TMath::DegToRad());   
+
+    y*=scale;
+    y+=yOffset;
+    y/=ySize;
+    x*=scale;
+    x+=xOffest;
+    x/=xSize;
+ 
 }
