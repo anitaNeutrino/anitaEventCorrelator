@@ -9,8 +9,6 @@ include Makefile.arch
 SYSINCLUDES	=
 SYSLIBS         = 
 
-
-
 ifdef ANITA_UTIL_INSTALL_DIR
 ANITA_UTIL_LIB_DIR=${ANITA_UTIL_INSTALL_DIR}/lib
 ANITA_UTIL_INC_DIR=${ANITA_UTIL_INSTALL_DIR}/include
@@ -81,15 +79,15 @@ $(ROOT_LIBRARY) : $(LIB_OBJS)
 	@echo "Linking $@ ..."
 ifeq ($(PLATFORM),macosx)
 # We need to make both the .dylib and the .so
-	$(LD) $(SOFLAGS) $^ $(LIBS) $(OutPutOpt) $@
+	$(LD)   $(SOFLAGS) $^ $(OutPutOpt) $@
 ifeq ($(MACOSX_MINOR),4)
 	ln -sf $@ $(subst .$(DLLSUF),.so,$@)
 else
-	$(LD) -bundle -undefined $(UNDEFOPT) $(LDFLAGS) $(LIBS) $^ \
+	$(LD) -bundle -undefined $(UNDEFOPT)  $(LDFLAGS) $^ \
 	 $(OutPutOpt) $(subst .$(DLLSUF),.so,$@)
 endif
 else
-	$(LD) $(SOFLAGS) $(LDFLAGS) $(LIB_OBJS) $(LIBS) -o $@
+	$(LD) $(SOFLAGS) $(LDFLAGS) $(LIBS) $(LIB_OBJS) -o $@
 endif
 
 %.$(OBJSUF) : %.$(SRCSUF)
@@ -103,11 +101,11 @@ endif
 
 install: $(ROOT_LIBRARY)
 ifeq ($(PLATFORM),macosx)
-	cp $(ROOT_LIBRARY) $(subst .$(DLLSUF),.so,$(ROOT_LIBRARY)) $(ANITA_UTIL_LIB_DIR)
+	install -c -m 755 $(ROOT_LIBRARY) $(subst .$(DLLSUF),.so,$(ROOT_LIBRARY)) $(ANITA_UTIL_LIB_DIR)
 else
-	cp $(ROOT_LIBRARY) $(ANITA_UTIL_LIB_DIR)
+	install -c -m 755 $(ROOT_LIBRARY) $(ANITA_UTIL_LIB_DIR)
 endif
-	cp  $(CLASS_HEADERS) $(ANITA_UTIL_INC_DIR)
+	install -c -m 644  $(CLASS_HEADERS) $(ANITA_UTIL_INC_DIR)
 
 clean:
 	@rm -f *Dict*
