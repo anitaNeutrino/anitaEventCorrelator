@@ -84,7 +84,7 @@ class UsefulAdu5Pat: public Adu5Pat
     \param ant1 The first antenna.
     \param ant2 The second antenna.
     \return The plane wave crossing time difference between the two antennas (t_1-t_2).
-  */
+ */
   Double_t getDeltaTWillySeavey(Int_t ant1, Int_t ant2); 
   //! Calculates the plane wave crossing time difference between two antennas for the Williams Field borehole.
   /*!

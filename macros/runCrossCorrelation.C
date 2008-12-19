@@ -9,10 +9,11 @@ void runCrossCorrelation(int run,int entry) {
   gSystem->Load("libMathMore.so");
   gSystem->Load("libPhysics.so");
   gSystem->Load("libfftw3.so");
-
+  gSystem->Load("libMinuit");
   gSystem->Load("libAnitaEvent.so");
-  gSystem->Load("libAnitaCorrelator.so");
   gSystem->Load("libRootFftwWrapper.so");
-  gSystem->CompileMacro("/home/anita/eventCorrelator/macros/crossCorrelation.C","k");
+  gSystem->Load("libAnitaCorrelator.so");
+  //  gSystem->Load("libRootFftwWrapper.so");
+  gSystem->CompileMacro("/Users/Matt/WORK/eventCorrelator/trunk/macros/crossCorrelation.C","k");
   startCorrelation(run,entry); 
 }

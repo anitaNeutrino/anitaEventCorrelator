@@ -8,7 +8,7 @@ void runPlotPrettyThings() {
 			  
   gSystem->Load("libMathMore.so");
   gSystem->Load("libPhysics.so");
-  gSystem->Load("/usr/lib64/libfftw3.so");
+  gSystem->Load("libfftw3.so");
 
   gSystem->Load("libAnitaEvent.so");
   gSystem->Load("libAnitaCorrelator.so");

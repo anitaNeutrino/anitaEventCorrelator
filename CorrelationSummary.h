@@ -73,6 +73,7 @@ class CorrelationSummary: public TObject
 
 
 
+
   double secondCorVals[19][2]; ///< The peak of the next highest correlation values (tore both left and right vals).
   double secondCorTimes[19][2]; ///< The time of the next highest correlation values (tore both left and right vals).
 
