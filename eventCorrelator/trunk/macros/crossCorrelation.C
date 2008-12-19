@@ -20,6 +20,7 @@
 #include "FFTWComplex.h"
 
 
+
 //ROOT Includes
 #include "TROOT.h"
 #include "TMath.h"
@@ -66,13 +67,18 @@ void startCorrelation(int run,int entry){
   RawAnitaHeader *hdPtr = 0;
   Adu5Pat *patPtr =0;
 
-  sprintf(headName,"/TBdata/anita/antarctica08/root/run%d/headFile%d.root",run,run);
-  sprintf(eventName,"/TBdata/anita/antarctica08/root/run%d/eventFile%d.root",run,run);
-  sprintf(gpsName,"/TBdata/anita/antarctica08/root/run%d/gpsFile%d.root",run,run);
+  sprintf(headName,"/Users/Matt/WORK/ANITA/rootFiles/run%d/headFile%d.root",run,run);
+  sprintf(eventName,"/Users/Matt/WORK/ANITA/rootFiles/run%d/eventFile%d.root",run,run);
+  sprintf(gpsName,"/Users/Matt/WORK/ANITA/rootFiles/run%d/gpsFile%d.root",run,run);
 
   TFile *eventFile = new TFile(eventName);
   TFile *headFile = new TFile(headName);
   TFile *fpGps = new TFile(gpsName);
+
+  if(!fpGps){
+    std::cout << "no GPS file\n";
+    return;
+  }
 
   TTree *adu5PatTree = (TTree*) fpGps->Get("adu5PatTree");
   TTree *eventTree = (TTree*)eventFile->Get("eventTree");
@@ -87,6 +93,18 @@ void startCorrelation(int run,int entry){
 
   UInt_t lastEvent;
 
+  while(hdPtr->eventNumber!=10900006){
+    if(lastEvent==hdPtr->eventNumber){
+      std::cout << "no more entries in run" << std::endl;
+      return;
+    }
+    lastEvent=hdPtr->eventNumber;
+    entry++;
+    eventTree->GetEntry(entry);
+    headTree->GetEntry(entry);
+  }
+
+  /*
   //for(int phi=0;phi<16;phi++){
     while(hdPtr->triggerTimeNs<349.99e6 || hdPtr->triggerTimeNs>350.005e6 || hdPtr->l3TrigPattern==0){
       if(lastEvent==hdPtr->eventNumber){
@@ -101,6 +119,8 @@ void startCorrelation(int run,int entry){
       adu5PatTree->GetEntry(entry);
     }
     //}
+    */
+
   std::cout << "opened entry " << entry << " (event " << hdPtr->eventNumber << ") with triggerTimeNs " << hdPtr->triggerTimeNs << std::endl;
 
   //get the pat ptr that corresponds to the timing of the event
@@ -108,6 +128,8 @@ void startCorrelation(int run,int entry){
   Int_t firstPatTime = patPtr->realTime;
   Int_t patEntry = hdPtr->realTime - firstPatTime;
   adu5PatTree->GetEntry(patEntry);
+
+  std::cout << patPtr->realTime << " " << hdPtr->realTime << std::endl;
 
   if(patPtr->realTime != hdPtr->realTime){
     std:: cout << "pat time doesn't match head time, pat realTime: " << patPtr->realTime << " head realTime: " << hdPtr->realTime << std::endl;

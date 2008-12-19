@@ -6,8 +6,8 @@
 include Makefile.arch
 
 #Site Specific  Flags
-SYSINCLUDES	=
-SYSLIBS         = 
+SYSINCLUDES	= -I/sw/include
+SYSLIBS         = -L/sw/lib
 
 ifdef ANITA_UTIL_INSTALL_DIR
 ANITA_UTIL_LIB_DIR=${ANITA_UTIL_INSTALL_DIR}/lib
@@ -22,6 +22,7 @@ LD_ANITA_UTIL=-L$(EVENT_READER_DIR)
 INC_ANITA_UTIL=-I$(EVENT_READER_DIR)
 endif
 endif
+
 
 
 #Toggles the FFT functions on and off
