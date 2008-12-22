@@ -14,6 +14,6 @@ void runCrossCorrelation(int run,int entry) {
   gSystem->Load("libRootFftwWrapper.so");
   gSystem->Load("libAnitaCorrelator.so");
   //  gSystem->Load("libRootFftwWrapper.so");
-  gSystem->CompileMacro("/Users/Matt/WORK/eventCorrelator/trunk/macros/crossCorrelation.C","k");
+  gSystem->CompileMacro("/home/anita/eventCorrelator/macros/crossCorrelation.C","k");
   startCorrelation(run,entry); 
 }
