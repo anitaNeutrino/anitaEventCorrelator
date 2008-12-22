@@ -59,7 +59,8 @@ void UsefulAdu5Pat::getThetaAndPhiWaveWillySeavey(Double_t &thetaWave, Double_t 
 int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat)
 {
   //returns 1 if successful, 0 is not possible
-  
+  std::cout << "lat " << latitude << " lon " << longitude << " alt " << altitude << std::endl;
+  std::cout << "phi " << phiWave  << " (" << phiWave*180/TMath::Pi()<< ") theta " << thetaWave << " (" << thetaWave*180/TMath::Pi() << ")" << std::endl;
    Double_t thetaBalloon=fUPGeomTool->getThetaFromLat(TMath::Abs(latitude));
    Double_t phiBalloon=fUPGeomTool->getPhiFromLon(longitude);
    Double_t balloonHeight=fUPGeomTool->getGeoid(thetaBalloon)+altitude;
@@ -67,15 +68,16 @@ int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWav
    Double_t tempPhiWave=phiWave;
    //Now need to take account of balloon heading
    //Will have to check heading at some point
+
    if(heading>=0 && heading<=360) {
      //     tempPhiWave-=heading*TMath::DegToRad();
      tempPhiWave=heading*TMath::DegToRad()-tempPhiWave;
       if(tempPhiWave<0)
 	 tempPhiWave+=TMath::TwoPi();
    }
-   
+     
    Double_t tempThetaWave=TMath::PiOver2()-thetaWave;
-
+   
    Double_t re=balloonHeight-altitude;
    Double_t reh=balloonHeight;
    Double_t costw=TMath::Cos(tempThetaWave);
@@ -114,6 +116,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWav
    
    fUPGeomTool->getLonLat(fSourcePos,sourceLon,sourceLat);
    sourceLat*=-1;
+   std::cout << "source lat " << sourceLat << " sourceLon " << sourceLon << std::endl;
    return 1;
 }
 
@@ -223,7 +226,7 @@ Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t phiWav
 }
 
 
-
+//does not take into account anita's position/heading...
 Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1,Int_t ant2,Double_t cosPhi,Double_t sinPhi,Double_t cosTheta,Double_t sinTheta){
   
   Double_t x1,y1,z1;

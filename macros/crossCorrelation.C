@@ -31,8 +31,10 @@
 #include "TImage.h"
 #include "TMarker.h"
 #include "TLatex.h"
+#include "TAxis.h"
 
 #define NUM_BINS_THETA 90
+#define THETA_MAX 0
 #define NUM_BINS_PHI 180
 #define PI 3.14159265
 
@@ -58,7 +60,9 @@ const float xSize=750;
 const float ySize=625;
 
 
-void startCorrelation(int run,int entry){
+void startCorrelation(int run,int eventNumber){
+
+  int entry=000;
 
   char headName[FILENAME_MAX];
   char eventName[FILENAME_MAX];
@@ -67,9 +71,9 @@ void startCorrelation(int run,int entry){
   RawAnitaHeader *hdPtr = 0;
   Adu5Pat *patPtr =0;
 
-  sprintf(headName,"/Users/Matt/WORK/ANITA/rootFiles/run%d/headFile%d.root",run,run);
-  sprintf(eventName,"/Users/Matt/WORK/ANITA/rootFiles/run%d/eventFile%d.root",run,run);
-  sprintf(gpsName,"/Users/Matt/WORK/ANITA/rootFiles/run%d/gpsFile%d.root",run,run);
+  sprintf(headName,"/TBdata/anita/antarctica08/webPlotter/events/root/run%d/headFile%d.root",run,run);
+  sprintf(eventName,"/TBdata/anita/antarctica08/webPlotter/events/root/run%d/eventFile%d.root",run,run);
+  sprintf(gpsName,"/TBdata/anita/antarctica08/webPlotter/events/root/run%d/gpsFile%d.root",run,run);
 
   TFile *eventFile = new TFile(eventName);
   TFile *headFile = new TFile(headName);
@@ -91,13 +95,14 @@ void startCorrelation(int run,int entry){
   eventTree->GetEntry(entry);
   headTree->GetEntry(entry);
 
-  UInt_t lastEvent;
+  UInt_t lastEvent=0;
 
-  while(hdPtr->eventNumber!=10900006){
-    if(lastEvent==hdPtr->eventNumber){
-      std::cout << "no more entries in run" << std::endl;
-      return;
-    }
+  while(hdPtr->eventNumber!=eventNumber){
+    //if(lastEvent==hdPtr->eventNumber){
+    //  std::cout << "no more entries in run" << std::endl;
+    //  return;
+    //}
+    std::cout << lastEvent << " " << hdPtr->eventNumber << std::endl;
     lastEvent=hdPtr->eventNumber;
     entry++;
     eventTree->GetEntry(entry);
@@ -125,18 +130,30 @@ void startCorrelation(int run,int entry){
 
   //get the pat ptr that corresponds to the timing of the event
   adu5PatTree->GetEntry(0);
-  Int_t firstPatTime = patPtr->realTime;
-  Int_t patEntry = hdPtr->realTime - firstPatTime;
+  Float_t firstPatTimeDiff = fabs(static_cast<float>(patPtr->realTime)-static_cast<float>(hdPtr->realTime));
+  Float_t newPatTimeDiff;
+  Int_t patEntry;
+
+  for(int entry=0;entry<adu5PatTree->GetEntries();entry++){
+    adu5PatTree->GetEntry(entry);
+    newPatTimeDiff = fabs(static_cast<float>(patPtr->realTime)-static_cast<float>(hdPtr->realTime));
+    if(newPatTimeDiff<firstPatTimeDiff){
+      firstPatTimeDiff=newPatTimeDiff;
+      patEntry=entry;
+    }
+  }
+  //Int_t firstPatTime = patPtr->realTime;
+  //Int_t patEntry = hdPtr->realTime - firstPatTime;
   adu5PatTree->GetEntry(patEntry);
 
   std::cout << patPtr->realTime << " " << hdPtr->realTime << std::endl;
 
   if(patPtr->realTime != hdPtr->realTime){
     std:: cout << "pat time doesn't match head time, pat realTime: " << patPtr->realTime << " head realTime: " << hdPtr->realTime << std::endl;
-    return;
+    //return;
   }
 
-  entry++;
+  //entry++;
   TH2D *crossCorrelation = crossCorrelate(evPtr,hdPtr,patPtr);
  
   sprintf(headName,"crossCorrCan");
@@ -146,12 +163,16 @@ void startCorrelation(int run,int entry){
   crossCorrCan->Clear();
   //sumCrossCorrs->Draw("aitoff");
   crossCorrelation->Draw("colz");
+  TAxis *phiSectors = new TAxis(16,1,16);
+  phiSectors->Draw();
+
+  //std::cout << "event " << hdPtr->eventNumber << " time " << 
 
   double theta,phi;
 
   getSignalDirection(crossCorrelation,phi,theta);
 
-  //std::cout << "phi " << phi << " theta " << theta << std::endl;
+  std::cout << "phi " << phi << " theta " << theta << std::endl;
 
   plotAnitaEventMap(patPtr,phi,theta);
 
@@ -164,10 +185,29 @@ TGraph *getCorrelation(TGraph *gr1,TGraph *gr2){
 
 
 void getTriggeredPhi(RawAnitaHeader *hdPtr,int triggeredPhi[16]){
+  int numPhiTrigs=0; 
+  int extraPhi[16]={0}; 
   for(int phi=0;phi<16;phi++){
-    if(hdPtr->l3TrigPattern & (1 << phi)) triggeredPhi[phi]=1;
+    if(hdPtr->l3TrigPattern & (1 << phi)){
+      triggeredPhi[phi]=1;
+      numPhiTrigs++;
+    }
     else triggeredPhi[phi]=0;
   }
+  if(numPhiTrigs<3){
+    for(int phi=0;phi<16;phi++){
+      if(triggeredPhi[phi]){
+	if(phi+1>15) extraPhi[0]=1;
+	else extraPhi[phi+1]=1;
+	if(phi-1<0) extraPhi[15]=1;
+	else extraPhi[phi-1]=1;
+      }
+    }
+    for(int phi=0;phi<16;phi++){
+      if(extraPhi[phi]) triggeredPhi[phi]=1;
+    }
+  }
+
 }
 
 
@@ -177,19 +217,20 @@ void getTriggeredAnt(int triggeredPhi[16],int triggeredAnt[32]){
     phi=AnitaGeomTool::getPhiFromAnt(ant);
     if(triggeredPhi[phi]) triggeredAnt[ant]=1;
     else triggeredAnt[ant]=0;
-    std::cout << "ant " << ant << " phi " << phi << " triggered? " << triggeredAnt[ant] << " " << triggeredPhi[phi] << std::endl;
+    std::cout << "ant " << ant+1 << " phi " << phi+1 << " triggered? " << triggeredAnt[ant] << " " << triggeredPhi[phi] << std::endl;
   }
 }
 
 
 void setupCosSinArray(double thetaArray[NUM_BINS_THETA],double phiArray[NUM_BINS_PHI],double cosThetaArray[NUM_BINS_THETA],double sinThetaArray[NUM_BINS_THETA],double cosPhiArray[NUM_BINS_PHI],double sinPhiArray[NUM_BINS_PHI]){
   for(int i=0;i<NUM_BINS_PHI;i++){
-    phiArray[i] = (i+0.5) * 2*PI/NUM_BINS_PHI - PI;
+    phiArray[i] = (i+0.5) * 2*PI/NUM_BINS_PHI;
     cosPhiArray[i] = cos(phiArray[i]);
     sinPhiArray[i] = sin(phiArray[i]);
   }
   for(int i=0;i<NUM_BINS_THETA;i++){
     thetaArray[i] = (i+0.5) * PI/NUM_BINS_THETA - PI/2;
+    //thetaArray[i] = (i+0.5) * PI/(2*NUM_BINS_THETA) - PI/2;
     cosThetaArray[i] = cos(thetaArray[i]);
     sinThetaArray[i] = sin(thetaArray[i]);
   }
@@ -221,7 +262,7 @@ TH2D *crossCorrelate(RawAnitaEvent *evPtr,RawAnitaHeader *hdPtr,Adu5Pat *patPtr)
   TGraph *grCorr[528]={0};
   double firstCorrTime[528];
   double dummyY;
-  Double_t deltaT=1/(2.6*8);
+  Double_t deltaT=1/(2.6*8.);
 
   for(int ant=0;ant<32;ant++){
     if(triggeredAnt[ant]){
@@ -230,12 +271,32 @@ TH2D *crossCorrelate(RawAnitaEvent *evPtr,RawAnitaHeader *hdPtr,Adu5Pat *patPtr)
   }
   int arrayRef=0;
 
+  char canName[FILENAME_MAX];
+  TCanvas *canny[528];
+
   for(int ant1=0;ant1<32;ant1++){
     for(int ant2=ant1;ant2<32;ant2++){
 
       if(triggeredAnt[ant1] && triggeredAnt[ant2] && ant1!=ant2){
 	grCorr[arrayRef]=FFTtools::getInterpolatedCorrelationGraph(grInt[ant1],grInt[ant2],deltaT);
 	grCorr[arrayRef]->GetPoint(0,firstCorrTime[arrayRef],dummyY);
+	/*
+	sprintf(canName,"can%d",arrayRef);
+	canny[arrayRef] = new TCanvas(canName,canName,800,600);
+	canny[arrayRef]->Divide(1,3);
+	canny[arrayRef]->cd(1);
+	sprintf(canName,"ant %d (phi %d)",ant1+1,AnitaGeomTool::getPhiFromAnt(ant1)+1);
+	grInt[ant1]->SetTitle(canName);
+	grInt[ant1]->Draw("al");
+	canny[arrayRef]->cd(2);
+	sprintf(canName,"ant %d (phi %d)",ant2+1,AnitaGeomTool::getPhiFromAnt(ant2)+1);
+	grInt[ant2]->SetTitle(canName);
+	grInt[ant2]->Draw("al");
+	canny[arrayRef]->cd(3);
+	sprintf(canName,"corr %d %d",ant1+1,ant2+1);
+	grCorr[arrayRef]->SetTitle(canName);
+	grCorr[arrayRef]->Draw("al");
+	*/
 	arrayRef++;
       }
       else{
@@ -272,8 +333,8 @@ TH2D *crossCorrelate(RawAnitaEvent *evPtr,RawAnitaHeader *hdPtr,Adu5Pat *patPtr)
 	for(int phi=0;phi<NUM_BINS_PHI;phi++){
 	  for(int theta=0;theta<NUM_BINS_THETA;theta++){
 
-	    deltaTarray[phi][theta] = usefulPat.getDeltaTExpected(ant1,ant2,cosPhiArray[phi],sinPhiArray[phi],cosThetaArray[theta],sinThetaArray[theta]);
-	    //deltaTarray[phi][theta] = usefulPat.getDeltaTExpected(ant1,ant2,phiArray[phi],thetaArray[theta]);
+	    //deltaTarray[phi][theta] = usefulPat.getDeltaTExpected(ant1,ant2,cosPhiArray[phi],sinPhiArray[phi],cosThetaArray[theta],sinThetaArray[theta]);
+	    deltaTarray[phi][theta] = usefulPat.getDeltaTExpected(ant2,ant1,phiArray[phi],thetaArray[theta]);
 
 	    getPoint=static_cast<int>((deltaTarray[phi][theta]-firstCorrTime[arrayRef])*1/deltaT);
 
@@ -297,11 +358,14 @@ TH2D *crossCorrelate(RawAnitaEvent *evPtr,RawAnitaHeader *hdPtr,Adu5Pat *patPtr)
 
   char histName[FILENAME_MAX];
   sprintf(histName,"sumCrossCorrs");
-  TH2D *sumCrossCorrs = new TH2D(histName,histName,NUM_BINS_PHI,-PI*180/PI,PI*180/PI,NUM_BINS_THETA,-PI/2*180/PI,PI/2*180/PI);
-  
+  //TH2D *sumCrossCorrs = new TH2D(histName,histName,NUM_BINS_PHI,2,17,NUM_BINS_THETA,-90,90);
+  TH2D *sumCrossCorrs = new TH2D(histName,histName,NUM_BINS_PHI,0,360,NUM_BINS_THETA,-90,90);
+  double phiscale = (15./360.);
   for(int phi=0;phi<NUM_BINS_PHI;phi++){
     for(int theta=0;theta<NUM_BINS_THETA;theta++){
-      sumCrossCorrs->Fill(phiArray[phi]*180/PI,thetaArray[theta]*180/PI,correlationArray[phi][theta]);
+      //sumCrossCorrs->Fill(phiArray[phi]*180/PI*phiscale+2.,thetaArray[theta]*180./PI,correlationArray[phi][theta]);
+      sumCrossCorrs->Fill(phiArray[phi]*180./PI,thetaArray[theta]*180./PI,correlationArray[phi][theta]);
+
     }
   }
 
@@ -322,6 +386,8 @@ void getSignalDirection(TH2D *crossCorrelation,double &phi,double &theta){
   double phiUpCont,phiDownCont,thetaUpCont,thetaDownCont,phiMidCont,thetaMidCont,phiTotCont,thetaTotCont;
   crossCorrelation->GetMaximumBin(x,y,z);
 
+  cout << "max bin " << x << " " << y << " " << z << endl;
+
   phiUpCont=crossCorrelation->GetXaxis()->GetBinCenter(x+1)*crossCorrelation->GetBinContent(x+1,y);
   phiDownCont=crossCorrelation->GetXaxis()->GetBinCenter(x-1)*crossCorrelation->GetBinContent(x-1,y);
   phiMidCont=crossCorrelation->GetXaxis()->GetBinCenter(x)*crossCorrelation->GetBinContent(x,y);
@@ -336,6 +402,8 @@ void getSignalDirection(TH2D *crossCorrelation,double &phi,double &theta){
   phi=(phiUpCont+phiMidCont+phiDownCont)/phiTotCont;
   theta=(thetaUpCont+thetaMidCont+thetaDownCont)/thetaTotCont;
 
+  cout << "sig phi " << phi << " theta " << theta << endl; 
+
 }
 
 
@@ -349,12 +417,14 @@ void plotAnitaEventMap(Adu5Pat *patPtr,double phi,double theta){
   anitaAlt = patPtr->altitude;
 
   UsefulAdu5Pat usefulPat(patPtr);
-  int sourceLoc = usefulPat.getSourceLonAndLatAltZero(phi,theta,sourceLon,sourceLat);
+  int sourceLoc = usefulPat.getSourceLonAndLatAltZero(phi/180.*PI,theta/180.*PI,sourceLon,sourceLat);
   TImage *map = TImage::Open("/home/anita/eventCorrelator/macros/antarcticaIceMap.png");
 
+  std::cout << sourceLoc << " phi " << phi << " theta " << theta << " lon " << sourceLon << " lat " << sourceLat << std::endl;
   gStyle->SetMarkerColor(kBlack);
+  //gStyle->SetMarkerSize(2);
   gStyle->SetTextSize(0.02);
-  TMarker *anitaPos = new TMarker(xAnita,yAnita,22);
+  TMarker *anitaPos = new TMarker(xAnita,yAnita,23);
 
   getRelXYFromLatLong(anitaLat,anitaLon,xAnita,yAnita);
   getRelXYFromLatLong(static_cast<float>(sourceLat),static_cast<float>(sourceLon),xEvent,yEvent);
@@ -370,7 +440,7 @@ void plotAnitaEventMap(Adu5Pat *patPtr,double phi,double theta){
   canMap->SetRightMargin(0);
 
   map->Draw("");
-  anitaPos->Draw("");
+  
 
   TLatex *positionLabel=0;
   char label[FILENAME_MAX];
@@ -390,18 +460,16 @@ void plotAnitaEventMap(Adu5Pat *patPtr,double phi,double theta){
     return;
   }
 
-  TMarker *eventPos = new TMarker(xAnita,yAnita,29);
+  TMarker *eventPos = new TMarker(xEvent,yEvent,29);
 
   eventPos->Draw("");
+  anitaPos->DrawMarker(xAnita,yAnita);
 
-  sprintf(label,"ANITA location: lat %f; long %f; alt %f",anitaLat,anitaLon,anitaAlt);
+  sprintf(label,"ANITA location: lat %f; long %f; alt %f, x %f, y %f",anitaLat,anitaLon,anitaAlt,xAnita,yAnita);
   positionLabel = new TLatex();
   positionLabel->DrawLatex(0.05,0.97,label);
-  sprintf(label,"Event location: lat %f; long %f",sourceLat,sourceLon);
+  sprintf(label,"Event location: lat %f; long %f, x %f, y %f",sourceLat,sourceLon,xEvent,yEvent);
   positionLabel->DrawLatex(0.05,0.94,label);
-
-  //std::cout << "anita lat " << anitaLat << " lon " << anitaLon << " alt " << anitaAlt << " x " << xAnita << " y " << yAnita << std::endl;
-  //std::cout << "source lat " << sourceLat << " lon " << sourceLon << " x " << xEvent << " y " << yEvent << std::endl;
 
 }
 
@@ -424,3 +492,59 @@ void getRelXYFromLatLong(float latitude, float longitude,float &x, float &y)
     x/=xSize;
  
 }
+
+
+/*
+void distanceCalculator(Adu5Pat *patPtr,double &distance,double &timeOfFlight){
+
+  //balloon location
+  double lat1=patPtr->latitude*(3.1415/180.);//degrees to radians
+  double lon1=patPtr->longitude*(3.1415/180.);
+  double height1=patPtr->altitude;//meters
+
+  //taylor dome location
+  double lat2=-77.8803*(3.1415/180.);
+  double lon2=158.45925*(3.1415/180.);
+  double height2=2260.;//meters
+  
+  double x1,y1,z1,x2,y2,z2;
+  
+  double lat,lon,h;
+  
+  for (int i=0;i<2;i++){
+    if (i==0){
+      lat=lat1;
+      lon=lon1;
+      h=height1;
+    }
+    if (i==1){
+      lat=lat2;
+      lon=lon2;
+      h=height2;
+    }
+    double r=6378137.0;//radius of earth in meters
+    double f=1/298.257223563;//flattening factor
+    double C=pow(cos(lat)*cos(lat)+(1-f)*(1-f)*sin(lat)*sin(lat),-0.5);
+    double Q=(1-f)*(1-f)*C;
+    double x=(r*C+h)*cos(lat)*cos(lon);
+    double y=(r*C+h)*cos(lat)*sin(lon);
+    double z=(r*Q+h)*sin(lat);
+    if (i==0){
+      x1=x; 
+      y1=y; 
+      z1=z;
+    }
+    if (i==1){
+      x2=x; 
+      y2=y; 
+      z2=z;
+    }
+  }
+
+  distance=sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2)+(z1-z2)*(z1-z2));
+  cout<<"Distance From Location 1 to Location 2 (km): "<<distance/1000.<<endl;
+  timeOfFlight=distance/(0.299792458);//in nanoseconds
+  cout<<"Time of Flight (us): "<<timeOfFlight/1000.<<endl;
+
+}
+*/
