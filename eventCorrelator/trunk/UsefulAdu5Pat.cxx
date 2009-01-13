@@ -58,6 +58,10 @@ void UsefulAdu5Pat::getThetaAndPhiWaveWillySeavey(Double_t &thetaWave, Double_t 
 
 int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat)
 {
+
+  if(fPhiWave!=phiWave) fPhiWave=phiWave;
+  if(fThetaWave!=thetaWave) fThetaWave=thetaWave;
+
   //returns 1 if successful, 0 is not possible
   std::cout << "lat " << latitude << " lon " << longitude << " alt " << altitude << std::endl;
   std::cout << "phi " << phiWave  << " (" << phiWave*180/TMath::Pi()<< ") theta " << thetaWave << " (" << thetaWave*180/TMath::Pi() << ")" << std::endl;
@@ -75,13 +79,17 @@ int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWav
       if(tempPhiWave<0)
 	 tempPhiWave+=TMath::TwoPi();
    }
+   else std::cout << "heading bad" << std::endl;
      
    Double_t tempThetaWave=TMath::PiOver2()-thetaWave;
    
-   Double_t re=balloonHeight-altitude;
+   Double_t re=balloonHeight-altitude+2000;
+   //Double_t re=balloonHeight-altitude;
    Double_t reh=balloonHeight;
    Double_t costw=TMath::Cos(tempThetaWave);
    Double_t sqrtArg=(reh*reh*costw*costw - (reh*reh-re*re));
+   std::cout << "re " << re << " reh " << reh << " costw " << costw << std::endl;
+   std::cout << "part1 " << reh*reh*costw*costw << " part2 " << reh*reh-re*re << std::endl;
    if(sqrtArg<0) {
      // No solution possible
      return 0;
@@ -227,8 +235,8 @@ Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t phiWav
 
 
 //does not take into account anita's position/heading...
-Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1,Int_t ant2,Double_t cosPhi,Double_t sinPhi,Double_t cosTheta,Double_t sinTheta){
-  
+Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1,Int_t ant2,Double_t cosPhi,Double_t sinPhi,Double_t cosTheta,Double_t sinTheta)
+{
   Double_t x1,y1,z1;
   fUPGeomTool->getAntXYZ(ant1,x1,y1,z1);
 
