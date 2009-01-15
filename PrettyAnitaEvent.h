@@ -191,16 +191,17 @@ class PrettyAnitaEvent: public UsefulAnitaEvent
   TGraph *getCorrelation(TGraph *gr1, TGraph *gr2); ///< Wrapper around FFTtools::getCorrelationGraph
   TGraph *getCorrelationInterpolated(int chanIndex1, int chanIndex2, Double_t deltaT=(1./(2.6*8)) ); ///< Wrapper around FFTtools::getInterpolatedCorrelationGraph
   
+  void fillSixAntArrays(int ant, int topAnts[3], int bottomAnts[3]); ///< Utility to get neighbouring antenna numbers
+  void fillNextFourAntArrays(int ant, int nextFourAnts[4]);///< Utility to get next to neighbouring antenna numbers
 
 
 #ifndef PLEASE_IGNORE_ME_DOXYGEN
   ClassDef(PrettyAnitaEvent,1); ///< ROOT's magic macro
 #endif
 
+
  private:
   void setStyleSixCanvas(); ///< gStyle setup
-  void fillSixAntArrays(int ant, int topAnts[3], int bottomAnts[3]); ///< Utility to get neighbouring antenna numbers
-  void fillNextFourAntArrays(int ant, int nextFourAnts[4]);///< Utility to get next to neighbouring antenna numbers
   int getPrettyColour(int index); ///< Utility to get a pretty colour.
 
   Double_t fDeltaT; ///< The interpolated sampling rate.
