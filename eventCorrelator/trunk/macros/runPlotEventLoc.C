@@ -1,7 +1,7 @@
 gSystem->Reset();
 
 void runPlotEventLoc() {
-  runPlotEventLocRemote(16,1267198,TMath::DegToRad()*35.1605,TMath::DegToRad()*226.987);
+  runPlotEventLocRemote(55,5876004,TMath::DegToRad()*8,TMath::DegToRad()*290);
 }
 
 void runPlotEventLocRemote(int run, int event, double thetaWave, double phiWave) {
