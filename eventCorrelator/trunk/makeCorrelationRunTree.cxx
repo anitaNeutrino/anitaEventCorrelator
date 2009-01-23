@@ -1,7 +1,7 @@
 #include "AnitaConventions.h"
 #include "PrettyAnitaEvent.h"
 #include "RawAnitaEvent.h"
-#include "TimedAnitaHeader.h"
+#include "RawAnitaHeader.h"
 #include "PrettyAnitaHk.h"
 #include "AnitaGeomTool.h"
 #include "Adu5Pat.h"
@@ -18,51 +18,46 @@
 #include <iostream>
 #include <fstream>
 
-void makeCorrelationRunTree(int run, int numEnts=0, char *outDir=0);
+void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir=0);
 
 int main(int argc, char **argv) {
-  int run=1028;
+  int run=17;
   if(argc>1) {
     run=atoi(argv[1]);
   }
   std::cout << "Making correlation summary tree for run: " << run << "\n";
-  makeCorrelationRunTree(run,0,"/unix/anita1/rjn/newClockNoCut");
+  makeCorrelationRunTree(run,0,"http://www.hep.ucl.ac.uk/uhen/anita/private/monitor2/runs/fromLoki/","/home/rjn/anita/data/corTrees");
 }
   
-void makeCorrelationRunTree(int run, int numEnts, char *outDir) {
+void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
   //AnitaGeomTool *fGeomTool = 
   //  AnitaGeomTool::Instance();
 
   char eventName[FILENAME_MAX];
   char headerName[FILENAME_MAX];
-  char hkName[FILENAME_MAX];
+  //  char hkName[FILENAME_MAX];
   char gpsName[FILENAME_MAX];
   char outName[FILENAME_MAX];
-  sprintf(eventName,"/unix/anita1/newRootData/run%d/eventFile%d*.root",run,run);
-  sprintf(headerName,"/unix/anita1/newRootData/run%d/timedHeadFile%d.root",run,run);
-  sprintf(hkName,"/unix/anita1/newRootData/run%d/prettyHkFile%d.root",run,run);
-  sprintf(gpsName,"/unix/anita1/newRootData/run%d/gpsFile%d.root",run,run);
+  sprintf(eventName,"%s/run%d/eventFile%d.root",baseDir,run,run);
+  sprintf(headerName,"%s/run%d/headFile%d.root",baseDir,run,run);
+  sprintf(gpsName,"%s/run%d/gpsFile%d.root",baseDir,run,run);
 
   RawAnitaEvent *event = 0;
-  TimedAnitaHeader *header =0;
-  PrettyAnitaHk *hk = 0;
+  RawAnitaHeader *header =0;
   Adu5Pat *pat = 0;
   
   TChain *eventChain = new TChain("eventTree");
   eventChain->Add(eventName);
   eventChain->SetBranchAddress("event",&event);
 
-  TFile *fpHead = new TFile(headerName);
+  TFile *fpHead = TFile::Open(headerName);
   TTree *headTree = (TTree*) fpHead->Get("headTree");
   headTree->SetBranchAddress("header",&header);
 
-  TFile *fpGps = new TFile(gpsName);
+  TFile *fpGps = TFile::Open(gpsName);
   TTree *adu5PatTree = (TTree*) fpGps->Get("adu5PatTree");
   adu5PatTree->SetBranchAddress("pat",&pat);
 
-  TFile *fpHk = new TFile(hkName);
-  TTree *prettyHkTree = (TTree*) fpHk->Get("prettyHkTree");
-  prettyHkTree->SetBranchAddress("hk",&hk);
 
 
   //Make output files
@@ -76,8 +71,11 @@ void makeCorrelationRunTree(int run, int numEnts, char *outDir) {
   }
   std::cout << outName << std::endl;
   fpOut= new TFile(outName,"RECREATE");
+  Double_t thetaWave,phiWave;
   TTree *corTree = new TTree("corTree","Tree of Correlation Summaries");
   corTree->Branch("cor","CorrelationSummary",&theCor);
+  corTree->Branch("thetaWave",&thetaWave,"thetaWave/D");
+  corTree->Branch("phiWave",&phiWave,"phiWave/D");
 
   Long64_t maxEntry=headTree->GetEntries(); 
   if(numEnts && maxEntry>numEnts) maxEntry=numEnts;
@@ -85,7 +83,6 @@ void makeCorrelationRunTree(int run, int numEnts, char *outDir) {
   Int_t starEvery=maxEntry/1000;
   if(starEvery==0) starEvery=1;
   
-  Double_t thetaWave,phiWave;
   std::cout <<  "There are " << maxEntry << " events to proces\n";
   for(Long64_t entry=0;entry<maxEntry;entry++) {
      if(entry%starEvery==0) std::cerr << "*";
@@ -98,11 +95,10 @@ void makeCorrelationRunTree(int run, int numEnts, char *outDir) {
      //Stupidly most do this to be perfectly safe  
      eventChain->GetEntry(entry);
      headTree->GetEntry(entry);
-     prettyHkTree->GetEntry(entry);
      adu5PatTree->GetEntry(entry);
      
      
-     PrettyAnitaEvent realEvent(event,WaveCalType::kVTFullJWPlusFancyClockZero,hk);
+     PrettyAnitaEvent realEvent(event,WaveCalType::kVTFullAGCrossCorClock,header);
      UsefulAdu5Pat usefulPat(pat);
      usefulPat.getThetaAndPhiWaveWillySeavey(thetaWave,phiWave);
      int ant=realEvent.getMaxAntenna(AnitaPol::kVertical);
