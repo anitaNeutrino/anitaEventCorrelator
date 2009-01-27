@@ -1,11 +1,11 @@
-#include "AnitaConventions.h"
-#include "PrettyAnitaEvent.h"
-#include "RawAnitaEvent.h"
-#include "TimedAnitaHeader.h"
-#include "PrettyAnitaHk.h"
-#include "UsefulAdu5Pat.h"
-#include "CorrelationSummary.h"
-#include "AnitaGeomTool.h"
+#include "../../include/AnitaConventions.h"
+#include "../../include/PrettyAnitaEvent.h"
+#include "../../include/RawAnitaEvent.h"
+#include "../../include/TimedAnitaHeader.h"
+#include "../../include/PrettyAnitaHk.h"
+#include "../../include/UsefulAdu5Pat.h"
+#include "../../include/CorrelationSummary.h"
+#include "../../include/AnitaGeomTool.h"
 #include "TFile.h"
 #include "TTree.h"
 #include "TChain.h"
@@ -31,17 +31,26 @@ void correlationTreeLoop(int run) {
    char gpsName[FILENAME_MAX];
    char corrName[FILENAME_MAX];
    char outName[FILENAME_MAX];
-   sprintf(eventName,"/unix/anita1/webData/firstDay/run%d/eventFile%d*.root",run,run);
-   sprintf(headerName,"/unix/anita1/webData/firstDay/run%d/timedHeadFile%d.root",run,run);
-   sprintf(hkName,"/unix/anita1/webData/firstDay/run%d/prettyHkFile%d.root",run,run);
-   sprintf(gpsName,"/unix/anita1/webData/firstDay/run%d/gpsFile%d.root",run,run);
-   sprintf(corrName,"/unix/anita1/rjn/corTree16/corRun%d.root",run);
-   sprintf(outName,"deltaTFileSlowClock%d.root",run);
+   char baseDir[FILENAME_MAX];
+
+   sprintf(baseDir,"http://www.hep.ucl.ac.uk/uhen/anita/private/monitor2/runs/fromLoki/");
+ sprintf(eventName,"%s/run%d/eventFile%d.root",baseDir,run,run);
+ sprintf(headerName,"%s/run%d/headFile%d.root",baseDir,run,run);
+ sprintf(gpsName,"%s/run%d/gpsFile%d.root",baseDir,run,run);
+ sprintf(corrName,"../../outFiles/corRun%d.root",run);
+ sprintf(outName,"../../outFiles/deltaTFileSlowClock%d.root",run);
+
+  //sprintf(eventName,"/unix/anita1/webData/firstDay/run%d/eventFile%d*.root",run,run);
+  //sprintf(headerName,"/unix/anita1/webData/firstDay/run%d/timedHeadFile%d.root",run,run);
+  //sprintf(hkName,"/unix/anita1/webData/firstDay/run%d/prettyHkFile%d.root",run,run);
+  //sprintf(gpsName,"/unix/anita1/webData/firstDay/run%d/gpsFile%d.root",run,run);
+  //sprintf(corrName,"/unix/anita1/rjn/corTree16/corRun%d.root",run);
+  //sprintf(outName,"deltaTFileSlowClock%d.root",run);
    
    RawAnitaEvent *event = 0;
    PrettyAnitaHk *hk = 0;
    
-   TimedAnitaHeader *header =0;
+   RawAnitaHeader *header =0;
    Adu5Pat *pat =0;
    CorrelationSummary *corSum =0;
    
@@ -49,30 +58,31 @@ void correlationTreeLoop(int run) {
    eventChain->Add(eventName);
    eventChain->SetBranchAddress("event",&event);
    
-   TFile *fpHk = new TFile(hkName);
-   TTree *prettyHkTree = (TTree*) fpHk->Get("prettyHkTree");
-   prettyHkTree->SetBranchAddress("hk",&hk);
+  //  TFile *fpHk = new TFile(hkName);
+//    TTree *prettyHkTree = (TTree*) fpHk->Get("prettyHkTree");
+//    prettyHkTree->SetBranchAddress("hk",&hk);
    
-   TFile *fpHead = new TFile(headerName);
+   TFile *fpHead = TFile::Open(headerName);
    TTree *headTree = (TTree*) fpHead->Get("headTree");
    headTree->SetBranchAddress("header",&header);
    
-   TFile *fpGps = new TFile(gpsName);
+   TFile *fpGps = TFile::Open(gpsName);
    TTree *adu5PatTree = (TTree*) fpGps->Get("adu5PatTree");
+   adu5PatTree->BuildIndex("realTime");
    adu5PatTree->SetBranchAddress("pat",&pat);
 
-   //   TFile *fpCor = new TFile(corrName);
-   //   TTree *corTree = (TTree*) fpCor->Get("corTree");
-   //   corTree->SetBranchAddress("cor",&corSum);
+      TFile *fpCor = new TFile(corrName);
+      TTree *corTree = (TTree*) fpCor->Get("corTree");
+      corTree->SetBranchAddress("cor",&corSum);
 
-   TFile *fpGp = new TFile("/unix/anita/gpLogs/gp_log_all.root");
-   TTree *gpLogTree = (TTree*) fpGp->Get("gp_log");
-   Double_t gpTriggerTime;
-   Int_t antennaFlag, sgFreq;
-   gpLogTree->SetBranchAddress("trigger_time",&gpTriggerTime);
-   gpLogTree->SetBranchAddress("sg_freq",&sgFreq);
-   gpLogTree->SetBranchAddress("antenna",&antennaFlag);
-   gpLogTree->BuildIndex("trigger_time");
+   // TFile *fpGp = new TFile("/unix/anita/gpLogs/gp_log_all.root");
+   //TTree *gpLogTree = (TTree*) fpGp->Get("gp_log");
+   // Double_t gpTriggerTime;
+   //Int_t antennaFlag, sgFreq;
+   //gpLogTree->SetBranchAddress("trigger_time",&gpTriggerTime);
+   //gpLogTree->SetBranchAddress("sg_freq",&sgFreq);
+   //gpLogTree->SetBranchAddress("antenna",&antennaFlag);
+   //gpLogTree->BuildIndex("trigger_time");
 
    Long64_t numEntries=headTree->GetEntries();
    int counter=0;
@@ -115,46 +125,61 @@ void correlationTreeLoop(int run) {
   
       //Stupidly most do this to be perfectly safe  
       headTree->GetEntry(entry);
-      if(header->triggerTimeNs*1e-9< 0.097 || header->triggerTimeNs*1e-9>0.1)
-	 continue;
-
-      Long64_t gpEntry=gpLogTree->GetEntryNumberWithBestIndex(header->triggerTime);
-      //     cout << gpEntry << endl;
-      if(gpEntry>-1) 
-	 gpLogTree->GetEntry(gpEntry);
-      else 
-	 continue;
      
-      if(antennaFlag!=1 || sgFreq!=-1) 
-	 continue;
+      // if(header->triggerTimeNs*1e-9< 0.097 || header->triggerTimeNs*1e-9>0.1)
+      if( (header->triggerTimeNs>0.3e6) || (header->triggerTimeNs<0.2e6) )  
+      continue; 
+
+      //Long64_t gpEntry=gpLogTree->GetEntryNumberWithBestIndex(header->triggerTime);
+      //     cout << gpEntry << endl;
+      //if(gpEntry>-1) 
+      //	 gpLogTree->GetEntry(gpEntry);
+      //else 
+      //	 continue;
+     
+      //  if(antennaFlag!=1 || sgFreq!=-1) 
+      //	 continue;
 
       //     cout << entry << "\t" << gpEntry << "\t" << header->triggerTime << "\t" << (UInt_t)gpTriggerTime << "\n";
      
-      eventChain->GetEntry(entry);
-      prettyHkTree->GetEntry(entry);
-      adu5PatTree->GetEntry(entry);
-      //     corTree->GetEntry(entry);
+      //  eventChain->GetEntry(entry);
+      //prettyHkTree->GetEntry(entry);
 
-      PrettyAnitaEvent realEvent(event,WaveCalType::kVTFullJWPlusClockZero,hk);
+
+     Long64_t bestEntry = adu5PatTree->GetEntryNumberWithBestIndex(header->triggerTime);
+   if(bestEntry>-1) 
+     adu5PatTree->GetEntry(bestEntry);
+   else 
+     continue;
+
+   corTree->GetEntry(entry);
+
+   // PrettyAnitaEvent realEvent(event,WaveCalType::kVTFullAGCrossCorClock,header);
       UsefulAdu5Pat usefulPat(pat);
       usefulPat.getThetaAndPhiWaveWillySeavey(thetaWave,phiWave);
       int ant=fGeomTool->getUpperAntNearestPhiWave(phiWave);
 
       //     cout << ant << "\t" << phiWave << "\t" << fGeomTool->getAntPhiPositionRelToAftFore(ant) << "\n";
 
-      labChip=realEvent.getLabChip(1);
+      // labChip=realEvent.getLabChip(1);
       Double_t deltaTHere= 1. / (2.6*16.);
-      corSum = realEvent.getCorrelationSummary(ant,AnitaPol::kVertical,deltaTHere);
+      //corSum = realEvent.getCorrelationSummary(ant,AnitaPol::kVertical,deltaTHere);
 
       //      usefulPat.getThetaAndPhiWaveWillySeavey(thetaWave,phiWave);
       //      int ant=fGeomTool->getUpperAntNearestPhiWave(phiWave);
       //      cout << ant << "\t" << corSum->firstAnt[1] << endl;
      
-      for(int corInd=0;corInd<11;corInd++) {
-	 deltaTExpected=usefulPat.getDeltaTWillySeavey(corSum->firstAnt[corInd],corSum->secondAnt[corInd]);
+      for(int corInd=0;corInd<19;corInd++) {
+
+
+	//replace taylor dome
+	//	 deltaTExpected=usefulPat.getDeltaTWillySeavey(corSum->firstAnt[corInd],corSum->secondAnt[corInd]);
+	 deltaTExpected=usefulPat.getDeltaTTaylor(corSum->firstAnt[corInd],corSum->secondAnt[corInd]);
+
 	 //	 histSimpleDtDiff->Fill(corSum->maxCorTimes[corInd]-deltaTExpected);
 	 int antInd=corSum->firstAnt[corInd]%16;
 	 //	 histDtDiffSep[antInd][labChip][corInd]->Fill(corSum->maxCorTimes[corInd]-deltaTExpected);
+
 	 firstAnt=corSum->firstAnt[corInd];
 	 secondAnt=corSum->secondAnt[corInd];
 	 deltaT=corSum->maxCorTimes[corInd];
