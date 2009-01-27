@@ -53,9 +53,9 @@ void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDi
    Adu5Pat *pat =0;
    CorrelationSummary *corSum =0;
    
-   TChain *eventChain = new TChain("eventTree");
-   eventChain->Add(eventName);
-   eventChain->SetBranchAddress("event",&event);
+   //  TChain *eventChain = new TChain("eventTree");
+   // eventChain->Add(eventName);
+   // eventChain->SetBranchAddress("event",&event);
    
   //  TFile *fpHk = new TFile(hkName);
 //    TTree *prettyHkTree = (TTree*) fpHk->Get("prettyHkTree");
@@ -141,7 +141,7 @@ void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDi
 
       //     cout << entry << "\t" << gpEntry << "\t" << header->triggerTime << "\t" << (UInt_t)gpTriggerTime << "\n";
      
-       eventChain->GetEntry(entry);
+      //eventChain->GetEntry(entry);
       //prettyHkTree->GetEntry(entry);
 
 
@@ -161,7 +161,8 @@ void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDi
       //     cout << ant << "\t" << phiWave << "\t" << fGeomTool->getAntPhiPositionRelToAftFore(ant) << "\n";
 
       //     labChip=realEvent.getLabChip(1);
-      labChip=event->getLabChip(1);
+      //labChip=event->getLabChip(1);
+      labChip=corSum->labChip;
       Double_t deltaTHere= 1. / (2.6*16.);
       //corSum = realEvent.getCorrelationSummary(ant,AnitaPol::kVertical,deltaTHere);
 
