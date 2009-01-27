@@ -142,7 +142,7 @@ void correlationTreeLoop(int run) {
 
       //     cout << entry << "\t" << gpEntry << "\t" << header->triggerTime << "\t" << (UInt_t)gpTriggerTime << "\n";
      
-      //  eventChain->GetEntry(entry);
+       eventChain->GetEntry(entry);
       //prettyHkTree->GetEntry(entry);
 
 
@@ -161,7 +161,8 @@ void correlationTreeLoop(int run) {
 
       //     cout << ant << "\t" << phiWave << "\t" << fGeomTool->getAntPhiPositionRelToAftFore(ant) << "\n";
 
-      // labChip=realEvent.getLabChip(1);
+      //     labChip=realEvent.getLabChip(1);
+      labChip=event->getLabChip(1);
       Double_t deltaTHere= 1. / (2.6*16.);
       //corSum = realEvent.getCorrelationSummary(ant,AnitaPol::kVertical,deltaTHere);
 
