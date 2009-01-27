@@ -82,6 +82,13 @@ class PrettyAnitaEvent: public UsefulAnitaEvent
     \return The antenna number of the antenna with the largest peak/rms correlation value.
   */  
   int getMaxAntennaCorrelation(AnitaPol::AnitaPol_t pol, Double_t *peakPtr=0);
+  //! Select the upper antenna with the maximum correlation (defined as peak/rms of the correlation) with it's pair in the lower ring.
+  /*!
+    \param pol Which polarisation to use?
+    \param peakPtr An optional pointer to a double in which to store the peak/rms correlation value.
+    \return The antenna number of the antenna with the largest peak/rms correlation value.
+  */  
+  int getMaxAntennaCorrelationRollingAvg(AnitaPol::AnitaPol_t pol, Double_t *peakPtr=0);
 
   //! Generates a CorrelationSummary object for a set of 10 antennas.
   /*!

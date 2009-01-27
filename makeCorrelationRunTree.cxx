@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
   }
   std::cout << "Making correlation summary tree for run: " << run << "\n";
   // makeCorrelationRunTree(run,0,"/Users/simonbevan/Desktop/","/Users/simonbevan/ANITA/outfiles/");
-makeCorrelationRunTree(run,0,"http://www.hep.ucl.ac.uk/uhen/anita/private/monitor2/runs/fromLoki/","/Users/simonbevan/ANITA/outfiles/");
+makeCorrelationRunTree(run,0,"http://www.hep.ucl.ac.uk/uhen/anita/private/monitor2/runs/fromLoki/","/home/rjn/anita/data/corTrees");
 
 }
   
@@ -97,8 +97,13 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
      //  eventChain->AddFriend(prettyHkTree);
      
      //Stupidly most do this to be perfectly safe  
-     eventChain->GetEntry(entry);
+
      headTree->GetEntry(entry);
+     if( (header->triggerTimeNs>0.3e6) || (header->triggerTimeNs<0.2e6) )  
+      continue; 
+     
+
+     eventChain->GetEntry(entry);
      adu5PatTree->GetEntry(entry);
      
      
