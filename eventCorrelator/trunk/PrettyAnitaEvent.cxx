@@ -897,7 +897,9 @@ int PrettyAnitaEvent::getPrettyColour(int index)
 //Putative Analysis methods
 int PrettyAnitaEvent::getMaxAntenna(AnitaPol::AnitaPol_t pol, Double_t *peakPtr)
 {
-   return getMaxAntennaCorrelation(pol, peakPtr);
+  return getMaxAntennaCorrelationRollingAvg(pol, peakPtr);
+  //  return getMaxAntennaCorrelation(pol, peakPtr);
+  //  getMaxAntennaVSquared(pol,peakPtr);
 }   
 
 
@@ -909,8 +911,10 @@ int PrettyAnitaEvent::getMaxAntennaVSquared(AnitaPol::AnitaPol_t pol, Double_t *
    int maxAnt=0;
    for(int ant=0;ant<32;ant++) {
       int chanIndex=AnitaGeomTool::getChanIndexFromAntPol(ant,pol);
+      Double_t rmsChan=TMath::RMS(fNumPoints[chanIndex],fVolts[chanIndex]);
       for(int samp=0;samp<fNumPoints[chanIndex];samp++) {
 	 double vSquared=fVolts[chanIndex][samp]*fVolts[chanIndex][samp];
+	 vSquared/=rmsChan;
 	 if(vSquared>maxVal) {
 	    maxVal=vSquared;
 	    maxAnt=ant;
@@ -946,6 +950,56 @@ int PrettyAnitaEvent::getMaxAntennaCorrelation(AnitaPol::AnitaPol_t pol, Double_
 	   maxAnt=otherAnt;
       }
       delete grCor;
+	 
+   }
+   if(peakPtr) *peakPtr=maxVal;
+   return maxAnt;
+}
+
+int PrettyAnitaEvent::getMaxAntennaCorrelationRollingAvg(AnitaPol::AnitaPol_t pol, Double_t *peakPtr)
+{
+   //Returns the antenna at the centre of three phi-secotrs with the largest peak/rms in the correlation with its azimuth partner antenna
+   double maxVal=0;
+   int maxAnt=0;
+   double maxVals[16]={0};
+   for(int ant=0;ant<16;ant++) {
+      //Loop over the top antennas
+      int otherAnt=AnitaGeomTool::getAzimuthPartner(ant);
+      int ciTop=AnitaGeomTool::getChanIndexFromAntPol(ant,pol);
+      int ciBottom=AnitaGeomTool::getChanIndexFromAntPol(otherAnt,pol);
+
+      TGraph *grCor = getCorrelation(ciTop,ciBottom);      
+      Double_t *y = grCor->GetY();
+      Double_t peak=TMath::MaxElement(grCor->GetN(),y);
+      Double_t rms=TMath::RMS(grCor->GetN(),y);
+      //      FFTtools::getPeakRmsSqVal(grCor,peak,rms);
+      if((peak/rms)>maxVals[ant])
+	maxVals[ant]=(peak/rms);
+
+     delete grCor;
+   }
+   
+   for(int ant=0;ant<16;ant++) {
+     int leftAnt=ant-1;
+     if(leftAnt<0) leftAnt=15;
+     int rightAnt=ant+1;
+     if(rightAnt>15) rightAnt=0;
+
+
+     int otherAnt=AnitaGeomTool::getAzimuthPartner(ant);
+     int ciTop=AnitaGeomTool::getChanIndexFromAntPol(ant,pol);
+     int ciBottom=AnitaGeomTool::getChanIndexFromAntPol(otherAnt,pol);
+     
+     Double_t newVal=maxVals[leftAnt]+maxVals[ant]+maxVals[rightAnt];
+
+     if(newVal>maxVal) {
+       maxVal=newVal;
+       maxAnt=ant;
+       Double_t maxTop=TMath::MaxElement(fNumPoints[ciTop],fVolts[ciTop]);
+       Double_t maxBottom=TMath::MaxElement(fNumPoints[ciBottom],fVolts[ciBottom]);
+       if(maxBottom>maxTop)
+	 maxAnt=otherAnt;
+     }
 	 
    }
    if(peakPtr) *peakPtr=maxVal;
