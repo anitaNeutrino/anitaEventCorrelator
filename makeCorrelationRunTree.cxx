@@ -74,10 +74,12 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
   std::cout << outName << std::endl;
   fpOut= new TFile(outName,"RECREATE");
   Double_t thetaWave,phiWave;
+  Int_t labChip;
   TTree *corTree = new TTree("corTree","Tree of Correlation Summaries");
   corTree->Branch("cor","CorrelationSummary",&theCor);
   corTree->Branch("thetaWave",&thetaWave,"thetaWave/D");
   corTree->Branch("phiWave",&phiWave,"phiWave/D");
+  corTree->Branch("labChip",&labChip,"labChip/I");
 
   Long64_t maxEntry=headTree->GetEntries(); 
   if(numEnts && maxEntry>numEnts) maxEntry=numEnts;
@@ -101,7 +103,7 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
      
      
      PrettyAnitaEvent realEvent(event,WaveCalType::kVTFullAGCrossCorClock,header); 
-
+ labChip=event->getLabChip(1);
 
    UsefulAdu5Pat usefulPat(pat);
      usefulPat.getThetaAndPhiWaveWillySeavey(thetaWave,phiWave);
