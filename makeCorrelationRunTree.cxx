@@ -26,7 +26,9 @@ int main(int argc, char **argv) {
     run=atoi(argv[1]);
   }
   std::cout << "Making correlation summary tree for run: " << run << "\n";
-  makeCorrelationRunTree(run,0,"http://www.hep.ucl.ac.uk/uhen/anita/private/monitor2/runs/fromLoki/","/home/rjn/anita/data/corTrees");
+  // makeCorrelationRunTree(run,0,"/Users/simonbevan/Desktop/","/Users/simonbevan/ANITA/outfiles/");
+makeCorrelationRunTree(run,0,"http://www.hep.ucl.ac.uk/uhen/anita/private/monitor2/runs/fromLoki/","/Users/simonbevan/ANITA/outfiles/");
+
 }
   
 void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
@@ -98,8 +100,10 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
      adu5PatTree->GetEntry(entry);
      
      
-     PrettyAnitaEvent realEvent(event,WaveCalType::kVTFullAGCrossCorClock,header);
-     UsefulAdu5Pat usefulPat(pat);
+     PrettyAnitaEvent realEvent(event,WaveCalType::kVTFullAGCrossCorClock,header); 
+
+
+   UsefulAdu5Pat usefulPat(pat);
      usefulPat.getThetaAndPhiWaveWillySeavey(thetaWave,phiWave);
      int ant=realEvent.getMaxAntenna(AnitaPol::kVertical);
      //     int ant=fGeomTool->getUpperAntNearestPhiWave(phiWave);
