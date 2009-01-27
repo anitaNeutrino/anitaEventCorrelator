@@ -65,7 +65,35 @@ class CorrelationSummary: public TObject
 
 
   //Correlation Thingies
-  int firstAnt[19]; ///< The index of the first antenna in the 19 possible pairs (3 up-down, 4 left-right, 4 diagonal, 4 outside-neighbour).
+  
+  //!  There are 19 correlations formed from a set of 10 antennas (5-phi sectors).
+   /*!
+     For clarity in the list below the antennas are described using the following names:
+    - LLT LT CT RT RRT
+    - LLB LB CB RB RRB
+    
+    In this scheme the 19 correlations are:
+    -  "[0]" LT - LB
+    -  "[1]" CT - CB
+    -  "[2]" RT - RB
+    -  "[3]" LT - CT
+    -  "[4]" CT - RT
+    -  "[5]" LB - CB
+    -  "[6]" CB - RB
+    -  "[7]" LT - CB
+    -  "[8]" RT - CB
+    -  "[9]" CT - LB
+    -  "[10]" CT - RB
+    -  "[11]" LLT - CT
+    -  "[12]" CT - RRT
+    -  "[13]" LLB - CB
+    -  "[14]" CB - RRB
+    -  "[15]" LLT - LT
+    -  "[16]" RT - RRT
+    -  "[17]" LLB - LB
+    -  "[18]" RB - RRT 
+   */
+  int firstAnt[19]; 
   int secondAnt[19]; ///< The index of the second antenna in the 19 possible pairs (3 up-down, 4 left-right, 4 diagonal, 4 outside-neighbour).
   double maxCorVals[19]; ///< The maximumn correlation value for each of the 19 possible correlations (3 up-down, 4 left-right, 4 diagonal, 4 outside-neighbour).
   double maxCorTimes[19]; ///< The time of the maximum correlation value for each of the 19 possible correlations (3 up-down, 4 left-right, 4 diagonal, 4 outside-neighbour).
