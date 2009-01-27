@@ -1,11 +1,11 @@
-#include "../../include/AnitaConventions.h"
-#include "../../include/PrettyAnitaEvent.h"
-#include "../../include/RawAnitaEvent.h"
-#include "../../include/TimedAnitaHeader.h"
-#include "../../include/PrettyAnitaHk.h"
-#include "../../include/UsefulAdu5Pat.h"
-#include "../../include/CorrelationSummary.h"
-#include "../../include/AnitaGeomTool.h"
+#include "AnitaConventions.h"
+#include "PrettyAnitaEvent.h"
+#include "RawAnitaEvent.h"
+#include "TimedAnitaHeader.h"
+#include "PrettyAnitaHk.h"
+#include "UsefulAdu5Pat.h"
+#include "CorrelationSummary.h"
+#include "AnitaGeomTool.h"
 #include "TFile.h"
 #include "TTree.h"
 #include "TChain.h"
@@ -20,10 +20,10 @@
 
 
 
-void correlationTreeLoop(int run);
+void correlationTreeLoop(int run, char *baseDir, char *corTreeDir, char *outputDir);
 
   
-void correlationTreeLoop(int run) {
+void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDir) {
    AnitaGeomTool *fGeomTool = AnitaGeomTool::Instance();
    char eventName[FILENAME_MAX];
    char headerName[FILENAME_MAX];
@@ -31,14 +31,13 @@ void correlationTreeLoop(int run) {
    char gpsName[FILENAME_MAX];
    char corrName[FILENAME_MAX];
    char outName[FILENAME_MAX];
-   char baseDir[FILENAME_MAX];
 
-   sprintf(baseDir,"http://www.hep.ucl.ac.uk/uhen/anita/private/monitor2/runs/fromLoki/");
+   //   sprintf(baseDir,"http://www.hep.ucl.ac.uk/uhen/anita/private/monitor2/runs/fromLoki/");
  sprintf(eventName,"%s/run%d/eventFile%d.root",baseDir,run,run);
  sprintf(headerName,"%s/run%d/headFile%d.root",baseDir,run,run);
  sprintf(gpsName,"%s/run%d/gpsFile%d.root",baseDir,run,run);
- sprintf(corrName,"../../outFiles/corRun%d.root",run);
- sprintf(outName,"../../outFiles/deltaTFileSlowClock%d.root",run);
+ sprintf(corrName,"%s/corRun%d.root",corTreeDir,run);
+ sprintf(outName,"%s/deltaTFile%d.root",outputDir,run);
 
   //sprintf(eventName,"/unix/anita1/webData/firstDay/run%d/eventFile%d*.root",run,run);
   //sprintf(headerName,"/unix/anita1/webData/firstDay/run%d/timedHeadFile%d.root",run,run);
