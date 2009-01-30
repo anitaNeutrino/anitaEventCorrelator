@@ -86,7 +86,7 @@ void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDi
    //gpLogTree->SetBranchAddress("antenna",&antennaFlag);
    //gpLogTree->BuildIndex("trigger_time");
 
-   Long64_t numEntries=headTree->GetEntries();
+   Long64_t numEntries=corTree->GetEntries();
    int counter=0;
 
    TFile *fpOut = new TFile(outName,"RECREATE");

@@ -70,18 +70,34 @@ int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWav
    Double_t balloonHeight=fUPGeomTool->getGeoid(thetaBalloon)+altitude;
 
    Double_t tempPhiWave=phiWave;
+   Double_t tempThetaWave=TMath::PiOver2()-thetaWave;
    //Now need to take account of balloon heading
    //Will have to check heading at some point
 
+//    if(heading>=0 && heading<=360) {
+//      //     tempPhiWave-=heading*TMath::DegToRad();
+//      tempPhiWave=heading*TMath::DegToRad()-tempPhiWave;
+//       if(tempPhiWave<0)
+// 	 tempPhiWave+=TMath::TwoPi();
+//    }
    if(heading>=0 && heading<=360) {
-     //     tempPhiWave-=heading*TMath::DegToRad();
-     tempPhiWave=heading*TMath::DegToRad()-tempPhiWave;
-      if(tempPhiWave<0)
-	 tempPhiWave+=TMath::TwoPi();
+     TVector3 arbDir;
+     arbDir.SetMagThetaPhi(1,tempThetaWave,tempPhiWave);
+     arbDir.Rotate(heading*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
+     arbDir.Rotate(roll*TMath::DegToRad(),fUPGeomTool->fRollRotationAxis);
+     arbDir.Rotate(pitch*TMath::DegToRad(),fUPGeomTool->fPitchRotationAxis);
+
+     tempPhiWave=arbDir.Phi();
+     if(tempPhiWave>TMath::TwoPi()) {
+       tempPhiWave-=TMath::TwoPi();
+     }
+     if(tempPhiWave<0) {
+       tempPhiWave+=TMath::TwoPi();
+     }
+     tempThetaWave=arbDir.Theta();
    }
    else std::cout << "heading bad" << std::endl;
      
-   Double_t tempThetaWave=TMath::PiOver2()-thetaWave;
    
    Double_t re=balloonHeight-altitude+2000;
    //Double_t re=balloonHeight-altitude;
@@ -169,11 +185,27 @@ void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, D
    }   
 
    //Now need to take account of balloon heading
-   //Will have to check heading at some point
+ //   //Will have to check heading at some point
+//    if(heading>=0 && heading<=360) {
+//       phiWave+=heading*TMath::DegToRad();
+//       if(phiWave>TMath::TwoPi())
+// 	 phiWave-=TMath::TwoPi();
+//    }
    if(heading>=0 && heading<=360) {
-      phiWave+=heading*TMath::DegToRad();
-      if(phiWave>TMath::TwoPi())
-	 phiWave-=TMath::TwoPi();
+     TVector3 arbDir;
+     arbDir.SetMagThetaPhi(1,thetaWave,phiWave);
+     arbDir.Rotate(heading*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
+     arbDir.Rotate(roll*TMath::DegToRad(),fUPGeomTool->fRollRotationAxis);
+     arbDir.Rotate(pitch*TMath::DegToRad(),fUPGeomTool->fPitchRotationAxis);
+
+     phiWave=arbDir.Phi();
+     if(phiWave>TMath::TwoPi()) {
+       phiWave-=TMath::TwoPi();
+     }
+     if(phiWave<0) {
+       phiWave+=TMath::TwoPi();
+     }
+     thetaWave=arbDir.Theta();
    }
 
    fPhiWave=phiWave;
