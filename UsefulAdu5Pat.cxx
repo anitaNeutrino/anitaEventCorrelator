@@ -296,3 +296,34 @@ Double_t UsefulAdu5Pat::getDeltaTTaylor(Int_t ant1, Int_t ant2)
 {
    return getDeltaTExpected(ant1,ant2,AnitaLocations::LONGITUDE_TD,AnitaLocations::LATITUDE_TD,AnitaLocations::ALTITUDE_TD);
 }
+
+
+Double_t UsefulAdu5Pat::getDeltaTTaylorOpt(Int_t ant1, Int_t ant2, Double_t *deltaR, Double_t *deltaZ, Double_t *deltaPhi)
+{
+  return getDeltaTExpectedOpt(ant1,ant2,AnitaLocations::LONGITUDE_TD,AnitaLocations::LATITUDE_TD,AnitaLocations::ALTITUDE_TD, deltaR, deltaZ,deltaPhi);
+}
+
+Double_t UsefulAdu5Pat::getDeltaTExpectedOpt(Int_t ant1, Int_t ant2,Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t *deltaR, Double_t *deltaZ, Double_t *deltaPhi)
+{
+
+   Double_t tempTheta,tempPhi;
+   if(fSourceAltitude!=sourceAlt || fSourceLongitude!=sourceLon || fSourceLatitude!=sourceLat)
+      getThetaAndPhiWave(sourceLon,sourceLat,sourceAlt,tempTheta,tempPhi);
+
+   //Now fThetaWave and fPhiWave should be correctly set.
+   Double_t phi1=fUPGeomTool->getAntPhiPositionRelToAftFore(ant1)+deltaPhi[ant1];
+   Double_t r1=fUPGeomTool->getAntR(ant1)+deltaR[ant1];
+   Double_t z1=fUPGeomTool->getAntZ(ant1)+deltaZ[ant1];
+
+   Double_t phi2=fUPGeomTool->getAntPhiPositionRelToAftFore(ant2)+deltaPhi[ant2];
+   Double_t r2=fUPGeomTool->getAntR(ant2)+deltaR[ant2];
+   Double_t z2=fUPGeomTool->getAntZ(ant2)+deltaZ[ant2];
+
+   Double_t tanThetaW=TMath::Tan(fThetaWave);
+   Double_t part1=z1*tanThetaW - r1 * TMath::Cos(fPhiWave-phi1);
+   Double_t part2=z2*tanThetaW - r2 * TMath::Cos(fPhiWave-phi2);
+   
+   return  1e9*((TMath::Cos(fThetaWave) * (part1 - part2))/C_LIGHT);    //returns time in ns
+}
+
+
