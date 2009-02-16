@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <fstream>
+#include "string.h"
 
 //ANITA Includes
 #include "PrettyAnitaEvent.h"
@@ -64,6 +65,8 @@ Int_t saturatedChannel[90];
 void startCorrelation(int run,int eventNumber){
 
   //int entry=65000;
+  char runRootDirectory[FILENAME_MAX];
+  sprintf(runRootDirectory,"/Users/Matt/WORK/antarctica08/webPlotterData/");
 
   char headName[FILENAME_MAX];
   char eventName[FILENAME_MAX];
@@ -72,9 +75,9 @@ void startCorrelation(int run,int eventNumber){
   RawAnitaHeader *hdPtr = 0;
   Adu5Pat *patPtr =0;
 
-  sprintf(headName,"/TBdata/anita/antarctica08/webPlotter/events/root/run%d/headFile%d.root",run,run);
-  sprintf(eventName,"/TBdata/anita/antarctica08/webPlotter/events/root/run%d/eventFile%d.root",run,run);
-  sprintf(gpsName,"/TBdata/anita/antarctica08/webPlotter/events/root/run%d/gpsFile%d.root",run,run);
+  sprintf(headName,"%s/run%d/headFile%d.root",runRootDirectory,run,run);
+  sprintf(eventName,"%s/run%d/eventFile%d.root",runRootDirectory,run,run);
+  sprintf(gpsName,"%s/run%d/gpsFile%d.root",runRootDirectory,run,run);
 
   TFile *eventFile = new TFile(eventName);
   TFile *headFile = new TFile(headName);
@@ -452,11 +455,11 @@ void plotAnitaEventMap(Adu5Pat *patPtr,double phi,double theta){
   std::cout << std::endl << "phi 6 " << std::endl;
   int headLoc6 = usefulPat.getSourceLonAndLatAltZero(90./180.*PI,10./180.*PI,phi6Lon,phi6Lat);
   std::cout << std::endl << "actual 14.5 " << std::endl;
-  int actualLoc = usefulPat.getSourceLonAndLatAltZero(231.5/180.*PI,14.5/180.*PI,actualLon,actualLat);
+  int actualLoc = usefulPat.getSourceLonAndLatAltZero(phi/180.*PI,12.5/180.*PI,actualLon,actualLat);
   std::cout << std::endl << "actual 4.5 " << std::endl;
-  int actualLoc2 = usefulPat.getSourceLonAndLatAltZero(231.5/180.*PI,7.5/180.*PI,actual2Lon,actual2Lat);
+  int actualLoc2 = usefulPat.getSourceLonAndLatAltZero(phi/180.*PI,7.5/180.*PI,actual2Lon,actual2Lat);
   //int sourceLoc = usefulPat.getSourceLonAndLatAltZero((phi)/180.*PI,(TMath::PiOver2()-theta)/180.*PI,sourceLon,sourceLat);
-  TImage *map = TImage::Open("/home/anita/eventCorrelator/macros/antarcticaIceMap.png");
+  TImage *map = TImage::Open("/Users/Matt/WORK/eventCorrelator/trunk/macros/antarcticaIceMap.png");
 
   std::cout << "sourceLoc " << sourceLoc << " phi " << phi << " theta " << theta << " lon " << sourceLon << " lat " << sourceLat << std::endl;
   gStyle->SetMarkerColor(kBlack);
@@ -485,7 +488,6 @@ void plotAnitaEventMap(Adu5Pat *patPtr,double phi,double theta){
 
   map->Draw("");
 
-
   TMarker *headingPos = new TMarker(xHead,yHead,29);
   TMarker *heading14Pos = new TMarker(x14,y14,29);
   TMarker *heading10Pos = new TMarker(x10,y10,29);
@@ -494,10 +496,10 @@ void plotAnitaEventMap(Adu5Pat *patPtr,double phi,double theta){
   TMarker *actual2Pos = new TMarker(xActual2,yActual2,29);
   headingPos->SetMarkerColor(kRed);
   heading14Pos->SetMarkerColor(kGray);
-  heading10Pos->SetMarkerColor(kBlack);
+  heading10Pos->SetMarkerColor(kGray+2);
   heading6Pos->SetMarkerColor(kViolet);
-  actualPos->SetMarkerColor(kYellow+3);
-  actual2Pos->SetMarkerColor(kYellow+2);
+  actualPos->SetMarkerColor(kRed+2);//12.5 theta
+  actual2Pos->SetMarkerColor(kBlue+2);//7.5 theta
 
   headingPos->Draw("");
   heading14Pos->Draw("");
@@ -527,7 +529,7 @@ void plotAnitaEventMap(Adu5Pat *patPtr,double phi,double theta){
   }
 
   TMarker *eventPos = new TMarker(xEvent,yEvent,29);
-
+  eventPos->SetMarkerColor(kBlack);
   eventPos->Draw("");
 
   sprintf(label,"ANITA location: lat %f; long %f; alt %f, x %f, y %f",anitaLat,anitaLon,anitaAlt,xAnita,yAnita);

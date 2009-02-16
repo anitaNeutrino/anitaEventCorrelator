@@ -1,4 +1,7 @@
 
+
+void runCrossCorrelation(int run,int entry) {
+
 void runCrossCorrelation() {
   static int firstTime=1;
   if(firstTime) {
@@ -17,7 +20,8 @@ void runCrossCorrelation() {
     gSystem->CompileMacro("crossCorrelation.C","k");
     firstTime=0;
   }
-  startCorrelation("http://192.168.10.101/monitor/runs",55,5958620);
+  startCorrelation("http://192.168.10.101/monitor/runs",run,entry);
+
 }
 
 void runTestDeltaT(int run,int entry) {
@@ -35,6 +39,6 @@ void runTestDeltaT(int run,int entry) {
   gSystem->Load("libRootFftwWrapper.so");
   gSystem->Load("libAnitaCorrelator.so");
   //  gSystem->Load("libRootFftwWrapper.so");
-  gSystem->CompileMacro("/home/anita/eventCorrelator/macros/testDeltaT.C","k");
+  gSystem->CompileMacro("/Users/Matt/WORK/eventCorrelator/trunk/macros/testDeltaT.C","k");
   testDeltaT(run,entry); 
 }
