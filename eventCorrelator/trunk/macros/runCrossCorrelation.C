@@ -2,7 +2,6 @@
 
 void runCrossCorrelation(int run,int entry) {
 
-void runCrossCorrelation() {
   static int firstTime=1;
   if(firstTime) {
     //  gSystem->AddIncludePath(gSystem->ExpandPathName("-I${EVENT_READER_DIR}"));
@@ -20,7 +19,8 @@ void runCrossCorrelation() {
     gSystem->CompileMacro("crossCorrelation.C","k");
     firstTime=0;
   }
-  startCorrelation("http://192.168.10.101/monitor/runs",run,entry);
+  //startCorrelation("http://192.168.10.101/monitor/runs",run,entry);
+  startCorrelation(run,entry);
 
 }
 
