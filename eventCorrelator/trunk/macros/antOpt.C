@@ -26,6 +26,11 @@ Double_t antOpt(Double_t *delta);
 //Double_t antOpt(Double_t *delta, TTree *headTree, TTree *adu5PatTree,TTree *corTree){
 Double_t antOpt(Double_t *delta){;
 
+ 
+
+Double_t histAdded = 0;
+Double_t histAdded2 = 0;
+
   //int middleAnt = delta[2];
   Double_t deltaR[16];  
   Double_t deltaZ[16];  
@@ -38,7 +43,7 @@ Double_t antOpt(Double_t *delta){;
   vector<Int_t> labChipVec;
 
   for(int r = 0; r <16; r++){
-    deltaR[r] = delta[0];
+    deltaR[r] = delta[r];
 }
   
   for(int z = 0; z <16; z++){
@@ -47,19 +52,22 @@ Double_t antOpt(Double_t *delta){;
   
   for(int phi = 0; phi <16; phi++){
     //deltaPhi[phi] = 0;
-     deltaPhi[phi] = delta[phi+1];
+     deltaPhi[phi] = delta[phi+16];
   }
 
   deltaHeading[0] = delta[18];
 
-  correlationTreeLoopOpt(18,"http://www.hep.ucl.ac.uk/uhen/anita/private/monitor2/runs/fromLoki/","../../outFiles/","../../outFiles/",deltaR,deltaZ,deltaPhi,deltaHeading);
+  // correlationTreeLoopOpt(18,"http://www.hep.ucl.ac.uk/uhen/anita/private/monitor2/runs/fromLoki/","../../outFiles/","../../outFiles/",deltaR,deltaZ,deltaPhi,deltaHeading);
+
+correlationTreeLoopOpt(18,"/unix/anita3/flight0809/root/","../outFiles/","../outFiles/",deltaR,deltaZ,deltaPhi,deltaHeading);
 
 int run = 18;
 
 //char *baseDir = "http://www.hep.ucl.ac.uk/uhen/anita/private/monitor2/runs/fromLoki/";
- char *baseDir = "/Users/simonbevan/Desktop/";
-  char *corTreeDir = "../../outFiles/";
-  char *outputDir = "../../outFiles/";
+//char *baseDir = "/Users/simonbevan/Desktop/";
+ char *baseDir = "/unix/anita3/flight0809/root/";
+ char *corTreeDir = "../outFiles/";
+ char *outputDir = "../outFiles/";
 
   char eventName[100];
   char headerName[100];
@@ -75,7 +83,7 @@ int run = 18;
   sprintf(gpsName,"%s/run%d/gpsFile%d.root",baseDir,run,run);
   sprintf(corrName,"%s/corRun%d.root",corTreeDir,run);
   sprintf(outName,"%s/opt%d.root",outputDir,run);
-  sprintf(fpTreeFile,"../../outFiles/deltaTFile18.root",run);
+  sprintf(fpTreeFile,"../outFiles/deltaTFile18.root",run);
 
   TFile *fpTTree = new TFile(fpTreeFile);
    TTree *deltaTTree = (TTree*) fpTTree->Get("deltaTTree");
@@ -130,7 +138,7 @@ for(int chip=0; chip<1;chip++){
        int leftAnt,rightAnt;
        fGeomTool->getThetaPartners(middleAnt,leftAnt,rightAnt); 
 
-       sprintf(plotCond,"((firstAnt==%d && secondAnt==%d) && labChip==%d) ",middleAnt,rightAnt,chip);	 
+       sprintf(plotCond,"((firstAnt==%d && secondAnt==%d)) ",middleAnt,rightAnt,chip);	 
        sprintf(plotTitle,"Ant %d -  Ant %d",middleAnt,rightAnt);
        sprintf(histNameOpt,"histDtOpt_%d_%d",ant,chip);
 
@@ -142,21 +150,23 @@ for(int chip=0; chip<1;chip++){
     }
    }
 
- Double_t histAdded = 0;
+ histAdded = 0;
+ histAdded2 = 0;
  bool histOK = false;
 
     for(int atten=0;atten<16;atten++) {
       for(int chip=0; chip<1;chip++){
 	//histAdded = histAdded + histAttenDiffOpt[atten][chip]->GetMean()*histAttenDiffOpt[atten][chip]->GetMean();
+
 	histAdded = histAdded + histAttenDiffOpt[atten][chip]->GetMean();
-	//histAdded = histAdded + histAttenDiffOpt[atten][chip]->GetRMS()* histAttenDiffOpt[atten][chip]->GetRMS();
+	histAdded2 = histAdded + histAttenDiffOpt[atten][chip]->GetRMS()* histAttenDiffOpt[atten][chip]->GetRMS();
 	  histOK = true;
 	}
       }
  
 
     if(histOK){
-      minValue = histAdded*histAdded;
+      minValue = histAdded*histAdded+ histAdded2*histAdded2;
       //minValue = histAdded;
     }else{
        minValue = 10000;
@@ -184,8 +194,8 @@ for(int chip=0; chip<1;chip++){
    //delete labChipVec;
    //delete deltaTVec;
 
-    cout << "deltaR  " << deltaR[0] << "  "  << deltaHeading[0] << "  minValue  " << minValue << std::endl;
-   //cout << "The sum of the rings  " <<  minValue  << endl;
+   //    cout << "deltaR  " << deltaR[0] << "  "  << deltaHeading[0] << "  minValue  " << minValue << std::endl;
+   cout << "The sum of the rings  " <<  histAdded  << " RMS  " << histAdded2<< " min value "<< minValue <<endl;
    return minValue;
 }
 
