@@ -13,7 +13,7 @@ void antCorrelation()
   gSystem->Load("libAnitaEvent.so");
    gSystem->Load("libAnitaCorrelator.so");
    TChain *deltaTTree = new TChain("deltaTTree");
-   deltaTTree->Add("../../outFiles/deltaTFile18.root");
+   deltaTTree->Add("../outFiles/deltaTFile18.root");
    
    AnitaGeomTool *fGeomTool = AnitaGeomTool::Instance();
 
@@ -47,8 +47,10 @@ void antCorrelation()
 
 
 gSystem->CompileMacro("correlationTreeLoopOpt.C","k");
- correlationTreeLoopOpt(18,"http://www.hep.ucl.ac.uk/uhen/anita/private/monitor2/runs/fromLoki/","../../outFiles/","../../outFiles/",deltaR,deltaZ,deltaPhi,deltaHeading);
+// correlationTreeLoopOpt(18,"http://www.hep.ucl.ac.uk/uhen/anita/private/monitor2/runs/fromLoki/","../../outFiles/","../../outFiles/",deltaR,deltaZ,deltaPhi,deltaHeading);
 
+
+correlationTreeLoopOpt(18,"/unix/anita3/flight0809/root/","../outFiles/","../outFiles/",deltaR,deltaZ,deltaPhi,deltaHeading);
 
    char plotCond[180];
    char plotTitle[180];
@@ -82,7 +84,8 @@ gSystem->CompileMacro("correlationTreeLoopOpt.C","k");
 //       //fitty->SetParLimits(2,0,1);
 // 	 // sprintf(plotCond,"((firstAnt==%d && secondAnt==%d))  && labChip==%d && (corPeak/corRMS)>6",leftAnt,middleAnt,chip);	 
 // 	 //sprintf(plotCond,"((firstAnt==%d && secondAnt==%d))  && labChip==%d && (corPeak/corRMS)>6",middleAnt,leftAnt,chip);	 
-       sprintf(plotCond,"((firstAnt==%d && secondAnt==%d) && labChip==%d) ",middleAnt,rightAnt,chip);	 
+       //sprintf(plotCond,"((firstAnt==%d && secondAnt==%d) && labChip==%d) ",middleAnt,rightAnt,chip);	 
+       sprintf(plotCond,"((firstAnt==%d && secondAnt==%d)) ",middleAnt,rightAnt);	 
  	 sprintf(plotTitle,"Ant %d -  Ant %d",middleAnt,rightAnt);
  	 sprintf(histName,"histDt_%d_%d",ant,chip);
  	 sprintf(histNameOpt,"histDtOpt_%d_%d",ant,chip);
