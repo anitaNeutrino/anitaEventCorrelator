@@ -3,7 +3,7 @@
 //TTree *adu5PatTree; 
 //TTree *corTree; 
 
-void runAntOpt(Int_t antIn1, Int_t antIn2) {
+void runAntOpt() {
   gSystem->AddIncludePath("-I${ANITA_UTIL_INSTALL_DIR}/include");
 
    double startVal=0;               
@@ -26,23 +26,23 @@ void runAntOpt(Int_t antIn1, Int_t antIn2) {
    gSystem->CompileMacro("antOpt.C","k");
    gSystem->CompileMacro("correlationTreeLoopOpt.C","k");
   
-  ifstream optFile("optFile.txt");
+//   ifstream optFile("optFile.txt");
      
-  if (optFile.fail()) {
-    cout << "optFile.txt" << "  file  NOT FOUND" << endl;
-    return 1;
-  }
+//   if (optFile.fail()) {
+//     cout << "optFile.txt" << "  file  NOT FOUND" << endl;
+//     return 1;
+//   }
   
-  else{
+//   else{
     
   Double_t deltaROut=0;    
   Double_t deltaZOut=0;    
   Double_t deltaPhiOut=0;    
-  optFile >> deltaROut;
-  optFile >> deltaZOut;
-  optFile >> deltaPhiOut;
+//   optFile >> deltaROut;
+//   optFile >> deltaZOut;
+//   optFile >> deltaPhiOut;
 
-  optFile.close();
+//   optFile.close();
   ofstream optFileOut("optFile.txt");
 
    Double_t relDeltaOut=0;
@@ -67,7 +67,7 @@ void runAntOpt(Int_t antIn1, Int_t antIn2) {
  char deltaZPar[100];
  char deltaPhiPar[100];
 
-  for(int r = 0; r < 1; r++){
+  for(int r = 0; r < 16; r++){
     sprintf(deltaRPar,"deltaR%d",r);
     myMin->DefineParameter(r, deltaRPar, startVal, stepSize, minVal, maxVal);
   }
@@ -80,11 +80,11 @@ void runAntOpt(Int_t antIn1, Int_t antIn2) {
   
   for(int phi = 0; phi < 16; phi++){
     sprintf(deltaPhiPar,"deltaPhi%d",phi);
-    myMin->DefineParameter(phi+1, deltaPhiPar, startVal, stepSize, minVal, maxVal);
-    myMin->FixParameter(phi+1);  
+     myMin->DefineParameter(phi+16, deltaPhiPar, startVal, stepSize, minVal, maxVal);
+    //myMin->FixParameter(phi+1);  
   }
  
-  myMin->DefineParameter(18, "deltaHeading", startVal, stepSize, minVal, maxVal);
+  // myMin->DefineParameter(18, "deltaHeading", startVal, stepSize, minVal, maxVal);
 
   //myMin->DefineParameter(33, "ant", antIn1, stepSize, antIn1-1, antIn1+1);
 
@@ -217,7 +217,7 @@ Double_t deltaHeading,deltaHeading;
    //myMin->GetParameter(6,relDeltaPhi,relDeltaPhiErr);
    
    for(int r = 0; r < 16; r++){
-     myMin->GetParameter(0,deltaR[r],deltaRErr[r]);
+     myMin->GetParameter(r,deltaR[r],deltaRErr[r]);
    }
    
    for(int z = 0; z < 16; z++){
@@ -225,10 +225,10 @@ Double_t deltaHeading,deltaHeading;
    }
 
    for(int phi = 0; phi < 16; phi++){
-      myMin->GetParameter(phi+1,deltaPhi[phi],deltaRErr[phi]);
+      myMin->GetParameter(phi+16,deltaPhi[phi],deltaRErr[phi]);
    }
 
-      myMin->GetParameter(18,deltaHeading,deltaHeading);
+   // myMin->GetParameter(18,deltaHeading,deltaHeading);
 
    //Double_t testIn1[7] = {deltaR,relDelta,antIn1,deltaZ,relDeltaZ,deltaPhi,relDeltaPhi};
    //Double_t testIn2[7] = {0,0,antIn1,0,0,0,0};
@@ -256,7 +256,7 @@ Double_t deltaHeading,deltaHeading;
    optFileOut.close();
    myMin->DeleteArrays();
 
-  }
+   //  }
 
 }
 
