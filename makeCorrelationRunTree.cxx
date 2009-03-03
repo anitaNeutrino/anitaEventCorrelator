@@ -1,6 +1,7 @@
 #include "AnitaConventions.h"
 #include "PrettyAnitaEvent.h"
 #include "RawAnitaEvent.h"
+#include "CalibratedAnitaEvent.h"
 #include "RawAnitaHeader.h"
 #include "PrettyAnitaHk.h"
 #include "AnitaGeomTool.h"
@@ -27,7 +28,7 @@ int main(int argc, char **argv) {
   }
   std::cout << "Making correlation summary tree for run: " << run << "\n";
   // makeCorrelationRunTree(run,0,"/Users/simonbevan/Desktop/","/Users/simonbevan/ANITA/outfiles/");
-makeCorrelationRunTree(run,0,"http://www.hep.ucl.ac.uk/uhen/anita/private/monitor2/runs/fromLoki/","/home/rjn/anita/data/corTrees");
+  makeCorrelationRunTree(run,0,"/unix/anita3/flight0809/root","/unix/anita3/rjn/corTrees");
 
 }
   
@@ -35,22 +36,35 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
   //AnitaGeomTool *fGeomTool = 
   //  AnitaGeomTool::Instance();
 
+
   char eventName[FILENAME_MAX];
   char headerName[FILENAME_MAX];
   //  char hkName[FILENAME_MAX];
   char gpsName[FILENAME_MAX];
   char outName[FILENAME_MAX];
-  sprintf(eventName,"%s/run%d/eventFile%d.root",baseDir,run,run);
+  sprintf(eventName,"%s/run%d/calEventFile%d*.root",baseDir,run,run);
   sprintf(headerName,"%s/run%d/headFile%d.root",baseDir,run,run);
   sprintf(gpsName,"%s/run%d/gpsFile%d.root",baseDir,run,run);
 
+  Int_t useCalibratedFiles=0;
+
   RawAnitaEvent *event = 0;
+  CalibratedAnitaEvent *calEvent = 0;
   RawAnitaHeader *header =0;
   Adu5Pat *pat = 0;
   
   TChain *eventChain = new TChain("eventTree");
   eventChain->Add(eventName);
-  eventChain->SetBranchAddress("event",&event);
+
+  if(eventChain->GetEntries()>0) {
+    eventChain->SetBranchAddress("event",&calEvent);
+    useCalibratedFiles=1;
+  }
+  else {
+    sprintf(eventName,"%s/run%d/eventFile%d*.root",baseDir,run,run);
+    eventChain->Add(eventName);
+    eventChain->SetBranchAddress("event",&event);
+  }
 
   TFile *fpHead = TFile::Open(headerName);
   TTree *headTree = (TTree*) fpHead->Get("headTree");
@@ -106,21 +120,27 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
      eventChain->GetEntry(entry);
      adu5PatTree->GetEntry(entry);
      
+     PrettyAnitaEvent *realEvent=0;
+     if(useCalibratedFiles) {
+       realEvent = new PrettyAnitaEvent(calEvent);
+     }
+     else {
+       realEvent = new PrettyAnitaEvent(event,WaveCalType::kVTFullAGCrossCorClock,header);
+     }
+     labChip=realEvent->getLabChip(1);
      
-     PrettyAnitaEvent realEvent(event,WaveCalType::kVTFullAGCrossCorClock,header); 
- labChip=event->getLabChip(1);
-
-   UsefulAdu5Pat usefulPat(pat);
+     UsefulAdu5Pat usefulPat(pat);
      usefulPat.getThetaAndPhiWaveWillySeavey(thetaWave,phiWave);
-     int ant=realEvent.getMaxAntenna(AnitaPol::kVertical);
+     int ant=realEvent->getMaxAntenna(AnitaPol::kVertical);
      //     int ant=fGeomTool->getUpperAntNearestPhiWave(phiWave);
      Double_t deltaT= 1. / (2.6*16);
      //     std::cout << deltaT << std::endl;
      //     if(entry%100==0)
      //       std::cout << ant << "\t" << realEvent.getMaxAntenna(AnitaPol::kVertical) << std::endl;
-     theCor =realEvent.getCorrelationSummary(ant,AnitaPol::kVertical,deltaT);
+     theCor =realEvent->getCorrelationSummary(ant,AnitaPol::kVertical,deltaT);
      corTree->Fill();     
      delete theCor;
+     delete realEvent;
   }
   std::cerr << "\n";
   corTree->AutoSave();
