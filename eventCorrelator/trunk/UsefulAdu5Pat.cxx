@@ -28,8 +28,9 @@ UsefulAdu5Pat::UsefulAdu5Pat()
    fPhiWave=0;
    fSourceLongitude=-1;
    fSourceLatitude=-1;
-   if(!fUPGeomTool)
+   if(!fUPGeomTool){
       fUPGeomTool=AnitaGeomTool::Instance();
+   }
 }
 
 UsefulAdu5Pat::UsefulAdu5Pat(Adu5Pat *patPtr)
@@ -39,8 +40,10 @@ UsefulAdu5Pat::UsefulAdu5Pat(Adu5Pat *patPtr)
    fPhiWave=0;
    fSourceLongitude=-1;
    fSourceLatitude=-1;
-   if(!fUPGeomTool)
+   if(!fUPGeomTool){
       fUPGeomTool=AnitaGeomTool::Instance();
+      std::cout << "making the geom" << std::endl;
+   }
 }
 
 
@@ -55,6 +58,18 @@ void UsefulAdu5Pat::getThetaAndPhiWaveWillySeavey(Double_t &thetaWave, Double_t 
    return getThetaAndPhiWave(AnitaLocations::LONGITUDE_SURF_SEAVEY,AnitaLocations::LATITUDE_SURF_SEAVEY,AnitaLocations::ALTITUDE_SURF_SEAVEY,thetaWave,phiWave);
 }
 
+void UsefulAdu5Pat::getThetaAndPhiWaveWillyBorehole(Double_t &thetaWave,Double_t &phiWave)
+{
+   return getThetaAndPhiWave(AnitaLocations::LONGITUDE_BH,AnitaLocations::LATITUDE_BH,AnitaLocations::ALTITUDE_BH,thetaWave,phiWave);
+}
+
+
+void UsefulAdu5Pat::getThetaAndPhiWaveTaylorDome(Double_t &thetaWave, Double_t &phiWave)
+{   
+   return getThetaAndPhiWave(AnitaLocations::LONGITUDE_TD,AnitaLocations::LATITUDE_TD,AnitaLocations::ALTITUDE_TD,thetaWave,phiWave);
+}
+
+
 
 int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat)
 {
@@ -63,7 +78,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWav
   if(fThetaWave!=thetaWave) fThetaWave=thetaWave;
 
   //returns 1 if successful, 0 is not possible
-  std::cout << "lat " << latitude << " lon " << longitude << " alt " << altitude << std::endl;
+  std::cout << "ANITA lat " << latitude << " lon " << longitude << " alt " << altitude << std::endl;
   std::cout << "phi " << phiWave  << " (" << phiWave*180/TMath::Pi()<< ") theta " << thetaWave << " (" << thetaWave*180/TMath::Pi() << ")" << std::endl;
    Double_t thetaBalloon=fUPGeomTool->getThetaFromLat(TMath::Abs(latitude));
    Double_t phiBalloon=fUPGeomTool->getPhiFromLon(longitude);
@@ -74,17 +89,24 @@ int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWav
    //Now need to take account of balloon heading
    //Will have to check heading at some point
 
-//    if(heading>=0 && heading<=360) {
-//      //     tempPhiWave-=heading*TMath::DegToRad();
-//      tempPhiWave=heading*TMath::DegToRad()-tempPhiWave;
-//       if(tempPhiWave<0)
-// 	 tempPhiWave+=TMath::TwoPi();
-//    }
+   //double tempphi2 = tempPhiWave;
+   //   if(heading>=0 && heading<=360) {
+   // //     tempPhiWave-=heading*TMath::DegToRad();
+   // tempphi2=heading*TMath::DegToRad()-tempphi2;
+   // if(tempphi2<0)
+   // tempphi2+=TMath::TwoPi();
+   //}
+
+
+	   
+   std::cout << "ANITA heading " << heading << " " << fUPGeomTool->fHeadingRotationAxis.Mag() << " " << fUPGeomTool->gpsPlaneFromVertical[0] << " " << fUPGeomTool->gpsPlaneFromVertical[1] << " " << fUPGeomTool->gpsPlaneFromVertical[2] << std::endl;
+   std::cout << fUPGeomTool->fHeadingRotationAxis[0] << " " << fUPGeomTool->fHeadingRotationAxis[1] << " " << fUPGeomTool->fHeadingRotationAxis[2] << " " << std::endl;
+   
    if(heading>=0 && heading<=360) {
      TVector3 arbDir;
-     arbDir.SetMagThetaPhi(1,tempThetaWave,tempPhiWave);
+     arbDir.SetMagThetaPhi(1,tempThetaWave,-1*tempPhiWave);
      arbDir.Rotate(heading*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
-     arbDir.Rotate(roll*TMath::DegToRad(),fUPGeomTool->fRollRotationAxis);
+     arbDir.Rotate(roll*TMath::DegToRad(),fUPGeomTool->fRollRotationAxis);//roll and pitch
      arbDir.Rotate(pitch*TMath::DegToRad(),fUPGeomTool->fPitchRotationAxis);
 
      tempPhiWave=arbDir.Phi();
@@ -97,10 +119,11 @@ int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWav
      tempThetaWave=arbDir.Theta();
    }
    else std::cout << "heading bad" << std::endl;
-     
+   //std::cout << "heading " << heading << std::endl;
+   //std::cout << tempPhiWave << " " << tempphi2 << std::endl;
    
-   Double_t re=balloonHeight-altitude+2000;
-   //Double_t re=balloonHeight-altitude;
+   //Double_t re=balloonHeight-altitude+2000;
+   Double_t re=balloonHeight-altitude;
    Double_t reh=balloonHeight;
    Double_t costw=TMath::Cos(tempThetaWave);
    Double_t sqrtArg=(reh*reh*costw*costw - (reh*reh-re*re));
@@ -195,7 +218,7 @@ void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, D
      TVector3 arbDir;
      arbDir.SetMagThetaPhi(1,thetaWave,phiWave);
      arbDir.Rotate(heading*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
-     arbDir.Rotate(roll*TMath::DegToRad(),fUPGeomTool->fRollRotationAxis);
+     arbDir.Rotate(roll*TMath::DegToRad(),fUPGeomTool->fRollRotationAxis);//roll and pitch
      arbDir.Rotate(pitch*TMath::DegToRad(),fUPGeomTool->fPitchRotationAxis);
 
      phiWave=arbDir.Phi();
@@ -220,10 +243,12 @@ void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, D
 Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt)
 {
 
+  //std::cout << "before " << sourceLon << " " << sourceLat << " " << sourceAlt << std::endl;
    Double_t tempTheta,tempPhi;
    if(fSourceAltitude!=sourceAlt || fSourceLongitude!=sourceLon || fSourceLatitude!=sourceLat)
       getThetaAndPhiWave(sourceLon,sourceLat,sourceAlt,tempTheta,tempPhi);
 
+   ///std::cout << "after " << sourceLon << " " << sourceLat << " " << sourceAlt << std::endl;
 
    //Now fThetaWave and fPhiWave should be correctly set.
    Double_t phi1=fUPGeomTool->getAntPhiPositionRelToAftFore(ant1);
@@ -240,6 +265,7 @@ Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t source
    
    return  1e9*((TMath::Cos(fThetaWave) * (part1 - part2))/C_LIGHT);    //returns time in ns
 }
+
 
 
 Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t phiWave, Double_t thetaWave)

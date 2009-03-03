@@ -1191,3 +1191,105 @@ CorrelationSummary *PrettyAnitaEvent::getCorrelationSummary(Int_t centreAnt,Anit
    return theSum;
 }
 
+/*
+
+#define NUM_BINS_PHI 10
+#define NUM_BINS_THETA 10
+#define NUM_ANTS 2
+
+TCanvas *PrettyAnitaEvent::getTwoAntMap(int ant1,int ant2){
+
+  gStyle->SetPalette(1);
+
+  //Double_t inch=0.0254;//inch in m
+  //antenna centre locations from anita note 345.  The coordinates noted are radius to centre of antenna (centre of base) - NEED TO ADJUST FOR PHASE CENTRE ACTUALLY BEING 17.5 CM INTO ANTENNA - and azimuth (az) angle. uses inches and degrees... only upper ring at the moment
+  //Double_t antennaCentres[16][2]={{56.831,-45.100},{56.77,-0.363},{56.464,44.59},{56.164,89.801},{56.012,135.095},{56.387,-179.576},{56.59,-134.46},{56.884,-89.728},{50.249,-67.471},{50.218,-22.571},{50.126,22.239},{49.823,67.286},{49.61,112.537},{49.667,157.928},{49.973,-157.101},{50.219,-112.091}};
+  //for(int i=0;i<16;i++){
+  //  antennaCentres[i][1]+=0.363;//so that everything is calibrated wrt antenna 2
+  //  antennaCentres[i][0]/=inch;
+  //  antennaCentres[i][0]-=17.5;//converts to phase centre from antenna centre
+  //  antennaCentres[i][1]=antennaCentres[i][1]*PI/180; 
+  //}
+
+  Double_t PI=3.14159;
+
+  //setup the phi and theta arrays, phi from -pi to pi, theta from -pi/2 to pi/2
+  Double_t phiArray[NUM_BINS_PHI];
+  Double_t thetaArray[NUM_BINS_THETA];
+  for(UInt_t i=0;i<NUM_BINS_PHI;i++){
+    phiArray[i] = (i+1/2) * 2*PI/NUM_BINS_PHI - PI;
+  }
+  for(UInt_t i=0;i<NUM_BINS_PHI;i++){
+    thetaArray[i] =(i+1/2) * PI/NUM_BINS_PHI - PI/2;
+  }
+
+  //time relative to phi sector 1 (ant 2 and 20)
+  Double_t timeRel[NUM_BINS_PHI][NUM_BINS_THETA][NUM_ANTS];
+  Double_t gainRel[NUM_BINS_PHI][NUM_BINS_THETA][NUM_ANTS];
+
+  for(int phi=0;phi<NUM_BINS_PHI;phi++){
+    for(int theta=0;theta<NUM_BINS_THETA;theta++){
+
+      timeRel[phi][theta] = UsefulAdu5Pat::getDeltaTExpected(ant1,ant2,phiArray[phi],thetaArray[theta],10.);
+
+    }
+  }
+
+  Double_t deltaT=1/(2.6*8);
+
+  TGraph *gr[NUM_ANTS]={0};
+
+  gr[0] = getInterpolatedGraph(AnitaGeomTool::getChanFromAntPol(ant1,AnitaPol::kVertical),deltaT);
+  gr[1] = getInterpolatedGraph(AnitaGeomTool::getChanFromAntPol(ant2,AnitaPol::kVertical),deltaT);
+
+  Int_t numBins=gr[0]->GetN();
+
+  Double_t maxPeak[NUM_BINS_PHI][NUM_BINS_THETA];
+  Double_t testPeak;
+  Double_t testX[NUM_ANTS]={0};
+  Double_t testY[NUM_ANTS]={0};
+
+  for(int phi=0;phi<NUM_BINS_PHI;phi++){
+    for(int theta=0;theta<NUM_BINS_THETA;theta++){
+
+      maxPeak[phi][theta]=0.;
+      testPeak=0.;
+
+      Int_t binShift=static_cast<Int_t>((timeRel[phi][theta][ant2]-timeRel[phi][theta][ant1])/deltaT);
+
+      for(int bin=0;bin<numBins;bin++){
+
+	if((bin+binShift)<0) continue;
+	if((bin+binShift)>numBins) continue;
+
+	gr[0]->GetPoint(bin,testX[0],testY[0]);
+	gr[1]->GetPoint(bin+binShift,testX[1],testY[1]);
+
+	testPeak=testY[0]+testY[1];
+	if(testPeak>maxPeak[phi][theta]) maxPeak[phi][theta]=testPeak;
+
+
+      }
+     
+    }
+  }
+
+  TCanvas *canvas = (TCanvas*) gROOT->FindObject("twoAntCorr");
+  if(!canvas) {
+    canvas = new TCanvas("twoAntCorr","twoAntCorr",600,500);
+  }
+
+  TH2F *corrPlot = new TH2F("Two Ant Correlation","Two Ant Correlation",NUM_BINS_PHI,0,2*PI,NUM_BINS_THETA,-PI/2,PI/2);
+
+  for(int phi=0;phi<NUM_BINS_PHI;phi++){
+    for(int theta=0;theta<NUM_BINS_THETA;theta++){
+      corrPlot->Fill(phiArray[phi],thetaArray[theta],maxPeak[phi][theta]);
+    }
+  }
+
+  corrPlot->Draw("colz");
+
+  return canvas;
+
+}
+*/
