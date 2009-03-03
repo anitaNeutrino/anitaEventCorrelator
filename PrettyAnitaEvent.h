@@ -187,6 +187,7 @@ class PrettyAnitaEvent: public UsefulAnitaEvent
     \return A pointer to the TCanvas with the interpolated waveforms.
   */  
   TCanvas *getSixInterpolatedCorrelationCanvas(int ant, AnitaPol::AnitaPol_t pol,Double_t deltaT=(1./(2.6*8)), TCanvas *can=0);
+  //TCanvas *getTwoAntMap(int ant1,int ant2);
 
 
   //Graph getters

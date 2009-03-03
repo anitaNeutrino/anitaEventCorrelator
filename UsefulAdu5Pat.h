@@ -55,6 +55,18 @@ class UsefulAdu5Pat: public Adu5Pat
     \param thetaWave Reference to a Fouble_t in which to store the elevation angle of plane wave (in payload centric coordinates)
   */
   void getThetaAndPhiWaveWillySeavey(Double_t &thetaWave, Double_t &phiWave);
+  //! For a the Williams Field borehole antenna calculates the payload centric azimuthal and elevation angles of the plane wave incident at the payload.
+  /*!    
+    \param phiWave Reference to a Fouble_t in which to store the azimuthal angle of plane wave (in payload centric coordinates)
+    \param thetaWave Reference to a Fouble_t in which to store the elevation angle of plane wave (in payload centric coordinates)
+  */
+  void getThetaAndPhiWaveWillyBorehole(Double_t &thetaWave,Double_t &phiWave);
+  //! For a the Taylor Dome seavey antenna calculates the payload centric azimuthal and elevation angles of the plane wave incident at the payload.
+  /*!    
+    \param phiWave Reference to a Fouble_t in which to store the azimuthal angle of plane wave (in payload centric coordinates)
+    \param thetaWave Reference to a Fouble_t in which to store the elevation angle of plane wave (in payload centric coordinates)
+  */
+  void getThetaAndPhiWaveTaylorDome(Double_t &thetaWave, Double_t &phiWave);
   //! For a given source latitude, longitude and altitude calculates the plane wave crossing time difference between two antennas.
   /*!
     \param ant1 The first antenna.
@@ -65,6 +77,7 @@ class UsefulAdu5Pat: public Adu5Pat
     \return The plane wave crossing time difference between the two antennas (t_1-t_2).
   */
   Double_t getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt); 
+
    //! Calculates the plane wave crossing time difference between two antennas for a given wave phi and theta - useful for testing prior to flight when heading etc not known/needed
   /*!
     \param ant1 The first antenna.

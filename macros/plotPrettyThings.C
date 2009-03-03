@@ -96,20 +96,22 @@ void plotPrettyThings(int run, Long64_t entry, int ant) {
 //     cout << i << "\t" << x-lastx << endl;
 //     lastx=x;
 //   }
+
+  TCanvas *can2Ant = realEvent.getTwoAntMap(4,6);
   
 
+  //TCanvas *canCor = realEvent.getSixCorrelationCanvas(ant, AnitaPol::kVertical);
 
 //  TCanvas *canWave = realEvent.getSixWaveformCanvas(ant, AnitaPol::kVertical);
-  TCanvas *canWave = realEvent.getTenWaveformCanvas(ant, AnitaPol::kVertical);
+  //TCanvas *canWave = realEvent.getTenWaveformCanvas(ant, AnitaPol::kVertical);
   //  TCanvas *canPower = realEvent.getSixPowerEnvelopeCanvas(ant, AnitaPol::kVertical);
-  TCanvas *canInter = realEvent.getSixInterpolatedCanvas(ant, AnitaPol::kVertical);
-  canInter->SetWindowSize(1200,400);
+  //TCanvas *canInter = realEvent.getSixInterpolatedCanvas(ant, AnitaPol::kVertical);
+  //canInter->SetWindowSize(1200,400);
 
 
   //  TCanvas *canFFT = realEvent.getSixFFTPowerCanvas(ant, AnitaPol::kVertical);
-  //  TCanvas *canCor = realEvent.getSixCorrelationCanvas(ant, AnitaPol::kVertical);
   //  TCanvas *canElevenCor = realEvent.getElevenCorrelationCanvas(ant, AnitaPol::kVertical);
-  TCanvas *canElevenIntCor = realEvent.getElevenInterpolationCorrelationCanvas(ant, AnitaPol::kVertical);
+  //TCanvas *canElevenIntCor = realEvent.getElevenInterpolationCorrelationCanvas(ant, AnitaPol::kVertical);
   //  TCanvas *canIntCor = realEvent.getSixInterpolatedCorrelationCanvas(ant, AnitaPol::kVertical);
   // 
 //   CorrelationSummary *corSum=realEvent.getCorrelationSummary(-1,AnitaPol::kVertical,1./(2.6*16.));

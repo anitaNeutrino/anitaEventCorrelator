@@ -66,7 +66,7 @@ void startCorrelation(int run,int eventNumber){
 
   //int entry=65000;
   char runRootDirectory[FILENAME_MAX];
-  sprintf(runRootDirectory,"/Users/Matt/WORK/antarctica08/webPlotterData/");
+  sprintf(runRootDirectory,"/unix/anita3/flight0809/root/");
 
   char headName[FILENAME_MAX];
   char eventName[FILENAME_MAX];
@@ -459,7 +459,7 @@ void plotAnitaEventMap(Adu5Pat *patPtr,double phi,double theta){
   std::cout << std::endl << "actual 4.5 " << std::endl;
   int actualLoc2 = usefulPat.getSourceLonAndLatAltZero(phi/180.*PI,7.5/180.*PI,actual2Lon,actual2Lat);
   //int sourceLoc = usefulPat.getSourceLonAndLatAltZero((phi)/180.*PI,(TMath::PiOver2()-theta)/180.*PI,sourceLon,sourceLat);
-  TImage *map = TImage::Open("/Users/Matt/WORK/eventCorrelator/trunk/macros/antarcticaIceMap.png");
+  TImage *map = TImage::Open("/home/mottram/work/eventCorrelator/macros/antarcticaIceMap.png");
 
   std::cout << "sourceLoc " << sourceLoc << " phi " << phi << " theta " << theta << " lon " << sourceLon << " lat " << sourceLat << std::endl;
   gStyle->SetMarkerColor(kBlack);
