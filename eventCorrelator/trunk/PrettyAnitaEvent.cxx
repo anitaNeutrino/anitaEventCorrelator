@@ -10,6 +10,7 @@
 
 //ANITA Includes
 #include "PrettyAnitaEvent.h"
+#include "CalibratedAnitaEvent.h"
 #include "AnitaGeomTool.h"
 #include "FFTtools.h"
 #include "FFTWComplex.h"
@@ -43,6 +44,7 @@ void CorSumFCN(Int_t& npar, Double_t*gin,
 }
 
 
+PrettyAnitaEvent::PrettyAnitaEvent(CalibratedAnitaEvent *eventPtr):UsefulAnitaEvent(eventPtr) { }
 
 PrettyAnitaEvent::PrettyAnitaEvent(RawAnitaEvent *eventPtr,WaveCalType::WaveCalType_t calType, PrettyAnitaHk *theHk):UsefulAnitaEvent(eventPtr,calType,theHk) { }
 

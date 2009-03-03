@@ -59,7 +59,7 @@ correlatorDict.C: $(CLASS_HEADERS)
 	@ rm -f *Dict* 
 	rootcint $@ -c $(CXXFLAGS) $(CLASS_HEADERS) LinkDef.h
 
-progs: makeCorrelationRunTree makeGoodCorrelationRunTree makeInitialGoodCorrelationRunTree
+progs: makeCorrelationRunTree #makeGoodCorrelationRunTree makeInitialGoodCorrelationRunTree
 
 
 makeCorrelationRunTree : $(ROOT_LIBRARY) makeCorrelationRunTree.$(SRCSUF)

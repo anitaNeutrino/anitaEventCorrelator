@@ -39,6 +39,9 @@
 #include "TGraph.h"
 #include <string>
 
+
+class CalibratedAnitaEvent;
+
 //!  This is the event class, inherited from UsefulAnitaEvent, that has a number of correlation related methods.
 /*!
   Basically this class is a good chunk of what the event correlator is all about. It inherits from UsefulAnitaEvent and can be used as a drop in replacement for the former. It provides a number of methods that do useful correlator-y stuff.
@@ -55,9 +58,10 @@ class PrettyAnitaEvent: public UsefulAnitaEvent
     \param calType The desired calibration option.
     \param theHk The hk (needed for the temperature correction of the SURF timebase).
   */
-  PrettyAnitaEvent(RawAnitaEvent *eventPtr,WaveCalType::WaveCalType_t calType, PrettyAnitaHk *theHk);
-
-  PrettyAnitaEvent(RawAnitaEvent *eventPtr,WaveCalType::WaveCalType_t calType, RawAnitaHeader *headPtr);
+   PrettyAnitaEvent(CalibratedAnitaEvent *calPtr);
+   PrettyAnitaEvent(RawAnitaEvent *eventPtr,WaveCalType::WaveCalType_t calType, PrettyAnitaHk *theHk);
+   
+   PrettyAnitaEvent(RawAnitaEvent *eventPtr,WaveCalType::WaveCalType_t calType, RawAnitaHeader *headPtr);
 
 
   //Putative Analysis methods
