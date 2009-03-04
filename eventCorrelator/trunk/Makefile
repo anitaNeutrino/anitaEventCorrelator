@@ -6,8 +6,8 @@
 include Makefile.arch
 
 #Site Specific  Flags
-SYSINCLUDES	= -I/sw/include
-SYSLIBS         = -L/sw/lib
+SYSINCLUDES	= 
+SYSLIBS         = -L/unix/anita/software/install/lib -lprofiler -ltcmalloc
 
 ifdef ANITA_UTIL_INSTALL_DIR
 ANITA_UTIL_LIB_DIR=${ANITA_UTIL_INSTALL_DIR}/lib

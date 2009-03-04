@@ -16,6 +16,7 @@
 #include "TF1.h"
 #include "TStyle.h"
 #include "TSystem.h"
+#include "TStopwatch.h"
 #include <iostream>
 #include <fstream>
 
@@ -26,46 +27,61 @@ int main(int argc, char **argv) {
   if(argc>1) {
     run=atoi(argv[1]);
   }
+  int numEnts=0;
+  if(argc>2) {
+    numEnts=atoi(argv[2]);
+  }
   std::cout << "Making correlation summary tree for run: " << run << "\n";
   // makeCorrelationRunTree(run,0,"/Users/simonbevan/Desktop/","/Users/simonbevan/ANITA/outfiles/");
-  makeCorrelationRunTree(run,0,"/unix/anita3/flight0809/root","/unix/anita3/rjn/corTrees");
+  TStopwatch stopy;
+  stopy.Start();
+  makeCorrelationRunTree(run,numEnts,"/unix/anita3/flight0809/root","/unix/anita3/rjn/corTreesSlow");
+  stopy.Stop();
+  std::cout << "Run " << run << "\t" << numEnts << " events \n";
+  std::cout << "CPU Time: " << stopy.CpuTime() << "\t" << "Real Time: "
+	    << stopy.RealTime() << "\n";
 
 }
   
 void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
-  //AnitaGeomTool *fGeomTool = 
-  //  AnitaGeomTool::Instance();
-
-
+  
   char eventName[FILENAME_MAX];
   char headerName[FILENAME_MAX];
-  //  char hkName[FILENAME_MAX];
   char gpsName[FILENAME_MAX];
   char outName[FILENAME_MAX];
+  
+  //The locations of the event, header and gps files 
+  // The * in the evnt file name is a wildcard for any _X files  
   sprintf(eventName,"%s/run%d/calEventFile%d*.root",baseDir,run,run);
   sprintf(headerName,"%s/run%d/headFile%d.root",baseDir,run,run);
   sprintf(gpsName,"%s/run%d/gpsFile%d.root",baseDir,run,run);
 
   Int_t useCalibratedFiles=0;
 
+  //Define and zero the class pointers
   RawAnitaEvent *event = 0;
   CalibratedAnitaEvent *calEvent = 0;
   RawAnitaHeader *header =0;
   Adu5Pat *pat = 0;
   
+  //Need a TChain for the event files as they are split in to sub files to ensure no single file is over 2GB
   TChain *eventChain = new TChain("eventTree");
   eventChain->Add(eventName);
 
+  //Here we check if there are any entries in the tree of CalibratedAnitaEvent objects
   if(eventChain->GetEntries()>0) {
+    //If there are entries we can set the branc address
     eventChain->SetBranchAddress("event",&calEvent);
     useCalibratedFiles=1;
   }
   else {
+    //If there aren't any entries we can try raw event files instead
     sprintf(eventName,"%s/run%d/eventFile%d*.root",baseDir,run,run);
     eventChain->Add(eventName);
     eventChain->SetBranchAddress("event",&event);
   }
-
+  
+  //Now open the header and GPS files
   TFile *fpHead = TFile::Open(headerName);
   TTree *headTree = (TTree*) fpHead->Get("headTree");
   headTree->SetBranchAddress("header",&header);
@@ -73,8 +89,9 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
   TFile *fpGps = TFile::Open(gpsName);
   TTree *adu5PatTree = (TTree*) fpGps->Get("adu5PatTree");
   adu5PatTree->SetBranchAddress("pat",&pat);
-
-
+  
+  //The index is necessary until we have an interpolated file
+  adu5PatTree->BuildIndex("realTime");
 
   //Make output files
   CorrelationSummary *theCor=0;
@@ -98,37 +115,45 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
   Long64_t maxEntry=headTree->GetEntries(); 
   if(numEnts && maxEntry>numEnts) maxEntry=numEnts;
 
-  Int_t starEvery=maxEntry/1000;
+  Int_t starEvery=maxEntry/10;
   if(starEvery==0) starEvery=1;
   
   std::cout <<  "There are " << maxEntry << " events to proces\n";
   for(Long64_t entry=0;entry<maxEntry;entry++) {
      if(entry%starEvery==0) std::cerr << "*";
-     //Friends only seem to work with TTree::Draw and similar commands
-     //if you are manually calling GetEntry (i.e in a loop) you must call
-     //the GetEntry for each tree separately.
-     //  eventChain->AddFriend(headTree);
-     //  eventChain->AddFriend(prettyHkTree);
-     
-     //Stupidly most do this to be perfectly safe  
 
+     //Get header
      headTree->GetEntry(entry);
+     
+     //Now cut to only process the Taylor Dome pulses
      if( (header->triggerTimeNs>0.3e6) || (header->triggerTimeNs<0.2e6) )  
-      continue; 
+       continue; 
      
-
+     //Get event
      eventChain->GetEntry(entry);
-     adu5PatTree->GetEntry(entry);
-     
+
+     //Get GPS by finding the entry closest to the trigger time
+     Long64_t bestEntry = adu5PatTree->GetEntryNumberWithBestIndex(header->triggerTime);
+     if(bestEntry>-1) 
+       adu5PatTree->GetEntry(bestEntry);
+     else {
+       std::cerr << "No GPS for event " << header->eventNumber << "\n";
+       continue;
+     }
+
+     //Now we can make a PrettyAnitaEvent (or a UsefulAnitaEvent)
      PrettyAnitaEvent *realEvent=0;
      if(useCalibratedFiles) {
+       //If we have CalibratedAnitaEvent then the constructor is just
        realEvent = new PrettyAnitaEvent(calEvent);
      }
      else {
+       //If we have RawAnitaEvent then we have to specify the calibration option
        realEvent = new PrettyAnitaEvent(event,WaveCalType::kVTFullAGCrossCorClock,header);
      }
      labChip=realEvent->getLabChip(1);
      
+     // UsefulAdu5Pat contains some generically useful GPS orientation thingies
      UsefulAdu5Pat usefulPat(pat);
      usefulPat.getThetaAndPhiWaveWillySeavey(thetaWave,phiWave);
      int ant=realEvent->getMaxAntenna(AnitaPol::kVertical);
@@ -140,7 +165,7 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
      theCor =realEvent->getCorrelationSummary(ant,AnitaPol::kVertical,deltaT);
      corTree->Fill();     
      delete theCor;
-     delete realEvent;
+     if(realEvent) delete realEvent;
   }
   std::cerr << "\n";
   corTree->AutoSave();
