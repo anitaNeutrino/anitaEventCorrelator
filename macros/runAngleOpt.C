@@ -32,13 +32,13 @@ void runAngleOpt() {
   TMinuit *myMin = new TMinuit(1);
   myMin->SetObjectFit(anglePlotterOpt);
   myMin->SetFCN(iHateRoot);
-
+  //setArray();
 
   for(int u = 0; u < 1; u++){
 
-    int middle = 0;
+    int middle = 16;
 
-      for(int y = 0; y <16; y++){
+      for(int y = 16; y <32; y++){
 
 	int leftOpt, rightOpt;
 	fGeomTool->getThetaPartners(middle,leftOpt,rightOpt); 
@@ -61,8 +61,12 @@ void runAngleOpt() {
 
 	setValue(rightOpt,deltaT);
 
-	cout << middle << "  " << rightOpt << "  " << deltaT << endl;
+	//	printArray();
+
+	//	cout << middle << "  " << rightOpt << "  " << deltaT << endl;
   
+	cout << "deltaTArrayMod[" << rightOpt << "] = " << deltaT << ";" << endl;
+
 	middle = rightOpt;
 
       }
