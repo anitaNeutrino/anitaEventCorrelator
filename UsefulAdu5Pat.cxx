@@ -41,8 +41,8 @@ UsefulAdu5Pat::UsefulAdu5Pat(Adu5Pat *patPtr)
    fSourceLongitude=-1;
    fSourceLatitude=-1;
    if(!fUPGeomTool){
-      fUPGeomTool=AnitaGeomTool::Instance();
-      std::cout << "making the geom" << std::endl;
+     fUPGeomTool=AnitaGeomTool::Instance();
+     //     std::cout << "making the geom" << std::endl;
    }
 }
 
@@ -105,12 +105,14 @@ int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWav
      arbDir.SetMagThetaPhi(1,tempThetaWave,-1.*tempPhiWave);
 
      arbDir.Rotate(heading*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
-     rollAxis.Rotate(heading*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
-     pitchAxis.Rotate(heading*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
-
+     rollAxis.Rotate((heading)*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
+     pitchAxis.Rotate((heading)*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
+     //     std::cout << arbDir.Phi() << "\t" << arbDir.Theta() << "\n";
+     //     std::cout << "Pitch Axis\t" << pitchAxis.X() << " " 
+     //	       << pitchAxis.Y() << " " << pitchAxis.Z() << "\t" << pitch << "\n";
      arbDir.Rotate(pitch*TMath::DegToRad(),pitchAxis);
+     //     std::cout << arbDir.Phi() << "\t" << arbDir.Theta() << "\n";
      rollAxis.Rotate(pitch*TMath::DegToRad(),pitchAxis);
-
      arbDir.Rotate(roll*TMath::DegToRad(),rollAxis);//roll and pitch
 
      tempPhiWave=arbDir.Phi();
@@ -131,6 +133,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWav
    Double_t sqrtArg=(reh*reh*costw*costw - (reh*reh-re*re));
    if(sqrtArg<0) {
      // No solution possible
+     //     std::cout << "No solution possible\n";
      return 0;
    }
    Double_t L=reh*costw - TMath::Sqrt(sqrtArg);
@@ -163,7 +166,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWav
    
    fUPGeomTool->getLonLat(fSourcePos,sourceLon,sourceLat);
    sourceLat*=-1;
-   //std::cout << "source lat " << sourceLat << " sourceLon " << sourceLon << std::endl;
+   //   std::cout << "source lat " << sourceLat << " sourceLon " << sourceLon << std::endl;
    return 1;
 }
 
