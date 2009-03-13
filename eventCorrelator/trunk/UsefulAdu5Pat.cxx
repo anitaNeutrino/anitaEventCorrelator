@@ -228,11 +228,11 @@ void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, D
      //need to rotate roll and pitch axes - in this function heading has been
      //chosen as +ve x axis, pitch and roll axes are defined in terms of x and
      //y axes from ANITA setup document
-     rollAxis.Rotate(-135.*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
-     pitchAxis.Rotate(45.*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
+     //rollAxis.Rotate(-135.*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
+     //pitchAxis.Rotate(45.*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
 
      arbDir.Rotate(pitch*TMath::DegToRad(),pitchAxis);
-     arbDir.Rotate(roll*TMath::DegToRad(),rollAxis);
+     arbDir.Rotate(-1.*roll*TMath::DegToRad(),rollAxis);
 
 
      phiWave=arbDir.Phi();
