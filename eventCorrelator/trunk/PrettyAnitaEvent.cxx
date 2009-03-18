@@ -737,6 +737,22 @@ TGraph *PrettyAnitaEvent::getSimplePowerEnvelopeGraph(int chanIndex) {
 TGraph *PrettyAnitaEvent::getInterpolatedGraph(int chanIndex, double deltaT) {
    
    TGraph *grWave = getGraph(chanIndex);
+
+   double x = 0; double x1 = 0;
+   double y = 0; double y1 = 0;
+
+int numP =  grWave->GetN();
+
+ for(int i = 1; i < numP; i++){
+   grWave->GetPoint(i,x,y);
+     grWave->GetPoint(i-1,x1,y1);
+
+     if((x<x1)){
+       std::cout << x << "  " << x1 << "  "<< chanIndex << "  " << i << "  " << numP << "  "<< eventNumber << std::endl;
+     }
+
+ }
+
    TGraph *grInt = FFTtools::getInterpolatedGraph(grWave,deltaT);
    delete grWave;
    return grInt;      
@@ -794,9 +810,9 @@ TGraph *PrettyAnitaEvent::getCorrelation(int chanIndex1, int chanIndex2)
 
 TGraph *PrettyAnitaEvent::getCorrelationInterpolated(int chanIndex1, int chanIndex2, Double_t deltaT) 
 {
-  if(chanIndex1 <0 || chanIndex1>80)
+  if(chanIndex1 <0 || chanIndex1>89)
     std::cerr << "Invalid channel index:\t" << chanIndex1 << "\n";
-  if(chanIndex2 <0 || chanIndex2>80)
+  if(chanIndex2 <0 || chanIndex2>89)
     std::cerr << "Invalid channel index:\t" << chanIndex2 << "\n";
    TGraph *gr1 =getInterpolatedGraph(chanIndex1,deltaT);
    TGraph *gr2 = getInterpolatedGraph(chanIndex2,deltaT);
@@ -885,6 +901,79 @@ void PrettyAnitaEvent::fillNextFourAntArrays(int ant, int nextFourAnts[4])
   nextFourAnts[1]=rightRightTop;
   nextFourAnts[2]=leftLeftBottom;
   nextFourAnts[3]=rightRightBottom;
+
+}
+
+
+void PrettyAnitaEvent::fillNadirArrays(int ant, int nadirAnts[5])
+{
+  //   std::cerr << "fillSixAntArrays( " << ant << ")\n";
+ 
+  //some logic to convert from top to nadir (on or between antennas)
+
+
+
+  int nadirAntNums[NUM_PHI]={32,-1,33,-1,34,-1,35,-1,36,-1,37,-1,38,-1,39,-1};
+
+  int left = -1; int right = -1;
+  int leftLeft = -1; int rightRight = -1;
+  int centre = -1;
+  int antBottom = ant;  
+
+    if(ant<16) {
+      antBottom=AnitaGeomTool::getAzimuthPartner(ant);
+    }
+      
+    int nadir =  nadirAntNums[antBottom-16];
+
+    if(nadir == -1){
+      
+      leftLeft = -1; 
+      rightRight = -1;
+	left = nadirAntNums[antBottom-17];
+
+	if((antBottom-15)==16){
+	right = 32;
+      }else{
+	right = nadirAntNums[antBottom-15];
+      }  
+
+    }else{
+      left = -1; 
+      right = -1;
+      if(nadir==32){
+	leftLeft = 39;
+      }else{
+	leftLeft = nadir - 1;
+      }
+
+      if(nadir==39){
+	rightRight = 32;
+      }else{
+	rightRight = nadir + 1;
+      }  
+    }
+
+    //only need nadir antennas
+
+ // AnitaGeomTool::getThetaPartners(top,leftTop,rightTop);
+//   AnitaGeomTool::getThetaPartners(ant,leftBottom,rightBottom);
+//   AnitaGeomTool::getThetaPartners(leftTop,leftLeftTop,crap);
+//   AnitaGeomTool::getThetaPartners(rightTop,crap,rightRightTop);
+//   AnitaGeomTool::getThetaPartners(leftBottom,leftLeftBottom,crap);
+//   AnitaGeomTool::getThetaPartners(rightBottom,crap,rightRightBottom);
+
+//   //  std::cout << top << "\t" << bottom << std::endl;
+//   AnitaGeomTool::getThetaPartners(nadir,leftTop,rightTop);
+	nadirAnts[0]=leftLeft;
+	nadirAnts[1]=rightRight;
+	nadirAnts[2]=left;
+	nadirAnts[3]=right;
+	nadirAnts[4]=nadir;
+//   nadirAnts[5]=rightRightTop;
+//   nadirAnts[6]=ant;
+//   nadirAnts[7]=top;
+  
 
 }
 
@@ -1018,8 +1107,8 @@ CorrelationSummary *PrettyAnitaEvent::getCorrelationSummary(Int_t centreAnt,Anit
   fillSixAntArrays(centreAnt,sixAnts,&(sixAnts[3]));
   int nextFourAnts[4];
   fillNextFourAntArrays(centreAnt,nextFourAnts);
-
-
+  int nadirAnts[5]={0};
+  fillNadirArrays(centreAnt,nadirAnts);
      
    
    CorrelationSummary *theSum = new CorrelationSummary(eventNumber, centreAnt, sixAnts,deltaT);
@@ -1082,14 +1171,96 @@ CorrelationSummary *PrettyAnitaEvent::getCorrelationSummary(Int_t centreAnt,Anit
    theSum->secondAnt[18]=nextFourAnts[3];
    
    
+   //Now Nadir
 
+   if(nadirAnts[4]!=-1){
+
+//   -  "[19]" CN - LLN
+   theSum->firstAnt[19]=nadirAnts[4];
+   theSum->secondAnt[19]=nadirAnts[0];
+
+   //   -  "[20]" CN - RRN
+   theSum->firstAnt[20]=nadirAnts[4];
+   theSum->secondAnt[20]=nadirAnts[1];
+
+  //   -  "[21]" LLN - LLB
+   theSum->firstAnt[21]=nadirAnts[4];
+   theSum->secondAnt[21]=nextFourAnts[2];
+
+  //  -  "[22]" LLN - LB
+   theSum->firstAnt[22]=nadirAnts[0];
+   theSum->secondAnt[22]=sixAnts[3];
+
+//   -  "[23]" CN - CB
+   theSum->firstAnt[23]=nadirAnts[4];
+   theSum->secondAnt[23]=sixAnts[4];
+
+ //   -  "[24]" CN - LB
+   theSum->firstAnt[24]=nadirAnts[4];
+   theSum->secondAnt[24]=sixAnts[3];
+
+//   -  "[25]" CN - RB
+   theSum->firstAnt[25]=nadirAnts[4];
+   theSum->secondAnt[25]=sixAnts[5];
+
+ //   -  "[26]" RRN - RB
+   theSum->firstAnt[26]=nadirAnts[1];
+   theSum->secondAnt[26]=sixAnts[5];
+
+ //   -  "[27]" RRN - RRB
+   theSum->firstAnt[27]=nadirAnts[1];
+   theSum->secondAnt[27]=nextFourAnts[4];
+   }else{
+
+
+//   -  "[19]" LN - RN
+   theSum->firstAnt[19]=nadirAnts[2];
+   theSum->secondAnt[19]=nadirAnts[3];
+
+   //   -  "[20]" LN - LLB
+   theSum->firstAnt[20]=nadirAnts[2];
+   theSum->secondAnt[20]=nextFourAnts[2];
+
+  //   -  "[21]" LN - LB
+   theSum->firstAnt[21]=nadirAnts[2];
+   theSum->secondAnt[21]=sixAnts[3];
+
+  //  -  "[22]" LN - CB
+   theSum->firstAnt[22]=nadirAnts[2];
+   theSum->secondAnt[22]=sixAnts[4];
+
+//   -  "[23]" LN - RB
+   theSum->firstAnt[23]=nadirAnts[2];
+   theSum->secondAnt[23]=sixAnts[5];
+
+ //   -  "[24]" RN - RRB
+   theSum->firstAnt[24]=nadirAnts[3];
+   theSum->secondAnt[24]=nextFourAnts[4];
+
+//   -  "[25]" RN - RB
+   theSum->firstAnt[25]=nadirAnts[3];
+   theSum->secondAnt[25]=sixAnts[5];
+
+ //   -  "[26]" RN - CB
+   theSum->firstAnt[26]=nadirAnts[3];
+   theSum->secondAnt[26]=sixAnts[4];
+
+ //   -  "[27]" RN - LB
+   theSum->firstAnt[27]=nadirAnts[3];
+   theSum->secondAnt[27]=sixAnts[3];
+
+   }   
+   
 
 
    //Now can make correlations and find max, rms, etc.
-   for(int corInd=0;corInd<19;corInd++) {
+   for(int corInd=0;corInd<28;corInd++) {
       TGraph *grCor;
       Int_t ci1=AnitaGeomTool::getChanIndexFromAntPol(theSum->firstAnt[corInd],pol);
       Int_t ci2=AnitaGeomTool::getChanIndexFromAntPol(theSum->secondAnt[corInd],pol);
+
+      //std::cout << ci1 << " " << ci2 << "  " << corInd <<std::endl;
+
       if(deltaT==0) {
 	 grCor=getCorrelation(ci1,ci2);
       }
