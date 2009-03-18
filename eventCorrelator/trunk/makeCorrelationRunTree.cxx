@@ -23,7 +23,7 @@
 void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir=0);
 
 int main(int argc, char **argv) {
-  int run=17;
+  int run=19;
   if(argc>1) {
     run=atoi(argv[1]);
   }
@@ -32,14 +32,24 @@ int main(int argc, char **argv) {
     numEnts=atoi(argv[2]);
   }
   std::cout << "Making correlation summary tree for run: " << run << "\n";
+
   // makeCorrelationRunTree(run,0,"/Users/simonbevan/Desktop/","/Users/simonbevan/ANITA/outfiles/");
+
+  //makeCorrelationRunTree(run,0,"http://www.hep.ucl.ac.uk/uhen/anita/private/monitor2/runs/fromLoki/","/home/rjn/anita/data/corTrees");
+  // makeCorrelationRunTree(run,0,"http://www.hep.ucl.ac.uk/uhen/anita/private/monitor2/runs/fromLoki/","../outFiles/");
+
   TStopwatch stopy;
   stopy.Start();
-  makeCorrelationRunTree(run,numEnts,"/unix/anita3/flight0809/root","/unix/anita3/rjn/corTreesSlow");
+  makeCorrelationRunTree(run,0,"/Users/simonbevan/Desktop/","/Users/simonbevan/ANITA/outfiles/");
+  //  makeCorrelationRunTree(run,numEnts,"/unix/anita3/flight0809/root","/unix/anita3/rjn/corTreesSlow");
   stopy.Stop();
   std::cout << "Run " << run << "\t" << numEnts << " events \n";
   std::cout << "CPU Time: " << stopy.CpuTime() << "\t" << "Real Time: "
 	    << stopy.RealTime() << "\n";
+
+
+  
+   //makeCorrelationRunTree(run,0,"/unix/anita3/flight0809/root","/unix/anita3/rjn/corTrees");
 
 }
   
@@ -112,6 +122,10 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
   corTree->Branch("phiWave",&phiWave,"phiWave/D");
   corTree->Branch("labChip",&labChip,"labChip/I");
 
+
+  std::cout << headTree->GetEntries() << "  " << eventChain->GetEntries() << std::endl;
+
+
   Long64_t maxEntry=headTree->GetEntries(); 
   if(numEnts && maxEntry>numEnts) maxEntry=numEnts;
 
@@ -124,9 +138,10 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
 
      //Get header
      headTree->GetEntry(entry);
-     
+
+     //    if( (header->triggerTimeNs>0.4e6) || (header->triggerTimeNs<0.25e6) )  
      //Now cut to only process the Taylor Dome pulses
-     if( (header->triggerTimeNs>0.3e6) || (header->triggerTimeNs<0.2e6) )  
+          if( (header->triggerTimeNs>0.5e6) || (header->triggerTimeNs<0.2e6) )  
        continue; 
      
      //Get event
