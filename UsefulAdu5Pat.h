@@ -26,6 +26,7 @@ class UsefulAdu5Pat: public Adu5Pat
 
  public:
   UsefulAdu5Pat(); ///< Default constructor
+  UsefulAdu5Pat(Adu5Pat *patPtr, double deltaR, double doubleRL, double doubleUD); ///< Assignment constructor
   UsefulAdu5Pat(Adu5Pat *patPtr); ///< Assignment constructor
   ~UsefulAdu5Pat(); ///< Destructor
 
