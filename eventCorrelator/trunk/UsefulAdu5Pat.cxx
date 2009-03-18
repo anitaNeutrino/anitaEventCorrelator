@@ -33,6 +33,18 @@ UsefulAdu5Pat::UsefulAdu5Pat()
    }
 }
 
+UsefulAdu5Pat::UsefulAdu5Pat(Adu5Pat *patPtr,double deltaR,double deltaRL,double deltaUD)
+   : Adu5Pat(*patPtr)
+{
+   fThetaWave=0;
+   fPhiWave=0;
+   fSourceLongitude=-1;
+   fSourceLatitude=-1;
+   if(!fUPGeomTool)
+      fUPGeomTool=AnitaGeomTool::Instance();
+   fUPGeomTool->updateAnt(deltaR,deltaRL,deltaUD);
+}
+
 UsefulAdu5Pat::UsefulAdu5Pat(Adu5Pat *patPtr)
    : Adu5Pat(*patPtr)
 {
@@ -276,7 +288,7 @@ Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t source
    Double_t tanThetaW=TMath::Tan(fThetaWave);
    Double_t part1=z1*tanThetaW - r1 * TMath::Cos(fPhiWave-phi1);
    Double_t part2=z2*tanThetaW - r2 * TMath::Cos(fPhiWave-phi2);
-   
+
    return  1e9*((TMath::Cos(fThetaWave) * (part1 - part2))/C_LIGHT);    //returns time in ns
 }
 
@@ -345,7 +357,6 @@ Double_t UsefulAdu5Pat::getDeltaTTaylorOpt(Int_t ant1, Int_t ant2, Double_t *del
 
 Double_t UsefulAdu5Pat::getDeltaTExpectedOpt(Int_t ant1, Int_t ant2,Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t *deltaR, Double_t *deltaZ, Double_t *deltaPhi)
 {
-
    Double_t tempTheta,tempPhi;
    if(fSourceAltitude!=sourceAlt || fSourceLongitude!=sourceLon || fSourceLatitude!=sourceLat)
       getThetaAndPhiWave(sourceLon,sourceLat,sourceAlt,tempTheta,tempPhi);
