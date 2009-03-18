@@ -205,7 +205,7 @@ class PrettyAnitaEvent: public UsefulAnitaEvent
   
   void fillSixAntArrays(int ant, int topAnts[3], int bottomAnts[3]); ///< Utility to get neighbouring antenna numbers
   void fillNextFourAntArrays(int ant, int nextFourAnts[4]);///< Utility to get next to neighbouring antenna numbers
-
+  void fillNadirArrays(int ant, int nadirAnts[9]);
 
 #ifndef PLEASE_IGNORE_ME_DOXYGEN
   ClassDef(PrettyAnitaEvent,1); ///< ROOT's magic macro
