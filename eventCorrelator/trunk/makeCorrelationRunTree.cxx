@@ -23,7 +23,7 @@
 void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir=0);
 
 int main(int argc, char **argv) {
-  int run=19;
+  int run=17;
   if(argc>1) {
     run=atoi(argv[1]);
   }
@@ -64,7 +64,7 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
   // The * in the evnt file name is a wildcard for any _X files  
   sprintf(eventName,"%s/run%d/calEventFile%d*.root",baseDir,run,run);
   sprintf(headerName,"%s/run%d/headFile%d.root",baseDir,run,run);
-  sprintf(gpsName,"%s/run%d/gpsFile%d.root",baseDir,run,run);
+  sprintf(gpsName,"%s/run%d/gpsEvent%d.root",baseDir,run,run);
 
   Int_t useCalibratedFiles=0;
 
@@ -101,7 +101,7 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
   adu5PatTree->SetBranchAddress("pat",&pat);
   
   //The index is necessary until we have an interpolated file
-  adu5PatTree->BuildIndex("realTime");
+  //adu5PatTree->BuildIndex("realTime");
 
   //Make output files
   CorrelationSummary *theCor=0;
@@ -148,13 +148,13 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
      eventChain->GetEntry(entry);
 
      //Get GPS by finding the entry closest to the trigger time
-     Long64_t bestEntry = adu5PatTree->GetEntryNumberWithBestIndex(header->triggerTime);
-     if(bestEntry>-1) 
-       adu5PatTree->GetEntry(bestEntry);
-     else {
-       std::cerr << "No GPS for event " << header->eventNumber << "\n";
-       continue;
-     }
+     //Long64_t bestEntry = adu5PatTree->GetEntryNumberWithBestIndex(header->triggerTime);
+     //if(bestEntry>-1) 
+       adu5PatTree->GetEntry(entry);
+       //else {
+       //std::cerr << "No GPS for event " << header->eventNumber << "\n";
+       //continue;
+       // }
 
      //Now we can make a PrettyAnitaEvent (or a UsefulAnitaEvent)
      PrettyAnitaEvent *realEvent=0;
