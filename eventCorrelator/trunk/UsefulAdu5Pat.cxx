@@ -8,6 +8,7 @@
 
 #include "UsefulAdu5Pat.h"
 #include "AnitaGeomTool.h"
+#include "AnitaConventions.h"
 #include <iostream>
 #include <fstream>
 
@@ -28,6 +29,10 @@ UsefulAdu5Pat::UsefulAdu5Pat()
    fPhiWave=0;
    fSourceLongitude=-1;
    fSourceLatitude=-1;
+   fBalloonCoords[0]=0;
+   fBalloonCoords[1]=0;
+   fBalloonCoords[2]=0;
+   fBalloonHeight=0;
    if(!fUPGeomTool){
       fUPGeomTool=AnitaGeomTool::Instance();
    }
@@ -43,6 +48,14 @@ UsefulAdu5Pat::UsefulAdu5Pat(Adu5Pat *patPtr,double deltaR,double deltaRL,double
    if(!fUPGeomTool)
       fUPGeomTool=AnitaGeomTool::Instance();
    fUPGeomTool->updateAnt(deltaR,deltaRL,deltaUD);
+   fUPGeomTool->getCartesianCoords(TMath::Abs(latitude),longitude,altitude,
+				   fBalloonCoords);
+   fBalloonPos.SetXYZ(fBalloonCoords[0],fBalloonCoords[1],fBalloonCoords[2]);
+   fBalloonTheta=fBalloonPos.Theta();
+   fBalloonPhi=fBalloonPos.Phi();
+   if(fBalloonPhi<0) fBalloonPhi+=TMath::TwoPi();
+   fBalloonHeight=fBalloonPos.Mag();
+
 }
 
 UsefulAdu5Pat::UsefulAdu5Pat(Adu5Pat *patPtr)
@@ -56,6 +69,13 @@ UsefulAdu5Pat::UsefulAdu5Pat(Adu5Pat *patPtr)
      fUPGeomTool=AnitaGeomTool::Instance();
      //     std::cout << "making the geom" << std::endl;
    }
+   fUPGeomTool->getCartesianCoords(TMath::Abs(latitude),longitude,altitude,
+				   fBalloonCoords);
+   fBalloonPos.SetXYZ(fBalloonCoords[0],fBalloonCoords[1],fBalloonCoords[2]);
+   fBalloonTheta=fBalloonPos.Theta();
+   fBalloonPhi=fBalloonPos.Phi();
+   if(fBalloonPhi<0) fBalloonPhi+=TMath::TwoPi();
+   fBalloonHeight=fBalloonPos.Mag();
 }
 
 
@@ -89,9 +109,12 @@ int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWav
   if(fPhiWave!=phiWave) fPhiWave=phiWave;
   if(fThetaWave!=thetaWave) fThetaWave=thetaWave;
 
-   Double_t thetaBalloon=fUPGeomTool->getThetaFromLat(TMath::Abs(latitude));
-   Double_t phiBalloon=fUPGeomTool->getPhiFromLon(longitude);
-   Double_t balloonHeight=fUPGeomTool->getGeoid(thetaBalloon)+altitude;
+//   Double_t thetaBalloon=fUPGeomTool->getThetaFromLat(TMath::Abs(latitude));
+//   Double_t phiBalloon=fUPGeomTool->getPhiFromLon(longitude);
+//   Double_t balloonHeight=fUPGeomTool->getGeoid(thetaBalloon)+altitude;
+
+   
+
 
    Double_t tempPhiWave=phiWave;
    Double_t tempThetaWave=TMath::PiOver2()-thetaWave;
@@ -139,8 +162,8 @@ int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWav
    else std::cout << "heading bad" << std::endl;
    
    //Double_t re=balloonHeight-altitude+2000;
-   Double_t re=balloonHeight-altitude;
-   Double_t reh=balloonHeight;
+   Double_t re=fBalloonHeight-altitude;
+   Double_t reh=fBalloonHeight;
    Double_t costw=TMath::Cos(tempThetaWave);
    Double_t sqrtArg=(reh*reh*costw*costw - (reh*reh-re*re));
    if(sqrtArg<0) {
@@ -154,7 +177,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWav
 
    
 
-   //   Double_t sinSquiggle=(balloonHeight/tempRE)*TMath::Sin(tempThetaWave);
+   //   Double_t sinSquiggle=(fBalloonHeight/tempRE)*TMath::Sin(tempThetaWave);
    //   Double_t squiggle=TMath::ASin(sinSquiggle);
    //   if(squiggle<0) squiggle+=TMath::Pi();
    
@@ -171,8 +194,8 @@ int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWav
    fSourcePos.RotateZ(-1*tempPhiWave);
 
    //Rotate to correct absolute values
-   fSourcePos.RotateY(thetaBalloon);
-   fSourcePos.RotateZ(phiBalloon);
+   fSourcePos.RotateY(fBalloonTheta);
+   fSourcePos.RotateZ(fBalloonPhi);
    //Goofy sign thing
    //   fSourcePos.SetZ(-1*fSourcePos.Z());
    
@@ -185,25 +208,32 @@ int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWav
 
 
 void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave) {
-   Double_t thetaBalloon=fUPGeomTool->getThetaFromLat(TMath::Abs(latitude));
-   Double_t phiBalloon=fUPGeomTool->getPhiFromLon(longitude);
-   Double_t balloonHeight=fUPGeomTool->getGeoid(thetaBalloon)+altitude;
-   
-   Double_t thetaSource=fUPGeomTool->getThetaFromLat(TMath::Abs(sourceLat));
-   Double_t phiSource=fUPGeomTool->getPhiFromLon(sourceLon);
-   Double_t radiusSource=fUPGeomTool->getGeoid(thetaSource)+sourceAlt;
+//    Double_t thetaBalloon=fUPGeomTool->getThetaFromLat(TMath::Abs(latitude));
+//    Double_t phiBalloon=fUPGeomTool->getPhiFromLon(longitude);
+//    Double_t balloonHeight=fUPGeomTool->getGeoid(thetaBalloon)+altitude;
+//    std::cout << "Theta " << thetaBalloon << "\t" << fBalloonTheta << "\n";
+//    std::cout << "Phi " << phiBalloon << "\t" << fBalloonPhi << "\n";
 
-   //Get vector from Earth's centre to source
-   fSourcePos.SetX(radiusSource*TMath::Sin(thetaSource)*TMath::Cos(phiSource));
-   fSourcePos.SetY(radiusSource*TMath::Sin(thetaSource)*TMath::Sin(phiSource));
-   fSourcePos.SetZ(radiusSource*TMath::Cos(thetaSource));
+//    Double_t thetaSource=fUPGeomTool->getThetaFromLat(TMath::Abs(sourceLat));
+//    Double_t phiSource=fUPGeomTool->getPhiFromLon(sourceLon);
+//    Double_t radiusSource=fUPGeomTool->getGeoid(thetaSource)+sourceAlt;
+
+//    //Get vector from Earth's centre to source
+//    fSourcePos.SetX(radiusSource*TMath::Sin(thetaSource)*TMath::Cos(phiSource));
+//    fSourcePos.SetY(radiusSource*TMath::Sin(thetaSource)*TMath::Sin(phiSource));
+//    fSourcePos.SetZ(radiusSource*TMath::Cos(thetaSource));
+
+   Double_t pSource[3]={0};
+   fUPGeomTool->getCartesianCoords(TMath::Abs(sourceLat),sourceLon,sourceAlt,pSource);
+   fSourcePos.SetXYZ(pSource[0],pSource[1],pSource[2]);
+
    
-   //Rotate such that balloon is at 0,0,balloonHeight
-   fSourcePos.RotateZ(-1*phiBalloon);
-   fSourcePos.RotateY(-1*thetaBalloon);
+   //Rotate such that balloon is at 0,0,fBalloonHeight
+   fSourcePos.RotateZ(-1*fBalloonPhi);
+   fSourcePos.RotateY(-1*fBalloonTheta);
 
    //Now find thetaWave and phiWave
-   thetaWave=TMath::ATan((balloonHeight-fSourcePos.Z())/TMath::Sqrt(fSourcePos.X()*fSourcePos.X() + fSourcePos.Y()*fSourcePos.Y()));
+   thetaWave=TMath::ATan((fBalloonHeight-fSourcePos.Z())/TMath::Sqrt(fSourcePos.X()*fSourcePos.X() + fSourcePos.Y()*fSourcePos.Y()));
    
    //phiWave is just atan(yp/xp) only looks confusing to make sure I get the sign and 0-360 convention
    phiWave=0;
@@ -378,3 +408,54 @@ Double_t UsefulAdu5Pat::getDeltaTExpectedOpt(Int_t ant1, Int_t ant2,Double_t sou
 }
 
 
+UInt_t UsefulAdu5Pat::getTaylorDomeTriggerTimeNs()
+{
+   
+//    Double_t thetaBalloon=fUPGeomTool->getThetaFromLat(TMath::Abs(latitude));
+//    Double_t phiBalloon=fUPGeomTool->getPhiFromLon(longitude);
+//    Double_t balloonHeight=fUPGeomTool->getGeoid(thetaBalloon)+altitude;
+   
+//    static Double_t thetaTaylor=fUPGeomTool->getThetaFromLat(TMath::Abs(AnitaLocations::LATITUDE_TD));
+//    static Double_t phiTaylor=fUPGeomTool->getPhiFromLon(AnitaLocations::LONGITUDE_TD);
+//    static Double_t radiusTaylor=fUPGeomTool->getGeoid(thetaTaylor)+AnitaLocations::ALTITUDE_TD;
+   
+
+//    //Get vector from Earth's centre to taylor
+//    TVector3 fTaylorPos;
+//    fTaylorPos.SetX(radiusTaylor*TMath::Sin(thetaTaylor)*TMath::Cos(phiTaylor));
+//    fTaylorPos.SetY(radiusTaylor*TMath::Sin(thetaTaylor)*TMath::Sin(phiTaylor));
+//    fTaylorPos.SetZ(radiusTaylor*TMath::Cos(thetaTaylor));
+
+   static Int_t firstTime=1;   
+   static Double_t pTaylor[3]={0};
+   if(firstTime) {
+      fUPGeomTool->getCartesianCoords(TMath::Abs(AnitaLocations::LATITUDE_TD),
+				      AnitaLocations::LONGITUDE_TD,
+				      AnitaLocations::ALTITUDE_TD,
+				      pTaylor);
+   }
+
+ //   std::cout << "Old Geoid Model:\t" << fTaylorPos.x() << "\t" << fTaylorPos.y() << "\t" << fTaylorPos.z() << "\n";
+//    std::cout << "New Model:\t" << pTaylor[0] << "\t" << pTaylor[1] << "\t" << pTaylor << "\n";   
+
+   
+//    //Rotate such that balloon is at 0,0,fBalloonHeight
+//    fTaylorPos.RotateZ(-1*phiBalloon);
+//    fTaylorPos.RotateY(-1*thetaBalloon);
+//    Double_t s2=(fTaylorPos.x()*fTaylorPos.x()) + (fTaylorPos.y()*fTaylorPos.y()) + TMath::Power(fBalloonHeight-fTaylorPos.z(),2);
+   Double_t s2=(pTaylor[0]-fBalloonCoords[0])*(pTaylor[0]-fBalloonCoords[0])+
+      (pTaylor[1]-fBalloonCoords[1])*(pTaylor[1]-fBalloonCoords[1])+
+      (pTaylor[2]-fBalloonCoords[2])*(pTaylor[2]-fBalloonCoords[2]);
+   
+
+   Double_t distanceToFly=TMath::Sqrt(s2);
+   Double_t timeOfFlight=distanceToFly/C_LIGHT;
+   timeOfFlight*=1e9;
+   Double_t expTime=timeOfFlight-40e3;
+   UInt_t expTrigTime=(UInt_t)expTime;
+   
+   //   std::cout << distanceToFly << "\t" << timeOfFlight << "\n";
+   return expTrigTime;
+
+
+}

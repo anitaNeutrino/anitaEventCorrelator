@@ -129,6 +129,9 @@ class UsefulAdu5Pat: public Adu5Pat
      { return fSourceLatitude;} ///< Returns the last calculated source latitude.
   Double_t getSourceAltitude() 
      { return fSourceAltitude;} ///< Returns the last calculated source altitude.
+  
+  UInt_t getTaylorDomeTriggerTimeNs();
+
  private:
   TVector3 fSourcePos; ///< Private variable to hold the source location in cartesian coordinates.
   Double_t fSourceLongitude; ///< The source longitude.
@@ -136,6 +139,11 @@ class UsefulAdu5Pat: public Adu5Pat
   Double_t fSourceAltitude; ///< The source altitude.
   Double_t fThetaWave; ///< The elevation angle of the plane wave in payload centric coordinates.
   Double_t fPhiWave; ///< The azimuthal angle of the plane wave in payload centric coordinates with phi equals zero lying along the direction of the ADU5 fore antenna.
+  Double_t fBalloonCoords[3]; ///< The balloon position in cartesian coords
+  TVector3 fBalloonPos; ///< The cartesian coords as a TVector3
+  Double_t fBalloonTheta; ///< The balloon theta
+  Double_t fBalloonPhi; ///< The balloon phi
+  Double_t fBalloonHeight; ///< The balloon height
 
   //optimisation stuff
   Double_t getDeltaTTaylorOpt(Int_t ant1, Int_t ant2, Double_t *deltaR, Double_t *deltaZ, Double_t *deltaPhi);
