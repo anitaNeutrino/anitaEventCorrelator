@@ -40,8 +40,8 @@ int main(int argc, char **argv) {
 
   TStopwatch stopy;
   stopy.Start();
-  makeCorrelationRunTree(run,0,"/Users/simonbevan/Desktop/","/Users/simonbevan/ANITA/outfiles/");
-  //  makeCorrelationRunTree(run,numEnts,"/unix/anita3/flight0809/root","/unix/anita3/rjn/corTreesSlow");
+  //  makeCorrelationRunTree(run,0,"/Users/simonbevan/Desktop/","/Users/simonbevan/ANITA/outfiles/");
+  makeCorrelationRunTree(run,numEnts,"/unix/anita1/flight0809/root","/unix/anita1/rjn/corTrees");
   stopy.Stop();
   std::cout << "Run " << run << "\t" << numEnts << " events \n";
   std::cout << "CPU Time: " << stopy.CpuTime() << "\t" << "Real Time: "
@@ -115,13 +115,16 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
   std::cout << outName << std::endl;
   fpOut= new TFile(outName,"RECREATE");
   Double_t thetaWave,phiWave;
+  UInt_t triggerTimeNs;
+  UInt_t expTaylorTime;
   Int_t labChip;
   TTree *corTree = new TTree("corTree","Tree of Correlation Summaries");
   corTree->Branch("cor","CorrelationSummary",&theCor);
-  corTree->Branch("thetaWave",&thetaWave,"thetaWave/D");
-  corTree->Branch("phiWave",&phiWave,"phiWave/D");
+  corTree->Branch("thetaWaveExp",&thetaWave,"thetaWaveExp/D");
+  corTree->Branch("phiWaveExp",&phiWave,"phiWaveExp/D");
   corTree->Branch("labChip",&labChip,"labChip/I");
-
+  corTree->Branch("expTaylorTime",&expTaylorTime,"expTaylorTime/i");
+  corTree->Branch("triggerTimeNs",&triggerTimeNs,"triggerTimeNs/i");
 
   std::cout << headTree->GetEntries() << "  " << eventChain->GetEntries() << std::endl;
 
@@ -129,7 +132,7 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
   Long64_t maxEntry=headTree->GetEntries(); 
   if(numEnts && maxEntry>numEnts) maxEntry=numEnts;
 
-  Int_t starEvery=maxEntry/10;
+  Int_t starEvery=maxEntry/100;
   if(starEvery==0) starEvery=1;
   
   std::cout <<  "There are " << maxEntry << " events to proces\n";
@@ -141,7 +144,7 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
 
      //    if( (header->triggerTimeNs>0.4e6) || (header->triggerTimeNs<0.25e6) )  
      //Now cut to only process the Taylor Dome pulses
-          if( (header->triggerTimeNs>0.5e6) || (header->triggerTimeNs<0.2e6) )  
+     if( (header->triggerTimeNs>3e6) || (header->triggerTimeNs<0.1e6) )  
        continue; 
      
      //Get event
@@ -150,8 +153,8 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
      //Get GPS by finding the entry closest to the trigger time
      //Long64_t bestEntry = adu5PatTree->GetEntryNumberWithBestIndex(header->triggerTime);
      //if(bestEntry>-1) 
-       adu5PatTree->GetEntry(entry);
-       //else {
+     adu5PatTree->GetEntry(entry);
+     //else {
        //std::cerr << "No GPS for event " << header->eventNumber << "\n";
        //continue;
        // }
@@ -169,8 +172,17 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
      labChip=realEvent->getLabChip(1);
      
      // UsefulAdu5Pat contains some generically useful GPS orientation thingies
+     pat->pitch=0;
+     pat->roll=0;
      UsefulAdu5Pat usefulPat(pat);
-     usefulPat.getThetaAndPhiWaveWillySeavey(thetaWave,phiWave);
+     expTaylorTime=usefulPat.getTaylorDomeTriggerTimeNs();
+     triggerTimeNs=header->triggerTimeNs;
+
+     if(TMath::Abs(Double_t(expTaylorTime)-Double_t(triggerTimeNs))>1000) continue;
+
+     usefulPat.getThetaAndPhiWaveWillySeavey(thetaWave,phiWave);     
+     //     std::cout << usefulPat.getTaylorDomeTriggerTimeNs() << "\t" 
+       //	       << header->triggerTimeNs << "\n";
      int ant=realEvent->getMaxAntenna(AnitaPol::kVertical);
      //     int ant=fGeomTool->getUpperAntNearestPhiWave(phiWave);
      Double_t deltaT= 1. / (2.6*16);
