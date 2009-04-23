@@ -58,7 +58,7 @@ class PrettyAnitaEvent: public UsefulAnitaEvent
     \param calType The desired calibration option.
     \param theHk The hk (needed for the temperature correction of the SURF timebase).
   */
-   PrettyAnitaEvent(CalibratedAnitaEvent *calPtr);
+   PrettyAnitaEvent(CalibratedAnitaEvent *calPtr, WaveCalType::WaveCalType_t calType=WaveCalType::kDefault);
    PrettyAnitaEvent(RawAnitaEvent *eventPtr,WaveCalType::WaveCalType_t calType, PrettyAnitaHk *theHk);
    
    PrettyAnitaEvent(RawAnitaEvent *eventPtr,WaveCalType::WaveCalType_t calType, RawAnitaHeader *headPtr);
@@ -211,6 +211,13 @@ class PrettyAnitaEvent: public UsefulAnitaEvent
   ClassDef(PrettyAnitaEvent,1); ///< ROOT's magic macro
 #endif
 
+  void setPassBandFilterFlag( int flag) { fPassBandFilter=flag;}
+  void setNotchFilterFlag( int flag) { fPassBandFilter=flag;}
+  void setPassBandLimits(Double_t low, Double_t high)
+     { fLowPassEdge=low; fHighPassEdge=high;}
+  void setNotchBandLimits(Double_t low, Double_t high)
+     { fLowNotchEdge=low; fHighNotchEdge=high;}
+
 
  private:
   void setStyleSixCanvas(); ///< gStyle setup
@@ -218,7 +225,13 @@ class PrettyAnitaEvent: public UsefulAnitaEvent
 
   Double_t fDeltaT; ///< The interpolated sampling rate.
   Double_t fWaveOffset; ///< The difference in T0 of two channels.
-
+  Int_t fPassBandFilter; ///< Whether or not to pass band filter the interpolated waves;
+  Int_t fNotchFilter; ///< Whether or not to notch filter;
+  Double_t fLowPassEdge; ///< The lower edge of the pass band
+  Double_t fHighPassEdge; ///< The higher edge of the pass band
+  Double_t fLowNotchEdge; ///< The lower edge of the notch band
+  Double_t fHighNotchEdge; ///< The higher edge of the notch band
+  
 
 };
 

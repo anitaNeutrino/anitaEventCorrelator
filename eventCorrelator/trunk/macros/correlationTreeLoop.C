@@ -35,7 +35,8 @@ void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDi
    //   sprintf(baseDir,"http://www.hep.ucl.ac.uk/uhen/anita/private/monitor2/runs/fromLoki/");
  sprintf(eventName,"%s/run%d/eventFile%d.root",baseDir,run,run);
  sprintf(headerName,"%s/run%d/headFile%d.root",baseDir,run,run);
- sprintf(gpsName,"%s/run%d/gpsFile%d.root",baseDir,run,run);
+ sprintf(gpsName,"%s/run%d/gpsSmooth%d.root",baseDir,run,run);
+ // sprintf(gpsName,"%s/run%d/gpsEvent%d.root",baseDir,run,run);
  sprintf(corrName,"%s/corRun%d.root",corTreeDir,run);
  sprintf(outName,"%s/deltaTFile%d.root",outputDir,run);
 
@@ -77,36 +78,18 @@ void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDi
    corTree->SetBranchAddress("cor",&corSum);
    corTree->SetBranchAddress("labChip",&labChip);
 
-   // TFile *fpGp = new TFile("/unix/anita/gpLogs/gp_log_all.root");
-   //TTree *gpLogTree = (TTree*) fpGp->Get("gp_log");
-   // Double_t gpTriggerTime;
-   //Int_t antennaFlag, sgFreq;
-   //gpLogTree->SetBranchAddress("trigger_time",&gpTriggerTime);
-   //gpLogTree->SetBranchAddress("sg_freq",&sgFreq);
-   //gpLogTree->SetBranchAddress("antenna",&antennaFlag);
-   //gpLogTree->BuildIndex("trigger_time");
 
    Long64_t numEntries=corTree->GetEntries();
    int counter=0;
 
    TFile *fpOut = new TFile(outName,"RECREATE");
-//    TH1F *histSimpleDtDiff  = new TH1F("histSimpleDtDiff","All DeltaT Diffs",2000,-10,10);
-//    TH1F *histDtDiffSep[16][4][11];
-//    char histName[180];
-//    for(int ant=0;ant<16;ant++) {
-//       for(int chip=0;chip<4;chip++) {
-// 	 for(int cor=0;cor<11;cor++) {
-// 	    sprintf(histName,"histDtDiffSep%d_%d_%d",ant,chip,cor);
-// 	    histDtDiffSep[ant][chip][cor]= new TH1F(histName,histName,2000,-10,10);
-// 	 }
-//       }
-//    }
 
    Long64_t entry=0;
    UInt_t eventNumber, triggerTime, triggerTimeNs;
    Int_t firstAnt,secondAnt,maxAnt,corInd;
    Double_t deltaT,deltaTExpected;
    Double_t phiWave, phiMaxAnt;
+   Double_t thetaWave;
    Double_t corPeak, corRMS;
    Double_t balloonLat, balloonLon, balloonAlt;
    Double_t heading,pitch,roll;
@@ -120,8 +103,9 @@ void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDi
    deltaTTree->Branch("deltaTExpected",&deltaTExpected,"deltaTExpected/D");
    deltaTTree->Branch("corPeak",&corPeak,"corPeak/D");
    deltaTTree->Branch("corRMS",&corRMS,"corRMS/D");
-   deltaTTree->Branch("phiWave",&phiWave,"phiWave/D");
    deltaTTree->Branch("phiMaxAnt",&phiMaxAnt,"phiMaxAnt/D");
+   deltaTTree->Branch("phiWave",&phiWave,"phiWave/D");
+   deltaTTree->Branch("thetaWave",&thetaWave,"thetaWave/D");
    deltaTTree->Branch("eventNumber",&eventNumber,"eventNumber/i");
    deltaTTree->Branch("triggerTime",&triggerTime,"triggerTime/i");
    deltaTTree->Branch("triggerTimeNs",&triggerTimeNs,"triggerTimeNs/i");
@@ -134,7 +118,7 @@ void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDi
    deltaTTree->Branch("roll",&roll,"roll/D");
    
 
-   Double_t thetaWave;
+  // Double_t thetaWave;
 
    for(entry=0;entry<numEntries;entry++) {
   
@@ -146,33 +130,12 @@ void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDi
       headTree->GetEntry(headEntry);
      
       // if(header->triggerTimeNs*1e-9< 0.097 || header->triggerTimeNs*1e-9>0.1)
-      if( (header->triggerTimeNs>0.3e6) || (header->triggerTimeNs<0.2e6) )  
-      continue; 
 
       triggerTimeNs=header->triggerTimeNs;
       triggerTime=header->triggerTime;
       eventNumber=header->eventNumber;
-      //Long64_t gpEntry=gpLogTree->GetEntryNumberWithBestIndex(header->triggerTime);
-      //     cout << gpEntry << endl;
-      //if(gpEntry>-1) 
-      //	 gpLogTree->GetEntry(gpEntry);
-      //else 
-      //	 continue;
-     
-      //  if(antennaFlag!=1 || sgFreq!=-1) 
-      //	 continue;
 
-      //     cout << entry << "\t" << gpEntry << "\t" << header->triggerTime << "\t" << (UInt_t)gpTriggerTime << "\n";
-     
-      //eventChain->GetEntry(entry);
-      //prettyHkTree->GetEntry(entry);
-
-
-      Long64_t bestEntry = adu5PatTree->GetEntryNumberWithBestIndex(header->triggerTime);
-      if(bestEntry>-1) 
-	adu5PatTree->GetEntry(bestEntry);
-      else 
-	continue;
+      adu5PatTree->GetEntry(headEntry);
       
       
    // PrettyAnitaEvent realEvent(event,WaveCalType::kVTFullAGCrossCorClock,header);
@@ -182,15 +145,21 @@ void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDi
       heading=pat->heading;
       pitch=pat->pitch;
       roll=pat->roll;
+      //      pat->pitch=0;
+      //      pat->roll=0;
+      pat->pitch=0.64;
+      pat->roll=0.14;
       UsefulAdu5Pat usefulPat(pat);
      
       for(corInd=0;corInd<19;corInd++) {
 
 
 	//replace taylor dome
-	//	 deltaTExpected=usefulPat.getDeltaTWillySeavey(corSum->firstAnt[corInd],corSum->secondAnt[corInd]);
-	usefulPat.fSourceLongitude=0;
-	 deltaTExpected=usefulPat.getDeltaTTaylor(corSum->firstAnt[corInd],corSum->secondAnt[corInd]);
+       
+	deltaTExpected=usefulPat.getDeltaTWillySeavey(corSum->firstAnt[corInd],corSum->secondAnt[corInd]);
+	//	std::cout << deltaTExpected 
+	//	usefulPat.fSourceLongitude=0;
+	deltaTExpected=usefulPat.getDeltaTTaylor(corSum->firstAnt[corInd],corSum->secondAnt[corInd]);
 
 	 //	 histSimpleDtDiff->Fill(corSum->maxCorTimes[corInd]-deltaTExpected);
 	 int antInd=corSum->firstAnt[corInd]%16;
@@ -200,8 +169,9 @@ void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDi
 	 secondAnt=corSum->secondAnt[corInd];
 	 deltaT=corSum->maxCorTimes[corInd];
 	 maxAnt=corSum->centreAntenna;
-	 phiWave=usefulPat.getPhiWave()*TMath::RadToDeg();
 	 phiMaxAnt=fGeomTool->getAntPhiPositionRelToAftFore(corSum->centreAntenna)*TMath::RadToDeg();
+	 phiWave=usefulPat.getPhiWave()*TMath::RadToDeg();
+	 thetaWave=usefulPat.getThetaWave()*TMath::RadToDeg();
 	 corPeak=corSum->maxCorVals[corInd];
 	 corRMS=corSum->rmsCorVals[corInd];
 	 deltaTTree->Fill();
