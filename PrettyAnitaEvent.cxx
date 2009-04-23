@@ -44,11 +44,20 @@ void CorSumFCN(Int_t& npar, Double_t*gin,
 }
 
 
-PrettyAnitaEvent::PrettyAnitaEvent(CalibratedAnitaEvent *eventPtr):UsefulAnitaEvent(eventPtr) { }
+PrettyAnitaEvent::PrettyAnitaEvent(CalibratedAnitaEvent *eventPtr, WaveCalType::WaveCalType_t calType):UsefulAnitaEvent(eventPtr,calType) {
+fPassBandFilter=0;
+fNotchFilter=0;
+}
 
-PrettyAnitaEvent::PrettyAnitaEvent(RawAnitaEvent *eventPtr,WaveCalType::WaveCalType_t calType, PrettyAnitaHk *theHk):UsefulAnitaEvent(eventPtr,calType,theHk) { }
+PrettyAnitaEvent::PrettyAnitaEvent(RawAnitaEvent *eventPtr,WaveCalType::WaveCalType_t calType, PrettyAnitaHk *theHk):UsefulAnitaEvent(eventPtr,calType,theHk) {
+fPassBandFilter=0;
+fNotchFilter=0;
+}
 
-PrettyAnitaEvent::PrettyAnitaEvent(RawAnitaEvent *eventPtr,WaveCalType::WaveCalType_t calType,RawAnitaHeader *headPtr):UsefulAnitaEvent(eventPtr,calType,headPtr) { }
+PrettyAnitaEvent::PrettyAnitaEvent(RawAnitaEvent *eventPtr,WaveCalType::WaveCalType_t calType,RawAnitaHeader *headPtr):UsefulAnitaEvent(eventPtr,calType,headPtr) {
+   fPassBandFilter=0;
+   fNotchFilter=0;
+}
 
 
 TCanvas *PrettyAnitaEvent::getSixWaveformCanvas(int ant, AnitaPol::AnitaPol_t pol, TCanvas *incan) {
@@ -741,20 +750,32 @@ TGraph *PrettyAnitaEvent::getInterpolatedGraph(int chanIndex, double deltaT) {
    double x = 0; double x1 = 0;
    double y = 0; double y1 = 0;
 
-int numP =  grWave->GetN();
-
- for(int i = 1; i < numP; i++){
-   grWave->GetPoint(i,x,y);
-     grWave->GetPoint(i-1,x1,y1);
-
-     if((x<x1)){
-       std::cout << x << "  " << x1 << "  "<< chanIndex << "  " << i << "  " << numP << "  "<< eventNumber << std::endl;
+   int numP =  grWave->GetN();
+   
+   for(int i = 1; i < numP; i++){
+      grWave->GetPoint(i,x,y);
+      grWave->GetPoint(i-1,x1,y1);
+      
+      if((x<x1)){
+	 std::cout << x << "  " << x1 << "  "<< chanIndex << "  " << i << "  " << numP << "  "<< eventNumber << std::endl;
      }
-
- }
+      
+   }
 
    TGraph *grInt = FFTtools::getInterpolatedGraph(grWave,deltaT);
    delete grWave;
+   //Now for the filtering
+   if(fPassBandFilter) {
+      TGraph *grFilt = FFTtools::simplePassBandFilter(grInt,fLowPassEdge,fHighPassEdge);
+      delete grInt;
+      grInt=grFilt;
+   }
+   if(fNotchFilter) {
+      TGraph *grFilt = FFTtools::simpleNotchFilter(grInt,fLowNotchEdge,fHighNotchEdge);
+      delete grInt;
+      grInt=grFilt;
+   }
+  
    return grInt;      
 }
 
@@ -1173,11 +1194,12 @@ CorrelationSummary *PrettyAnitaEvent::getCorrelationSummary(Int_t centreAnt,Anit
    
    //Now Nadir
 
-   if(nadirAnts[4]!=-1){
-
-//   -  "[19]" CN - LLN
+   if(nadirAnts[4]>-1){
+      //      std::cout << "Here1\t" << nadirAnts[4] << "\t" << nadirAnts[0] << "\n";
+      //   -  "[19]" CN - LLN
    theSum->firstAnt[19]=nadirAnts[4];
    theSum->secondAnt[19]=nadirAnts[0];
+   //   std::cout << "Here1\t" << theSum->firstAnt[19] << "\t" << theSum->secondAnt[19] << "\n";
 
    //   -  "[20]" CN - RRN
    theSum->firstAnt[20]=nadirAnts[4];
@@ -1212,7 +1234,7 @@ CorrelationSummary *PrettyAnitaEvent::getCorrelationSummary(Int_t centreAnt,Anit
    theSum->secondAnt[27]=nextFourAnts[4];
    }else{
 
-
+      //      std::cout << "Here2\t" << nadirAnts[2] << "\t" << nadirAnts[3] << "\n";
 //   -  "[19]" LN - RN
    theSum->firstAnt[19]=nadirAnts[2];
    theSum->secondAnt[19]=nadirAnts[3];
@@ -1256,10 +1278,11 @@ CorrelationSummary *PrettyAnitaEvent::getCorrelationSummary(Int_t centreAnt,Anit
    //Now can make correlations and find max, rms, etc.
    for(int corInd=0;corInd<28;corInd++) {
       TGraph *grCor;
+      //      std::cout << corInd << "\t" << theSum->firstAnt[corInd] << "\t" << theSum->secondAnt[corInd] << "\n";
       Int_t ci1=AnitaGeomTool::getChanIndexFromAntPol(theSum->firstAnt[corInd],pol);
       Int_t ci2=AnitaGeomTool::getChanIndexFromAntPol(theSum->secondAnt[corInd],pol);
 
-      //std::cout << ci1 << " " << ci2 << "  " << corInd <<std::endl;
+      //      std::cout << nadirAnts[0] << "\t" << corInd << "\t"<< ci1 << " " << ci2 << "  " << theSum->firstAnt[corInd] << "\t" << theSum->secondAnt[corInd] <<std::endl;
 
       if(deltaT==0) {
 	 grCor=getCorrelation(ci1,ci2);

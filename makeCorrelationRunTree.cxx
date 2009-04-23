@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
   TStopwatch stopy;
   stopy.Start();
   //  makeCorrelationRunTree(run,0,"/Users/simonbevan/Desktop/","/Users/simonbevan/ANITA/outfiles/");
-  makeCorrelationRunTree(run,numEnts,"/unix/anita1/flight0809/root","/unix/anita1/rjn/corTrees");
+  makeCorrelationRunTree(run,numEnts,"/unix/anita1/flight0809/root","/unix/anita1/rjn/corTrees/seaveyTest");
   stopy.Stop();
   std::cout << "Run " << run << "\t" << numEnts << " events \n";
   std::cout << "CPU Time: " << stopy.CpuTime() << "\t" << "Real Time: "
@@ -64,11 +64,12 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
   // The * in the evnt file name is a wildcard for any _X files  
   sprintf(eventName,"%s/run%d/calEventFile%d*.root",baseDir,run,run);
   sprintf(headerName,"%s/run%d/headFile%d.root",baseDir,run,run);
-  sprintf(gpsName,"%s/run%d/gpsEvent%d.root",baseDir,run,run);
+  sprintf(gpsName,"%s/run%d/gpsSmooth%d.root",baseDir,run,run);
 
   Int_t useCalibratedFiles=0;
 
   //Define and zero the class pointers
+  AnitaGeomTool *fGeomTool = AnitaGeomTool::Instance();
   RawAnitaEvent *event = 0;
   CalibratedAnitaEvent *calEvent = 0;
   RawAnitaHeader *header =0;
@@ -144,7 +145,11 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
 
      //    if( (header->triggerTimeNs>0.4e6) || (header->triggerTimeNs<0.25e6) )  
      //Now cut to only process the Taylor Dome pulses
-     if( (header->triggerTimeNs>3e6) || (header->triggerTimeNs<0.1e6) )  
+     //     if( (header->triggerTimeNs>3e6) || (header->triggerTimeNs<0.1e6) )  
+     //       continue; 
+
+     //Seavey finding cut
+     if( (header->triggerTimeNs<149.998e6) || (header->triggerTimeNs>150e6) )  
        continue; 
      
      //Get event
@@ -169,18 +174,26 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
        //If we have RawAnitaEvent then we have to specify the calibration option
        realEvent = new PrettyAnitaEvent(event,WaveCalType::kVTFullAGCrossCorClock,header);
      }
+   //   realEvent->setPassBandFilterFlag(1);
+//      realEvent->setPassBandLimits(200,1200);
+//      realEvent->setNotchFilterFlag(1);
+//      realEvent->setNotchBandLimits(300,500);
+
      labChip=realEvent->getLabChip(1);
      
      // UsefulAdu5Pat contains some generically useful GPS orientation thingies
-     pat->pitch=0;
-     pat->roll=0;
+     //     pat->pitch=0;
+     //     pat->roll=0;
      UsefulAdu5Pat usefulPat(pat);
      expTaylorTime=usefulPat.getTaylorDomeTriggerTimeNs();
      triggerTimeNs=header->triggerTimeNs;
 
-     if(TMath::Abs(Double_t(expTaylorTime)-Double_t(triggerTimeNs))>1000) continue;
+//     if(TMath::Abs(Double_t(expTaylorTime)-Double_t(triggerTimeNs))>1000) {
+//       if(realEvent) delete realEvent;
+//       continue;
+//     }
 
-     usefulPat.getThetaAndPhiWaveWillySeavey(thetaWave,phiWave);     
+     usefulPat.getThetaAndPhiWaveTaylorDome(thetaWave,phiWave);     
      //     std::cout << usefulPat.getTaylorDomeTriggerTimeNs() << "\t" 
        //	       << header->triggerTimeNs << "\n";
      int ant=realEvent->getMaxAntenna(AnitaPol::kVertical);
