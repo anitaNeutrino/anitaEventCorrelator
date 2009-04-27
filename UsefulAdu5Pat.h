@@ -16,6 +16,7 @@
 #include "Adu5Pat.h"
 #include "AnitaConventions.h"
 #include "AnitaGeomTool.h"
+#include "BedmapReader.h"
 
 //!  This is the position and attitude class that inherits from Adu5Pat and has some useful methods for determining the expected plane wave angles and inter-antenna crossing times for a given source.
 /*!
@@ -40,6 +41,9 @@ class UsefulAdu5Pat: public Adu5Pat
   */
   int getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat);
   
+  int getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat,Double_t &sourceAltitude);
+
+/*   int getSourceLonAndLatWithBedmap(BedmapReader *bedmapData,Double_t phiWave, Double_t thetaWave,Double_t &sourceLon, Double_t &sourceLat); */
 //! For a given source latitude, longitude and altitude calculates the payload centric azimuthal and elevation angles of the plane wave incident at the payload.
   /*!
     
