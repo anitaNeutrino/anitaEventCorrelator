@@ -329,7 +329,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
      inTheLoop++;
      std::cout << std::endl << "in do while loop " << inTheLoop << std::endl;
 
-     std::cout << "pointing lat " << latitude << " lon " << longitude << " re " << re << " surface elevation " << chosenAlt << std::endl;
+     std::cout << "pointing lat " << sourceLat << " lon " << sourceLon << " re " << re << " surface elevation " << chosenAlt << std::endl;
 
      Double_t sintw=TMath::Sin(tempThetaWave);
      Double_t costw=TMath::Cos(tempThetaWave);
@@ -389,7 +389,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
      //std::cout << "Earth radius: " << nextRe << "\t" << re << "\n";
      //     break;
 
-     std::cout << "pointing lat " << latitude << " lon " << longitude << " re " << nextRe << " surface elevation " << chosenAlt << std::endl;
+     std::cout << "pointing lat " << sourceLat << " lon " << sourceLon << " re " << nextRe << " surface elevation " << chosenAlt << std::endl;
 
    } while(TMath::Abs(nextRe-re)>1);
 
