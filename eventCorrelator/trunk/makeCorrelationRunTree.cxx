@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
   TStopwatch stopy;
   stopy.Start();
   //  makeCorrelationRunTree(run,0,"/Users/simonbevan/Desktop/","/Users/simonbevan/ANITA/outfiles/");
-  makeCorrelationRunTree(run,numEnts,"/unix/anita1/flight0809/root","/unix/anita1/rjn/corTrees/seaveyTest");
+  makeCorrelationRunTree(run,numEnts,"/unix/anita1/flight0809/root","/unix/anita1/rjn/corTrees/justTaylorDomeTimes");
   stopy.Stop();
   std::cout << "Run " << run << "\t" << numEnts << " events \n";
   std::cout << "CPU Time: " << stopy.CpuTime() << "\t" << "Real Time: "
@@ -64,7 +64,7 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
   // The * in the evnt file name is a wildcard for any _X files  
   sprintf(eventName,"%s/run%d/calEventFile%d*.root",baseDir,run,run);
   sprintf(headerName,"%s/run%d/headFile%d.root",baseDir,run,run);
-  sprintf(gpsName,"%s/run%d/gpsSmooth%d.root",baseDir,run,run);
+  sprintf(gpsName,"%s/run%d/gpsEvent%d.root",baseDir,run,run);
 
   Int_t useCalibratedFiles=0;
 
@@ -145,24 +145,17 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
 
      //    if( (header->triggerTimeNs>0.4e6) || (header->triggerTimeNs<0.25e6) )  
      //Now cut to only process the Taylor Dome pulses
-     //     if( (header->triggerTimeNs>3e6) || (header->triggerTimeNs<0.1e6) )  
-     //       continue; 
+     if( (header->triggerTimeNs>3e6) || (header->triggerTimeNs<0.1e6) )  
+       continue; 
 
      //Seavey finding cut
-     if( (header->triggerTimeNs<149.998e6) || (header->triggerTimeNs>150e6) )  
-       continue; 
+     //     if( (header->triggerTimeNs<149.998e6) || (header->triggerTimeNs>150e6) )  
+     //       continue; 
      
      //Get event
      eventChain->GetEntry(entry);
-
-     //Get GPS by finding the entry closest to the trigger time
-     //Long64_t bestEntry = adu5PatTree->GetEntryNumberWithBestIndex(header->triggerTime);
-     //if(bestEntry>-1) 
+     //Get interpolated GPS stiff
      adu5PatTree->GetEntry(entry);
-     //else {
-       //std::cerr << "No GPS for event " << header->eventNumber << "\n";
-       //continue;
-       // }
 
      //Now we can make a PrettyAnitaEvent (or a UsefulAnitaEvent)
      PrettyAnitaEvent *realEvent=0;
@@ -174,6 +167,7 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
        //If we have RawAnitaEvent then we have to specify the calibration option
        realEvent = new PrettyAnitaEvent(event,WaveCalType::kVTFullAGCrossCorClock,header);
      }
+     //Here we have the option to do some filtering
    //   realEvent->setPassBandFilterFlag(1);
 //      realEvent->setPassBandLimits(200,1200);
 //      realEvent->setNotchFilterFlag(1);
@@ -184,24 +178,23 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
      // UsefulAdu5Pat contains some generically useful GPS orientation thingies
      //     pat->pitch=0;
      //     pat->roll=0;
+     pat->pitch=0.64;
+     pat->roll=0.14;
      UsefulAdu5Pat usefulPat(pat);
      expTaylorTime=usefulPat.getTaylorDomeTriggerTimeNs();
      triggerTimeNs=header->triggerTimeNs;
 
-//     if(TMath::Abs(Double_t(expTaylorTime)-Double_t(triggerTimeNs))>1000) {
-//       if(realEvent) delete realEvent;
-//       continue;
-//     }
-
+     //This is just a cut for Taylor Dome
+     if(TMath::Abs(Double_t(expTaylorTime)-Double_t(triggerTimeNs))>1000) {
+       if(realEvent) delete realEvent;
+       continue;
+     }
+     
      usefulPat.getThetaAndPhiWaveTaylorDome(thetaWave,phiWave);     
-     //     std::cout << usefulPat.getTaylorDomeTriggerTimeNs() << "\t" 
-       //	       << header->triggerTimeNs << "\n";
+     //Either get the maximum antenna or not.
      int ant=realEvent->getMaxAntenna(AnitaPol::kVertical);
-     //     int ant=fGeomTool->getUpperAntNearestPhiWave(phiWave);
+     //int ant=fGeomTool->getUpperAntNearestPhiWave(phiWave);
      Double_t deltaT= 1. / (2.6*16);
-     //     std::cout << deltaT << std::endl;
-     //     if(entry%100==0)
-     //       std::cout << ant << "\t" << realEvent.getMaxAntenna(AnitaPol::kVertical) << std::endl;
      theCor =realEvent->getCorrelationSummary(ant,AnitaPol::kVertical,deltaT);
      corTree->Fill();     
      delete theCor;
