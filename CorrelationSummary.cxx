@@ -62,12 +62,12 @@ void CorrelationSummary::fillErrorsAndFit()
 
    //For now we'll go for the zeroth order solution to errors that is will assign them all to be the same
    //and just for teh sake of doing something we'll make it half a time bin (0.5/2.6) in ns.
-   for(int i=0;i<19;i++) {
+   for(int i=0;i<35;i++) {
       deltaTErr[i]=0.5/2.6; // in ns
    }
 
   //Now fill the antenna postions (these might become member variables)
-   for(int i=0;i<19;i++) {
+   for(int i=0;i<35;i++) {
       fAntPhi[i][0]=fCSGeomTool->getAntPhiPositionRelToAftFore(firstAnt[i]);
       fAntPhi[i][1]=fCSGeomTool->getAntPhiPositionRelToAftFore(secondAnt[i]);
       fAntR[i][0]=fCSGeomTool->getAntR(firstAnt[i]);

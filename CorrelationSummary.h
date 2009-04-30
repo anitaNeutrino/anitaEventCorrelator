@@ -66,13 +66,13 @@ class CorrelationSummary: public TObject
 
   //Correlation Thingies
   
-  //!  There are 28 correlations formed from a set of 10 antennas (5-phi sectors).
+  //!  There are 35 correlations formed from a set of 13 antennas (5-phi sectors).
    /*!
-     For clarity in the list below the antennas are described using the following names:
+     For clarity in the list below the antennas are described using the following names, for cases where there is a nadir antenna in the centre phi sector we have:
     - LLT LT CT RT RRT
     - LLB LB CB RB RRB
-    
-    In this scheme the 28 correlations are:
+    - LLN X  CN X  RRN
+    In this scheme the 35 correlations are:
     -  "[0]" LT - LB
     -  "[1]" CT - CB
     -  "[2]" RT - RB
@@ -92,22 +92,80 @@ class CorrelationSummary: public TObject
     -  "[16]" RT - RRT
     -  "[17]" LLB - LB
     -  "[18]" RB - RRT 
+    -  "[19]" CN - LLN
+    -  "[20]" CN - RRN
+    -  "[21]" LLN - LLB
+    -  "[22]" LLN - LB
+    -  "[23]" CN - CB
+    -  "[24]" CN - LB
+    -  "[25]" CN - RB
+    -  "[26]" RRN - RB
+    -  "[27]" RRN - RRB
+    -  "[28]" LLN - LLT
+    -  "[29]" LLN - LT
+    -  "[30]" CN - CT
+    -  "[31]" CN - LT
+    -  "[32]" CN - RT
+    -  "[33]" RRN - RT
+    -  "[34]" RRN - RRT
+    
+
+    For cases where there isn't a nadir antenna in the centre phi sector, then we have:
+     - LLT LT CT RT RRT
+    - LLB LB CB RB RRB
+    -  X  LN X  RN  X
+    In this scheme the 35 correlations are (RN-LT is missing):
+    -  "[0]" LT - LB
+    -  "[1]" CT - CB
+    -  "[2]" RT - RB
+    -  "[3]" LT - CT
+    -  "[4]" CT - RT
+    -  "[5]" LB - CB
+    -  "[6]" CB - RB
+    -  "[7]" LT - CB
+    -  "[8]" RT - CB
+    -  "[9]" CT - LB
+    -  "[10]" CT - RB
+    -  "[11]" LLT - CT
+    -  "[12]" CT - RRT
+    -  "[13]" LLB - CB
+    -  "[14]" CB - RRB
+    -  "[15]" LLT - LT
+    -  "[16]" RT - RRT
+    -  "[17]" LLB - LB
+    -  "[18]" RB - RRT 
+    -  "[19]" LN - RN
+    -  "[20]" LN - LLB
+    -  "[21]" LN - LB
+    -  "[22]" LN - CB
+    -  "[23]" LN - RB
+    -  "[24]" RN - RRB
+    -  "[25]" RN - RB
+    -  "[26]" RN - CB
+    -  "[27]" RN - LB
+    -  "[28]" LN - LLT
+    -  "[29]" LN - LT
+    -  "[30]" LN - CT
+    -  "[31]" LN - RT
+    -  "[32]" RN - RRT
+    -  "[33]" RN - RT
+    -  "[34]" RN - CT
    */
-  int firstAnt[28]; 
-  int secondAnt[28]; ///< The index of the second antenna in the 28 possible pairs (3 up-down, 4 left-right, 4 diagonal, 4 outside-neighbour).
-  double maxCorVals[28]; ///< The maximumn correlation value for each of the 28 possible correlations (3 up-down, 4 left-right, 4 diagonal, 4 outside-neighbour).
-  double maxCorTimes[28]; ///< The time of the maximum correlation value for each of the 28 possible correlations (3 up-down, 4 left-right, 4 diagonal, 4 outside-neighbour).
-  double rmsCorVals[28]; ///< The rms correlation value for each of the 28 possible correlations (3 up-down, 4 left-right, 4 diagonal, 4 outside-neighbour).
+  int firstAnt[35]; 
+  int secondAnt[35]; ///< The index of the second antenna in the 35 possible pairs (3 up-down, 4 left-right, 4 diagonal, 4 outside-neighbour).
+  double maxCorVals[35]; ///< The maximumn correlation value for each of the 35 possible correlations (3 up-down, 4 left-right, 4 diagonal, 4 outside-neighbour).
+  double maxCorTimes[35]; ///< The time of the maximum correlation value for each of the 35 possible correlations (3 up-down, 4 left-right, 4 diagonal, 4 outside-neighbour).
+  double rmsCorVals[35]; ///< The rms correlation value for each of the 35 possible correlations (3 up-down, 4 left-right, 4 diagonal, 4 outside-neighbour).
 
 
 
 
-  double secondCorVals[28][2]; ///< The peak of the next highest correlation values (tore both left and right vals).
-  double secondCorTimes[28][2]; ///< The time of the next highest correlation values (tore both left and right vals).
+  double secondCorVals[35][2]; ///< The peak of the next highest correlation values (tore both left and right vals).
+  double secondCorTimes[35][2]; ///< The time of the next highest correlation values (tore both left and right vals).
 
   //Time Thingies
-  //  double deltaT[28]; is maxCorTimes
-  double deltaTErr[28]; ///< The error on each of the 28 deltaTs (no idea right now what this means).
+  //  double deltaT[35]; is maxCorTimes
+  double deltaTErr[35]; ///< The error on each of the 35 deltaTs (no idea right now what this means).
   
   //Fit Results
   double phiWave; ///< The azimuthal angle of the plane wave (in payload centric coordinates).
@@ -118,9 +176,9 @@ class CorrelationSummary: public TObject
   int ndf; ///< The number of degrees of freedom -- no frigging idea I just make it up
 
   //Antenna postion variables for use in fit
-  Double_t fAntPhi[28][2]; ///< A lookup table for antenna postions.
-  Double_t fAntR[28][2]; ///< A lookup table for antenna postions.
-  Double_t fAntZ[28][2]; ///< A lookup table for antenna postions.
+  Double_t fAntPhi[35][2]; ///< A lookup table for antenna postions.
+  Double_t fAntR[35][2]; ///< A lookup table for antenna postions.
+  Double_t fAntZ[35][2]; ///< A lookup table for antenna postions.
   
   
 

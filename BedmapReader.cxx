@@ -118,10 +118,20 @@ Double_t BedmapReader::Geoid(Double_t latitude) {
 //_______________________________________________________________________________
 void BedmapReader::ReadSurfaceElevation() {
   //Reads the BEDMAP data on the elevation of the surface beneath the ice.  If there is water beneath the ice, the ground elevation is given the value 0.  Assumes the file is in directory "data".  Origianl code by Ryan Nichol.
-
-  char *dataEnv=getenv("BEDMAP_DATA_DIR");
+  char calibDir[FILENAME_MAX];
+  char *calibEnv=getenv("ANITA_CALIB_DIR");
+  if(!calibEnv) {
+     char *utilEnv=getenv("ANITA_UTIL_INSTALL_DIR");
+     if(!utilEnv)
+	sprintf(calibDir,"calib");
+     else
+	sprintf(calibDir,"%s/share/anitaCalib",utilEnv);
+  }
+  else {
+    strncpy(calibDir,calibEnv,FILENAME_MAX);
+  }
   char surfaceFile[FILENAME_MAX];
-  sprintf(surfaceFile,"%s/surfaceElevation.asc",dataEnv);
+  sprintf(surfaceFile,"%s/surfaceElevation.asc",calibDir);
   ifstream SurfaceElevationFile(surfaceFile);
   if(!SurfaceElevationFile) {
     std::cerr << "Couldn't open: " << surfaceFile << std::endl;

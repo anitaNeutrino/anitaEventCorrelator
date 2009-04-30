@@ -25,6 +25,7 @@ void correlationTreeLoop(int run, char *baseDir, char *corTreeDir, char *outputD
   
 void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDir) {
    AnitaGeomTool *fGeomTool = AnitaGeomTool::Instance();
+   //   fGeomTool->useKurtAnitaIINumbers(1);
    char eventName[FILENAME_MAX];
    char headerName[FILENAME_MAX];
    char hkName[FILENAME_MAX];
@@ -35,8 +36,7 @@ void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDi
    //   sprintf(baseDir,"http://www.hep.ucl.ac.uk/uhen/anita/private/monitor2/runs/fromLoki/");
  sprintf(eventName,"%s/run%d/eventFile%d.root",baseDir,run,run);
  sprintf(headerName,"%s/run%d/headFile%d.root",baseDir,run,run);
- sprintf(gpsName,"%s/run%d/gpsSmooth%d.root",baseDir,run,run);
- // sprintf(gpsName,"%s/run%d/gpsEvent%d.root",baseDir,run,run);
+ sprintf(gpsName,"%s/run%d/gpsEvent%d.root",baseDir,run,run);
  sprintf(corrName,"%s/corRun%d.root",corTreeDir,run);
  sprintf(outName,"%s/deltaTFile%d.root",outputDir,run);
 
@@ -93,6 +93,8 @@ void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDi
    Double_t corPeak, corRMS;
    Double_t balloonLat, balloonLon, balloonAlt;
    Double_t heading,pitch,roll;
+   Double_t deltaZ;
+   Double_t deltaR;
    TTree *deltaTTree = new TTree("deltaTTree","Tree of Delta T's");
    deltaTTree->Branch("entry",&entry,"entry/L");
    deltaTTree->Branch("firstAnt",&firstAnt,"firstAnt/I");
@@ -116,7 +118,8 @@ void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDi
    deltaTTree->Branch("heading",&heading,"heading/D");
    deltaTTree->Branch("pitch",&pitch,"pitch/D");
    deltaTTree->Branch("roll",&roll,"roll/D");
-   
+   deltaTTree->Branch("deltaZ",&deltaZ,"deltaZ/D");
+   deltaTTree->Branch("deltaR",&deltaR,"deltaR/D");
 
   // Double_t thetaWave;
 
@@ -145,25 +148,39 @@ void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDi
       heading=pat->heading;
       pitch=pat->pitch;
       roll=pat->roll;
-      //      pat->pitch=0;
-      //      pat->roll=0;
+	//Simon numbers     
       pat->pitch=0.64;
       pat->roll=0.14;
+
+      //Test heading offset
+      pat->heading+=0.24;
+      if(pat->heading>=360) pat->heading-=360;
+      if(pat->heading<0) pat->heading+=360;
+
+     // 
+
+      //      pat->pitch=0.5;
+      //      pat->roll=-0.1;
+
+
+      //Kurt numbers 
+      //      pat->pitch=-0.29;
+      //      pat->roll=0.89;
+//       //Test heading offset
+//       pat->heading-=0.16;
+//       if(pat->heading>=360) pat->heading-=360;
+//       if(pat->heading<0) pat->heading+=360;
+
       UsefulAdu5Pat usefulPat(pat);
      
-      for(corInd=0;corInd<19;corInd++) {
+      for(corInd=0;corInd<28;corInd++) {
 
 
 	//replace taylor dome
        
-	deltaTExpected=usefulPat.getDeltaTWillySeavey(corSum->firstAnt[corInd],corSum->secondAnt[corInd]);
-	//	std::cout << deltaTExpected 
-	//	usefulPat.fSourceLongitude=0;
-	deltaTExpected=usefulPat.getDeltaTTaylor(corSum->firstAnt[corInd],corSum->secondAnt[corInd]);
 
-	 //	 histSimpleDtDiff->Fill(corSum->maxCorTimes[corInd]-deltaTExpected);
+
 	 int antInd=corSum->firstAnt[corInd]%16;
-	 //	 histDtDiffSep[antInd][labChip][corInd]->Fill(corSum->maxCorTimes[corInd]-deltaTExpected);
 
 	 firstAnt=corSum->firstAnt[corInd];
 	 secondAnt=corSum->secondAnt[corInd];
@@ -174,29 +191,23 @@ void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDi
 	 thetaWave=usefulPat.getThetaWave()*TMath::RadToDeg();
 	 corPeak=corSum->maxCorVals[corInd];
 	 corRMS=corSum->rmsCorVals[corInd];
+
+
+	 //Default values
+	 deltaTExpected=usefulPat.getDeltaTWillySeavey(corSum->firstAnt[corInd],corSum->secondAnt[corInd]);
+	 deltaTExpected=usefulPat.getDeltaTTaylor(corSum->firstAnt[corInd],corSum->secondAnt[corInd]);
+	 
+
+
+	 //Actually fill the tree
 	 deltaTTree->Fill();
-	 //	cout << corSum->centreAntenna << "\t" << corSum->firstAnt[corInd] << "\t" << corSum->secondAnt[corInd] << "\t" << deltaTExpected << "\t" << corSum->maxCorTimes[corInd] << "\n";
       }
 
 
-      //     cout << "Phi Compare:\t" << corSum->centreAntenna << "\t" << fGeomTool->getAntPhiPositionRelToAftFore(corSum->centreAntenna)*TMath::RadToDeg() << "\t"
-      //	  << usefulPat.getPhiWave()*TMath::RadToDeg() << endl;
-      //     if(entry>10)
-      //     cout << "Source:\t" << usefulPat.getSourceLongitude() << "\t" << usefulPat.getSourceLatitude() << "\t"
-      //	  << usefulPat.getSourceAltitude() << "\n";
-      //     cout << "Balloon:\t" << usefulPat.longitude << "\t" << usefulPat.latitude << "\t" << usefulPat.altitude << "\t" << usefulPat.heading << endl;
       counter++; 
       if(counter%100==0)
 	 cerr << "*";
    }
-//    histSimpleDtDiff->Write();
-//    for(int ant=0;ant<16;ant++) {
-//       for(int chip=0;chip<4;chip++) {
-// 	 for(int cor=0;cor<11;cor++) {
-// 	    histDtDiffSep[ant][chip][cor]->Write();
-// 	 }
-//       }
-//    }
    deltaTTree->AutoSave();
    fpOut->Close();
    //   histSimpleDtDiff->Draw();

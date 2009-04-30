@@ -1232,6 +1232,31 @@ CorrelationSummary *PrettyAnitaEvent::getCorrelationSummary(Int_t centreAnt,Anit
  //   -  "[27]" RRN - RRB
    theSum->firstAnt[27]=nadirAnts[1];
    theSum->secondAnt[27]=nextFourAnts[4];
+
+   //     -  "[28]" LLN - LLT
+   theSum->firstAnt[28]=nadirAnts[0];
+   theSum->secondAnt[28]=nextFourAnts[0];
+
+//     -  "[29]" LLN - LT
+   theSum->firstAnt[29]=nadirAnts[0];
+   theSum->secondAnt[29]=sixAnts[0];
+//     -  "[30]" CN - CT
+   theSum->firstAnt[30]=nadirAnts[4];
+   theSum->secondAnt[30]=sixAnts[1];
+//     -  "[31]" CN - LT
+   theSum->firstAnt[31]=nadirAnts[4];
+   theSum->secondAnt[31]=sixAnts[0];
+//     -  "[32]" CN - RT
+   theSum->firstAnt[32]=nadirAnts[4];
+   theSum->secondAnt[32]=sixAnts[2];
+//     -  "[33]" RRN - RT
+   theSum->firstAnt[33]=nadirAnts[1];
+   theSum->secondAnt[33]=sixAnts[2];
+//     -  "[34]" RRN - RRT
+   theSum->firstAnt[34]=nadirAnts[1];
+   theSum->secondAnt[34]=nextFourAnts[1];
+   
+
    }else{
 
       //      std::cout << "Here2\t" << nadirAnts[2] << "\t" << nadirAnts[3] << "\n";
@@ -1271,12 +1296,40 @@ CorrelationSummary *PrettyAnitaEvent::getCorrelationSummary(Int_t centreAnt,Anit
    theSum->firstAnt[27]=nadirAnts[3];
    theSum->secondAnt[27]=sixAnts[3];
 
+
+//     -  "[28]" LN - LLT
+   theSum->firstAnt[28]=nadirAnts[2];
+   theSum->secondAnt[28]=nextFourAnts[0];
+
+//     -  "[29]" LN - LT
+   theSum->firstAnt[29]=nadirAnts[2];
+   theSum->secondAnt[29]=sixAnts[0];
+
+//     -  "[30]" LN - CT
+   theSum->firstAnt[30]=nadirAnts[2];
+   theSum->secondAnt[30]=sixAnts[1];
+
+//     -  "[31]" LN - RT
+   theSum->firstAnt[31]=nadirAnts[2];
+   theSum->secondAnt[31]=sixAnts[2];
+
+//     -  "[32]" RN - RRT
+   theSum->firstAnt[32]=nadirAnts[3];
+   theSum->secondAnt[32]=nextFourAnts[1];
+//     -  "[33]" RN - RT
+   theSum->firstAnt[33]=nadirAnts[3];
+   theSum->secondAnt[33]=sixAnts[2];
+//     -  "[34]" RN - CT
+   theSum->firstAnt[34]=nadirAnts[3];
+   theSum->secondAnt[34]=sixAnts[1];
+
+
    }   
    
 
 
    //Now can make correlations and find max, rms, etc.
-   for(int corInd=0;corInd<28;corInd++) {
+   for(int corInd=0;corInd<35;corInd++) {
       TGraph *grCor;
       //      std::cout << corInd << "\t" << theSum->firstAnt[corInd] << "\t" << theSum->secondAnt[corInd] << "\n";
       Int_t ci1=AnitaGeomTool::getChanIndexFromAntPol(theSum->firstAnt[corInd],pol);
