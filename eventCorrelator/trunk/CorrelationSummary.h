@@ -183,7 +183,7 @@ class CorrelationSummary: public TObject
   
 
 
-  ClassDef(CorrelationSummary,3); ///< One of ROOT's magic macros.
+  ClassDef(CorrelationSummary,4); ///< One of ROOT's magic macros.
 };
 
 

@@ -212,7 +212,7 @@ class PrettyAnitaEvent: public UsefulAnitaEvent
 #endif
 
   void setPassBandFilterFlag( int flag) { fPassBandFilter=flag;}
-  void setNotchFilterFlag( int flag) { fPassBandFilter=flag;}
+  void setNotchFilterFlag( int flag) { fNotchFilter=flag;}
   void setPassBandLimits(Double_t low, Double_t high)
      { fLowPassEdge=low; fHighPassEdge=high;}
   void setNotchBandLimits(Double_t low, Double_t high)
