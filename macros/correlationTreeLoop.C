@@ -28,39 +28,22 @@ void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDi
    //   fGeomTool->useKurtAnitaIINumbers(1);
    char eventName[FILENAME_MAX];
    char headerName[FILENAME_MAX];
-   char hkName[FILENAME_MAX];
    char gpsName[FILENAME_MAX];
    char corrName[FILENAME_MAX];
    char outName[FILENAME_MAX];
 
    //   sprintf(baseDir,"http://www.hep.ucl.ac.uk/uhen/anita/private/monitor2/runs/fromLoki/");
- sprintf(eventName,"%s/run%d/eventFile%d.root",baseDir,run,run);
- sprintf(headerName,"%s/run%d/headFile%d.root",baseDir,run,run);
- sprintf(gpsName,"%s/run%d/gpsEvent%d.root",baseDir,run,run);
- sprintf(corrName,"%s/corRun%d.root",corTreeDir,run);
- sprintf(outName,"%s/deltaTFile%d.root",outputDir,run);
+   sprintf(eventName,"%s/run%d/eventFile%d.root",baseDir,run,run);
+   sprintf(headerName,"%s/run%d/headFile%d.root",baseDir,run,run);
+   sprintf(gpsName,"%s/run%d/gpsEvent%d.root",baseDir,run,run);
+   sprintf(corrName,"%s/corRun%d.root",corTreeDir,run);
+   sprintf(outName,"%s/deltaTFile%d.root",outputDir,run);
 
-  //sprintf(eventName,"/unix/anita1/webData/firstDay/run%d/eventFile%d*.root",run,run);
-  //sprintf(headerName,"/unix/anita1/webData/firstDay/run%d/timedHeadFile%d.root",run,run);
-  //sprintf(hkName,"/unix/anita1/webData/firstDay/run%d/prettyHkFile%d.root",run,run);
-  //sprintf(gpsName,"/unix/anita1/webData/firstDay/run%d/gpsFile%d.root",run,run);
-  //sprintf(corrName,"/unix/anita1/rjn/corTree16/corRun%d.root",run);
-  //sprintf(outName,"deltaTFileSlowClock%d.root",run);
-   
-   RawAnitaEvent *event = 0;
-   PrettyAnitaHk *hk = 0;
    
    RawAnitaHeader *header =0;
    Adu5Pat *pat =0;
    CorrelationSummary *corSum =0;
    
-   //  TChain *eventChain = new TChain("eventTree");
-   // eventChain->Add(eventName);
-   // eventChain->SetBranchAddress("event",&event);
-   
-  //  TFile *fpHk = new TFile(hkName);
-//    TTree *prettyHkTree = (TTree*) fpHk->Get("prettyHkTree");
-//    prettyHkTree->SetBranchAddress("hk",&hk);
    
    TFile *fpHead = TFile::Open(headerName);
    TTree *headTree = (TTree*) fpHead->Get("headTree");
@@ -73,11 +56,12 @@ void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDi
    adu5PatTree->SetBranchAddress("pat",&pat);
    
    Int_t labChip;
+   UInt_t expTaylorTime;
    TFile *fpCor = new TFile(corrName);
    TTree *corTree = (TTree*) fpCor->Get("corTree");
    corTree->SetBranchAddress("cor",&corSum);
    corTree->SetBranchAddress("labChip",&labChip);
-
+   corTree->SetBranchAddress("expTaylorTime",&expTaylorTime);
 
    Long64_t numEntries=corTree->GetEntries();
    int counter=0;
@@ -95,6 +79,11 @@ void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDi
    Double_t heading,pitch,roll;
    Double_t deltaZ;
    Double_t deltaR;
+   Double_t meanPhiAntPair;
+   Double_t deltaPhiAntPair;
+   
+
+
    TTree *deltaTTree = new TTree("deltaTTree","Tree of Delta T's");
    deltaTTree->Branch("entry",&entry,"entry/L");
    deltaTTree->Branch("firstAnt",&firstAnt,"firstAnt/I");
@@ -120,10 +109,13 @@ void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDi
    deltaTTree->Branch("roll",&roll,"roll/D");
    deltaTTree->Branch("deltaZ",&deltaZ,"deltaZ/D");
    deltaTTree->Branch("deltaR",&deltaR,"deltaR/D");
+   deltaTTree->Branch("meanPhiAntPair",&meanPhiAntPair,"meanPhiAntPair/D");
+   deltaTTree->Branch("deltaPhiAntPair",&deltaPhiAntPair,"deltaPhiAntPair/D");
+   deltaTTree->Branch("expTaylorTime",&expTaylorTime,"expTaylorTime/i");
 
   // Double_t thetaWave;
 
-   for(entry=0;entry<numEntries;entry++) {
+   for(entry=0;entry<numEntries;entry++) { 
   
 
       corTree->GetEntry(entry);
@@ -153,9 +145,9 @@ void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDi
       pat->roll=0.14;
 
       //Test heading offset
-      pat->heading+=0.24;
-      if(pat->heading>=360) pat->heading-=360;
-      if(pat->heading<0) pat->heading+=360;
+//       pat->heading+=0.24;
+//       if(pat->heading>=360) pat->heading-=360;
+//       if(pat->heading<0) pat->heading+=360;
 
      // 
 
@@ -173,31 +165,33 @@ void correlationTreeLoop(int run,char *baseDir, char *corTreeDir, char *outputDi
 
       UsefulAdu5Pat usefulPat(pat);
      
-      for(corInd=0;corInd<28;corInd++) {
-
-
-	//replace taylor dome
-       
-
-
-	 int antInd=corSum->firstAnt[corInd]%16;
+      for(corInd=0;corInd<35;corInd++) {
 
 	 firstAnt=corSum->firstAnt[corInd];
 	 secondAnt=corSum->secondAnt[corInd];
 	 deltaT=corSum->maxCorTimes[corInd];
 	 maxAnt=corSum->centreAntenna;
 	 phiMaxAnt=fGeomTool->getAntPhiPositionRelToAftFore(corSum->centreAntenna)*TMath::RadToDeg();
-	 phiWave=usefulPat.getPhiWave()*TMath::RadToDeg();
-	 thetaWave=usefulPat.getThetaWave()*TMath::RadToDeg();
-	 corPeak=corSum->maxCorVals[corInd];
-	 corRMS=corSum->rmsCorVals[corInd];
-
-
+	 
 	 //Default values
 	 deltaTExpected=usefulPat.getDeltaTWillySeavey(corSum->firstAnt[corInd],corSum->secondAnt[corInd]);
 	 deltaTExpected=usefulPat.getDeltaTTaylor(corSum->firstAnt[corInd],corSum->secondAnt[corInd]);
 	 
 
+	 phiWave=usefulPat.getPhiWave();
+	 thetaWave=usefulPat.getThetaWave();
+	 corPeak=corSum->maxCorVals[corInd];
+	 corRMS=corSum->rmsCorVals[corInd];
+	 
+	 meanPhiAntPair=fGeomTool->getMeanAntPairPhiRelToAftFore(firstAnt,secondAnt);
+	 deltaPhiAntPair=fGeomTool->getPhiDiff(meanPhiAntPair,phiWave);
+	 
+	 //	 std::cout << phiWave << "\t" << meanPhiAntPair << "\t" << deltaPhiAntPair << "\n";
+
+	 //Convert to degrees
+	 deltaPhiAntPair*=TMath::RadToDeg();
+	 phiWave*=TMath::RadToDeg();
+	 thetaWave*=TMath::RadToDeg();	       
 
 	 //Actually fill the tree
 	 deltaTTree->Fill();

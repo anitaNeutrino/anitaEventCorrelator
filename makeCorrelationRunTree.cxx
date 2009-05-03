@@ -41,9 +41,9 @@ int main(int argc, char **argv) {
   TStopwatch stopy;
   stopy.Start();
   //  makeCorrelationRunTree(run,0,"/Users/simonbevan/Desktop/","/Users/simonbevan/ANITA/outfiles/");
-  makeCorrelationRunTree(run,numEnts,"/unix/anita1/flight0809/root","/unix/anita1/rjn/corTrees/justTaylorDomeTimes");
+  makeCorrelationRunTree(run,numEnts,"/unix/anita1/flight0809/root","/unix/anita1/rjn/corTrees/justTaylorNewSimon020509");
   stopy.Stop();
-  std::cout << "Run " << run << "\t" << numEnts << " events \n";
+  std::cout << "Run " << run << "\n";
   std::cout << "CPU Time: " << stopy.CpuTime() << "\t" << "Real Time: "
 	    << stopy.RealTime() << "\n";
 
@@ -137,6 +137,7 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
   if(starEvery==0) starEvery=1;
   
   std::cout <<  "There are " << maxEntry << " events to proces\n";
+  Long64_t countEvents=0;
   for(Long64_t entry=0;entry<maxEntry;entry++) {
      if(entry%starEvery==0) std::cerr << "*";
 
@@ -145,7 +146,7 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
 
      //    if( (header->triggerTimeNs>0.4e6) || (header->triggerTimeNs<0.25e6) )  
      //Now cut to only process the Taylor Dome pulses
-     if( (header->triggerTimeNs>3e6) || (header->triggerTimeNs<0.1e6) )  
+     if( (header->triggerTimeNs>3e6) )
        continue; 
 
      //Seavey finding cut
@@ -168,10 +169,10 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
        realEvent = new PrettyAnitaEvent(event,WaveCalType::kVTFullAGCrossCorClock,header);
      }
      //Here we have the option to do some filtering
-   //   realEvent->setPassBandFilterFlag(1);
-//      realEvent->setPassBandLimits(200,1200);
-//      realEvent->setNotchFilterFlag(1);
-//      realEvent->setNotchBandLimits(300,500);
+       //  realEvent->setPassBandFilterFlag(1);
+        // realEvent->setPassBandLimits(200,1200);
+        // realEvent->setNotchFilterFlag(1);
+        // realEvent->setNotchBandLimits(235,500);
 
      labChip=realEvent->getLabChip(1);
      
@@ -197,11 +198,18 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
      Double_t deltaT= 1. / (2.6*16);
      theCor =realEvent->getCorrelationSummary(ant,AnitaPol::kVertical,deltaT);
      corTree->Fill();     
+     countEvents++;
      delete theCor;
      if(realEvent) delete realEvent;
   }
   std::cerr << "\n";
   corTree->AutoSave();
   fpOut->Close();
+
+ //  if(countEvents==0) {
+//     std::cout << "No events written will tidy up after myself and delete "
+// 	      << outName << "\n";
+//     gSystem->Unlink(outName);
+//   }
 }
      
