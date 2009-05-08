@@ -27,6 +27,9 @@ void thetaPlotter(){
 TCanvas *canSurf= new TCanvas("canSurf","canSurf");
 canSurf->Divide(1,3);
 
+TCanvas *canSurf2= new TCanvas("canSurf2","canSurf2");
+canSurf2->Divide(3,3);
+
   int upperAntNums[NUM_PHI]={8,0,9,1,10,2,11,3,12,4,13,5,14,6,15,7};
   int lowerAntNums[NUM_PHI]={16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31};
   int lowerAntFromUpper[NUM_PHI]={17,19,21,23,25,27,29,31,16,18,20,22,24,26,28,30};
@@ -38,17 +41,21 @@ canSurf->Divide(1,3);
    Double_t deltaR[40]={0};  
    Double_t deltaZ[40]={0};  
    Double_t deltaPhi[40]={0};  
+   Double_t deltaTheta[40]={0};  
+
    Double_t deltaHeading[1]={0};
  
   double theReturn = 0;
   double sumMean = 0;
   double sumMean2 = 0;
-  int count8 = 0;
+    double sumMean3 = 0;
+int count8 = 0;
 
 
   TMultiGraph *myMG = new TMultiGraph;
   TMultiGraph *myMG3 = new TMultiGraph;
   TMultiGraph *myMG2 = new TMultiGraph;;
+  TMultiGraph *myMG4 = new TMultiGraph;;
 
   AnitaGeomTool *fGeomTool = AnitaGeomTool::Instance();
   char eventName[FILENAME_MAX];
@@ -61,13 +68,16 @@ canSurf->Divide(1,3);
   char *corTreeDir = "../../../Outfiles";
   double dummyArray[40][1] ={{0}}; 
   TGraph *tempAntGraph;
+  TGraph *tempAntGraph2;
 
   vector<vector<double> > phiAngle;
+  vector<vector<double> > thetaAngle;
   vector<vector<double> > deltaTVec;
   vector<vector<int> > firstAntVec;
   vector<vector<int> > secondAntVec;
 
   vector<vector<double> > phiAngleArray2;
+  vector<vector<double> > thetaAngleArray2;
   vector<vector<double> > deltaTArray2;
 
   vector<double> temp;
@@ -75,9 +85,9 @@ canSurf->Divide(1,3);
   temp.push_back(0);
   temp2.push_back(0);
 
-  double deltaTArrayLoop[6000] ={0};
-  double phiAngleArrayLoop[6000] = {0};
-
+  double deltaTArrayLoop[3000] ={0};
+  double phiAngleArrayLoop[3000] = {0};
+  double thetaAngleArrayLoop[3000] = {0};
 
   int leftOpt, rightOpt;
 
@@ -128,7 +138,9 @@ canSurf->Divide(1,3);
   
   for(int i =0; i < 40; i++){
     phiAngleArray2.push_back(temp);
+    thetaAngleArray2.push_back(temp);
     deltaTArray2.push_back(temp);
+
   }
 
   for(int loop = 1; loop <4; loop++){
@@ -138,12 +150,14 @@ canSurf->Divide(1,3);
     canSurf->cd(loop+1);
 
     phiAngle.clear();
+    thetaAngle.clear();
     deltaTVec.clear();
     firstAntVec.clear();
     secondAntVec.clear();
 
     for(int i = 0; i < 40; i++){
       phiAngle.push_back(temp);
+      thetaAngle.push_back(temp);
       deltaTVec.push_back(temp);
       firstAntVec.push_back(temp2);
       secondAntVec.push_back(temp2);
@@ -239,13 +253,18 @@ canSurf->Divide(1,3);
 	deltaT=corSum->maxCorTimes[corInd];
 	maxAnt=corSum->centreAntenna;
 	phiWave=usefulPat.getPhiWave()*TMath::RadToDeg();
+	thetaWave=usefulPat.getThetaWave()*TMath::RadToDeg();
 	phiMaxAnt=fGeomTool->getAntPhiPositionRelToAftFore(corSum->centreAntenna)*TMath::RadToDeg();
 	corPeak=corSum->maxCorVals[corInd];
 	corRMS=corSum->rmsCorVals[corInd];
 
+
+	Double_t meanPhiAntPair=fGeomTool->getMeanAntPairPhiRelToAftFore(corSum->firstAnt[corInd],corSum->secondAnt[corInd]);
+	Double_t deltaPhiAntPair=fGeomTool->getPhiDiff(meanPhiAntPair,usefulPat.getPhiWave());
 	
-	if((deltaT - deltaTExpected)*(deltaT - deltaTExpected) < 1 && (corPeak/corRMS)>8 ){
+	if((deltaT - deltaTExpected)*(deltaT - deltaTExpected) < 1 && (corPeak/corRMS)>8  && TMath::Abs(deltaPhiAntPair)*TMath::RadToDeg()<20){
 	  phiAngle[0].push_back(phiWave);
+	  thetaAngle[0].push_back(thetaWave);
 	  deltaTVec[0].push_back(deltaT - deltaTExpected + deltaTArrayMod[firstAnt] - deltaTArrayMod[secondAnt]);
 	  firstAntVec[0].push_back(firstAnt);
 	  secondAntVec[0].push_back(secondAnt);
@@ -258,11 +277,13 @@ canSurf->Divide(1,3);
     }
 
 
-    double deltaTArray[40][6000] = {{0}};
-    double phiAngleArray[40][6000]= {{0}};
+    double deltaTArray[40][3000] = {{0}};
+    double phiAngleArray[40][3000]= {{0}};
+    double thetaAngleArray[40][3000]= {{0}};
 
-    double deltaTArrayCut[40][6000]= {{0}};
-    double phiAngleArrayCut[40][6000]= {{0}};
+    double deltaTArrayCut[40][3000]= {{0}};
+    double phiAngleArrayCut[40][3000]= {{0}};
+    double thetaAngleArrayCut[40][3000]= {{0}};
 
     int middleAnt; 
     int leftAnt,rightAnt;
@@ -313,7 +334,8 @@ canSurf->Divide(1,3);
       if((firstAntTemp == ants) &&  (secondAntTemp == aboveTemp)){
 	deltaTArray[ants][count] = deltaTVec[0][events];
 	phiAngleArray[ants][count] = phiAngle[0][events];
-	
+	thetaAngleArray[ants][count] = thetaAngle[0][events];
+
 	count++;
       }
     }else{
@@ -323,12 +345,18 @@ canSurf->Divide(1,3);
 	rightTemp = 32;
 	}
            
-      if((firstAntTemp == ants) &&  (secondAntTemp == aboveTemp)){
+  
+      //      if((ants == 36) &&  (secondAntTemp == 22)){
+
+	//cout << firstAntTemp << "  " << secondAntTemp<< endl;
+
+         if((firstAntTemp == ants) &&  (secondAntTemp == aboveTemp)){
 	  //if(((firstAntTemp == ants) &&  (secondAntTemp == rightTemp)) || ((firstAntTemp == ants) &&  (secondAntTemp == aboveTemp))){	  
 
 	  deltaTArray[ants][count] = deltaTVec[0][events];
 	  phiAngleArray[ants][count] = phiAngle[0][events];
-	  
+	  thetaAngleArray[ants][count] = thetaAngle[0][events];
+
 	count++;
 	}
       }
@@ -398,17 +426,19 @@ canSurf->Divide(1,3);
 
       for(int events = 0; events < countArray[ants]; events++){
 
-		if((phiAngleArray[ants][events] > lower ) && (phiAngleArray[ants][events]< upper)){
+	//if((phiAngleArray[ants][events] > lower ) && (phiAngleArray[ants][events]< upper)){
       
-		    phiAngleArrayCut[ants][count] = phiAngleArray[ants][events];
-		    deltaTArrayCut[ants][count] = deltaTArray[ants][events];
+		    thetaAngleArrayCut[ants][count] = thetaAngleArray[ants][events];
+ 		    phiAngleArrayCut[ants][count] = phiAngleArray[ants][events];
+ 		    deltaTArrayCut[ants][count] = deltaTArray[ants][events];
 		    
 		    count++;
-	  	}
+		    //	}
       }
       
       for(int events = 0; events < count-1; events++){
 	phiAngleArray2[ants].push_back(phiAngleArrayCut[ants][events]);
+	thetaAngleArray2[ants].push_back(thetaAngleArrayCut[ants][events]);
 	deltaTArray2[ants].push_back(deltaTArrayCut[ants][events]);
       }
       
@@ -428,13 +458,17 @@ canSurf->Divide(1,3);
 
   sumMean = 0;
   sumMean2 = 0;
+  sumMean3 = 0;
+
   for(int ants = 0; ants < 40; ants++){
     count8 = 0;
     for(int events = 1; events < phiAngleArray2[ants].size(); events++){
 
-      if( deltaTArrayLoop[count8]<1){      
+      if( deltaTArrayLoop[count8]<1){ 
+     
       deltaTArrayLoop[count8] = deltaTArray2[ants][events];
       phiAngleArrayLoop[count8] = phiAngleArray2[ants][events];
+      thetaAngleArrayLoop[count8] = thetaAngleArray2[ants][events];
       count8++;
       }
 
@@ -447,10 +481,11 @@ canSurf->Divide(1,3);
 
     if(count8==0){
       	tempAntGraph  = new TGraph(1, dummyArray[ants], dummyArray[ants]);
+	tempAntGraph2  = new TGraph(1, dummyArray[ants], dummyArray[ants]);
     }else{
     
       tempAntGraph  = new TGraph(count8-1,  phiAngleArrayLoop, deltaTArrayLoop);
-    
+      tempAntGraph2  = new TGraph(count8-1,  thetaAngleArrayLoop, deltaTArrayLoop);
 
       //if(ants <16 && ants<8){  
       if(ants <16 ){  
@@ -609,6 +644,63 @@ canSurf->Divide(1,3);
 	myMG3->Add(tempAntGraph);
 	myMG3->Draw("p");  
 
+
+       
+
+ 	canSurf2->cd(ants - 31);
+      
+ 	tempAntGraph2->SetMinimum(-0.5);
+ 	tempAntGraph2->SetMaximum(0.5);
+ 	tempAntGraph2->Draw("ap");
+	
+ 	tempAntGraph2->SetMarkerStyle(1);
+   
+ 	tempAntGraph2->GetXaxis()->SetLimits(10,30);
+    
+ 	tempAntGraph2->GetXaxis()->SetTitle("theta (degrees)");
+ 	tempAntGraph2->GetYaxis()->SetTitle("actual - expected time");
+	
+	sumMean3 = sumMean3 + tempAntGraph2->GetMean(2)*tempAntGraph2->GetMean(2);
+
+ 	if(ants == 8 || ants == 16 || ants == 12 || ants == 24 || ants == 32){
+ 	  tempAntGraph2->SetMarkerColor(8);
+ 	}
+
+	if(ants == 3 || ants == 7 || ants == 23 || ants == 31 || ants == 33){
+	  tempAntGraph2->SetMarkerColor(1);
+	}
+    
+	if(ants == 9 || ants == 13 || ants == 18 || ants == 26 || ants == 34){
+	  tempAntGraph2->SetMarkerColor(2);
+	}
+    
+    
+	if(ants == 10 || ants == 14 || ants == 20 || ants == 28 || ants == 35){
+	  tempAntGraph2->SetMarkerColor(3);
+	}
+    
+	if(ants == 11 || ants == 15 || ants == 22 || ants == 30 || ants == 36){
+	  tempAntGraph2->SetMarkerColor(4);
+	}
+    
+	if(ants == 0 || ants == 4 || ants == 17 || ants == 25 || ants == 37){
+	  tempAntGraph2->SetMarkerColor(5);
+	}
+
+
+	if(ants == 2 || ants == 6 || ants == 21 || ants == 29 || ants == 38){
+	  tempAntGraph2->SetMarkerColor(6);
+	}
+
+	if(ants == 1 || ants == 5 || ants == 19 || ants == 27 || ants == 39){
+	  tempAntGraph2->SetMarkerColor(7);
+	}
+    
+ 	myMG4->Add(tempAntGraph2);
+ 	//myMG4->Draw("p");  
+	
+
+
       }
     } 
 
@@ -616,7 +708,7 @@ canSurf->Divide(1,3);
   }
  
 
-  cout << sumMean << "  " << sumMean2 <<endl;
+  cout << sumMean << "  " << sumMean2 << "  " << sumMean3 << endl;
 
 
    
