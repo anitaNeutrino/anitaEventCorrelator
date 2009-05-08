@@ -81,52 +81,6 @@ canSurf->Divide(1,3);
 
   int leftOpt, rightOpt;
 
-
-   double meanPhi[40] = {0}; 
-      meanPhi[0] =22.5-12.5;
-      meanPhi[1] =67.5-12.5;
-      meanPhi[2] =112.5-12.5;
-      meanPhi[3] =157.5-12.5;
-      meanPhi[4] =202.5-12.5;
-      meanPhi[5] =247.5-12.5;
-      meanPhi[6] =292.5-12.5;
-      meanPhi[7] =337.5-12.5;
-      meanPhi[8] =45-12.5;
-      meanPhi[9] =90-12.5;
-      meanPhi[10] =135-12.5;
-      meanPhi[11] =180-12.5;
-      meanPhi[12] =225-12.5;
-      meanPhi[13] =270-12.5;
-      meanPhi[14] =315-12.5;
-      meanPhi[15] =360-12.5;
-
-      meanPhi[16] = 22.5-12.5;
-	meanPhi[17] = 45-12.5;
-	meanPhi[18] = 67.5-12.5;
-	meanPhi[19] = 90-12.5;
-	meanPhi[20] = 112.5-12.5;
-	meanPhi[21] = 135-12.5;
-	meanPhi[22] = 157.5-12.5;
-	meanPhi[23] = 180-12.5;
-	meanPhi[24] = 202.5-12.5;
-	meanPhi[25] = 225-12.5;
-	meanPhi[26] = 247.5-12.5;
-	meanPhi[27] = 270-12.5;
-	meanPhi[28] = 292.5-12.5;
-	meanPhi[29] = 315-12.5;
-	meanPhi[30] = 337.5-12.5;
-	meanPhi[31] = 360-12.5;
-
-
-	meanPhi[32] = 22.5-12.5;
-	meanPhi[33] = 67.5-12.5;
-	meanPhi[34] = 112.5-12.5;
-	meanPhi[35] = 157.5-12.5;
-	meanPhi[36] = 202.5-12.5;
-	meanPhi[37] = 247.5-12.5;
-	meanPhi[38] = 292.5-12.5;
-	meanPhi[39] = 337.5-12.5;
-
   for(int i =0; i < 40; i++){
     phiAngleArray2.push_back(temp);
     deltaTArray2.push_back(temp);
@@ -224,11 +178,13 @@ canSurf->Divide(1,3);
       balloonLon=pat->longitude;
       balloonAlt=pat->altitude;
       heading=pat->heading;
+     
+      pat->pitch=0.64;
+      pat->roll=0.14;
+      
       pitch=pat->pitch;
       roll=pat->roll;
 
-      //pat->pitch = 0;
-      //pat->roll = 0;
       UsefulAdu5Pat usefulPat(pat);
 
       
@@ -272,16 +228,22 @@ canSurf->Divide(1,3);
 	corPeak=corSum->maxCorVals[corInd];
 	corRMS=corSum->rmsCorVals[corInd];
 
+	Double_t meanPhiAntPair=fGeomTool->getMeanAntPairPhiRelToAftFore(corSum->firstAnt[corInd],corSum->secondAnt[corInd]);
+	Double_t deltaPhiAntPair=fGeomTool->getPhiDiff(meanPhiAntPair,usefulPat.getPhiWave());
 
 	//cout << deltaT << "  "  << deltaTExpected << endl;
 	
-			if((deltaT - deltaTExpected)*(deltaT - deltaTExpected) < 1 && (corPeak/corRMS)>8 ){
+
+
+	if((deltaT - deltaTExpected)*(deltaT - deltaTExpected) < 1 && (corPeak/corRMS)>8 && TMath::Abs(deltaPhiAntPair)*TMath::RadToDeg()<20){
 	  phiAngle[0].push_back(phiWave);
 	  deltaTVec[0].push_back(deltaT - deltaTExpected + deltaTArrayMod[firstAnt] - deltaTArrayMod[secondAnt]);
 	  firstAntVec[0].push_back(firstAnt);
-	  secondAntVec[0].push_back(secondAnt);
+	  secondAntVec[0].push_back(secondAnt);  
+	}
 
-	  	  	}
+
+
       }
 
       counter++; 
@@ -386,59 +348,18 @@ canSurf->Divide(1,3);
       double sumPhi = 0;
  
 
-      double lower  = meanPhi[ants] - 20;
-      	double upper = meanPhi[ants] + 10;
-      //double lower  = 0;
-      //double upper = 360;
 
-	if(ants<8){
-	  lower = lower;
-	  upper=upper;
-
-	if(lower < 0){
-	  lower = 0;
-	  upper = 20;
-	}
-
-	if(upper > 360){
-	  lower = 330;
-	  upper = 360;
-	}
-
-	}else if(ants<16){
-	  lower = lower;
-	  upper= upper;
-	if(lower < 0){
-	  lower = 330;
-	  upper = 355;
-	}
-
-	if(upper > 360){
-	  lower = 330;
-	  upper = 360;
-	}
-
-	}
-   
-
-
-
-
-      //cout <<  ants << "  " << meanPhi[ants] << endl;
-	//   cout  << "  " << upper << "  " << lower << endl;
+      
+     
 
       for(int events = 0; events < countArray[ants]; events++){
 
-		if((phiAngleArray[ants][events] > lower ) && (phiAngleArray[ants][events]< upper)){
-      
-		 
+		
 		    phiAngleArrayCut[ants][count] = phiAngleArray[ants][events];
 		    deltaTArrayCut[ants][count] = deltaTArray[ants][events];
 		    
 		    count++;
-		 
-
-	  	}
+		
 
       }
 
@@ -500,9 +421,10 @@ canSurf->Divide(1,3);
    
 	tempAntGraph->GetXaxis()->SetLimits(0,360);
     
+	
 
 
-	//	cout << ants << "  " << count8 <<"  " << tempAntGraph->GetMean(1) << "  " << tempAntGraph->GetMean(2) << endl;
+		cout << ants << "  " << count8 <<"  " << tempAntGraph->GetMean(1) << "  " << tempAntGraph->GetMean(2) << endl;
 
 	//	cout << "deltaTArrayMod["<<ants<<"] = " <<  tempAntGraph->GetMean(2) << ";" << endl;
 
@@ -615,8 +537,48 @@ tempAntGraph->GetYaxis()->SetTitle("actual - expected time");
       
 	tempAntGraph->SetMinimum(-0.5);
 	tempAntGraph->SetMaximum(0.5);
+
+	double x=0;
+	double y =0;
+	double upper = 0;
+	double lower = 100000;
+	for(int i = 0; i <tempAntGraph->GetN(); i++){
+
+	  tempAntGraph->GetPoint(i,x,y);
+	  if(x<lower){
+	    lower=x;}
+	  if(x>upper){
+	    upper=x;}
+	}
+
+
+
+
+
+	  for(int i = 0; i <tempAntGraph->GetN(); i++){
+	    
+	    tempAntGraph->GetPoint(i,x,y);
+
+	    if((upper-lower>100)&&x<300){
+	   
+	      tempAntGraph->SetPoint(i,x+360,y);
+	      lower = 300;
+	      upper = 400;   
+
+	    }
+	    
+	  }
+
+
 	tempAntGraph->Draw("ap");
 	
+
+	
+	cout <<"lower " << lower << " " << upper << endl;       
+
+	//	TF1 *fa3 = new TF1("fa3","pol1",lower,upper);
+	//tempAntGraph->Fit("fa3","R");
+
 	tempAntGraph->SetMarkerStyle(1);
    
 	tempAntGraph->GetXaxis()->SetLimits(0,360);
@@ -624,7 +586,7 @@ tempAntGraph->GetYaxis()->SetTitle("actual - expected time");
 tempAntGraph->GetXaxis()->SetTitle("phi (degrees)");
  tempAntGraph->GetYaxis()->SetTitle("actual - expected time");
 
-	//	 cout << ants <<"  " <<tempAntGraph->GetMean(2) << endl;
+ //	 cout << ants <<"  " <<tempAntGraph->GetMean(2) << endl;
 	//	sumMean2 = sumMean2 + tempAntGraph->GetMean(2);
 
 	if(ants == 8 || ants == 16 || ants == 12 || ants == 24 || ants == 32){
