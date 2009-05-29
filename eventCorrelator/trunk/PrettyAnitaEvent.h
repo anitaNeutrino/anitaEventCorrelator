@@ -7,11 +7,11 @@
 //////////////////////////////////////////////////////////////////////////////
 
 
-/*! \mainpage ROOT FFTW Wrapper
+/*! \mainpage ANITA Event Correlator
  *
  * \section intro_sec Introduction
  *
- * This is the somewhat sketchy documentation for my poor attempt at an event correlator library. At the moment this library is in pale in comparison to the work done by Andres, Jiwoo, Stephen and jsut about every other ANITA collaborator I suspect. But I did it so I'm sticking it here.
+ * This is the somewhat sketchy documentation for my poor attempt at an event correlator library. At the moment this library is in pale in comparison to the work done by Andres, Jiwoo, Stephen and just about every other ANITA collaborator I suspect. But I did it so I'm sticking it here.
  *
  * \section prereq_sec Prerequisites
  *

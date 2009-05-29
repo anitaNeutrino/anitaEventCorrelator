@@ -41,11 +41,17 @@ UsefulAdu5Pat::UsefulAdu5Pat()
    if(!fBedmapReader){
       fBedmapReader=BedmapReader::Instance();
    }
+
 }
 
 UsefulAdu5Pat::UsefulAdu5Pat(Adu5Pat *patPtr,double deltaR,double deltaRL,double deltaUD)
    : Adu5Pat(*patPtr)
 {
+  pitch=STATIC_ADU5_PITCH;
+  roll=STATIC_ADU5_ROLL;
+  heading+=OFFSET_ADU5_HEADING;
+  if(heading>=360) heading-=360;
+  if(heading<0) heading+=360;
    fThetaWave=0;
    fPhiWave=0;
    fSourceLongitude=-1;
@@ -69,6 +75,12 @@ UsefulAdu5Pat::UsefulAdu5Pat(Adu5Pat *patPtr,double deltaR,double deltaRL,double
 UsefulAdu5Pat::UsefulAdu5Pat(Adu5Pat *patPtr)
    : Adu5Pat(*patPtr)
 {
+
+  pitch=STATIC_ADU5_PITCH;
+  roll=STATIC_ADU5_ROLL;
+  heading+=OFFSET_ADU5_HEADING;
+  if(heading>=360) heading-=360;
+  if(heading<0) heading+=360;
    fThetaWave=0;
    fPhiWave=0;
    fSourceLongitude=-1;

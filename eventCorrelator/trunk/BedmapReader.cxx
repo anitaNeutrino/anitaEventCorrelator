@@ -264,9 +264,9 @@ void BedmapReader::ENtoLonLat(Int_t e_coord, Int_t n_coord, Double_t xLowerLeft,
   //now find latitude
 
   if (easting != 0)
-    bedmap_R = fabs(easting/sin(lon));
+    bedmap_R = TMath::Abs(easting/sin(lon));
   else if (easting == 0 && northing != 0)
-    bedmap_R = fabs(northing);
+    bedmap_R = TMath::Abs(northing);
   else {
     lat = 0; //at the pole, set lat=0 degrees
     lon = lon*TMath::RadToDeg();
