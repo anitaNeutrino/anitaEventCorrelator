@@ -20,7 +20,7 @@
 
 //!  This is the position and attitude class that inherits from Adu5Pat and has some useful methods for determining the expected plane wave angles and inter-antenna crossing times for a given source.
 /*!
-  As UsefulAnitaEvent is to RawAnitaEvent, UsefulAdu5Pat is to Adu5Pat. Well not quite as useful but you get the picture.
+  As UsefulAnitaEvent is to RawAnitaEvent, UsefulAdu5Pat is to Adu5Pat. Well not quite as useful but you get the picture. Note that UsefulAdu5Pat sets the pitch, roll and heading variables according to the values defined in AnitaConventions.h
 */
 class UsefulAdu5Pat: public Adu5Pat
 {
