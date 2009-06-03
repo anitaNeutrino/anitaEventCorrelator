@@ -23,12 +23,33 @@
 
 #include <iostream>
 #include <fstream>
+#include <vector>
+#include <algorithm>
 #include <cstring>
 #include "TMath.h"
 #include "BedmapReader.h"
 #include "AnitaGeomTool.h"
 
 using namespace std;
+
+ struct rampData{
+  Double_t lat;
+  Double_t longi;
+  Double_t el1;
+  Double_t el2;
+ };
+
+bool comparitor(rampData const& first, rampData const& second){
+	return first.lat < second.lat;
+}
+
+vector<rampData> rampDemVec;
+vector<double> longVec;
+vector<double> latVec;
+
+vector<double>::iterator myIteratorLow;
+vector<double>::iterator myIteratorUp;
+vector<double>::iterator myIteratorFinal;
 
 //Parameters of the BEDMAP ice model. (See http://www.antarctica.ac.uk/data/access/bedmap/download/)
 Int_t cellSize=5000; //in meters, set by header file (should be 5000)
@@ -58,7 +79,8 @@ BedmapReader::BedmapReader()
 {
   //Default constructor
   std::cout << "reading the bedmap data" << std::endl;
-  ReadSurfaceElevation();
+  //ReadSurfaceElevation();
+  ReadSurfaceElevationRampDem();
   fgInstance=this;
 }
 
@@ -112,7 +134,46 @@ Double_t BedmapReader::Geoid(Double_t latitude) {
   return (GEOID_MIN*GEOID_MAX/sqrt(pow(GEOID_MIN,2)-(pow(GEOID_MIN,2)-pow(GEOID_MAX,2))*pow(cos(latitude*TMath::DegToRad()),2)));
 } //Geoid(lat)
 
+//_______________________________________________________________________________
+Double_t BedmapReader::SurfaceAboveGeoidRampDem(Double_t lon, Double_t lat) {
 
+  double searchVal = lat;
+  double searchValFinal = lon;
+  double lower = 0;
+  double  upper = 0;
+  double finalVal = 0;
+  double lowerEl;
+  double upperEl;
+  double finalEl;
+
+
+  //there may be more than one value that matches the latitude, so first lets fins find the upper and lower limit on this range
+ myIteratorLow = lower_bound(latVec.begin(), latVec.end(), searchVal);
+if (myIteratorLow == latVec.begin()) upper = *myIteratorLow; // no smaller value  than val in vector
+else if (myIteratorLow == latVec.end()) lower = *(myIteratorLow-1); // no bigger value than val in vector
+else {
+    lower = *(myIteratorLow);
+   lowerEl = distance(latVec.begin(),myIteratorLow); 
+}
+
+ myIteratorUp = upper_bound(latVec.begin(), latVec.end(), searchVal);
+if (myIteratorUp == latVec.begin()) upper = *myIteratorUp; // no smaller value  than val in vector
+else if (myIteratorUp == latVec.end()) lower = *(myIteratorUp-1); // no bigger value than val in vector
+else {
+    upper = *(myIteratorUp);
+   upperEl = distance(latVec.begin(),myIteratorUp); 
+}
+
+
+//now we have upper and lower limit, lets find the nearest longitude in this range of values
+ myIteratorFinal = lower_bound(longVec.begin()+lowerEl, longVec.begin()+upperEl-1, searchValFinal);
+    
+   finalVal = *(myIteratorFinal);
+    finalEl = distance(longVec.begin()+lowerEl,myIteratorFinal); 
+
+  return 0;
+
+}
 
 
 //_______________________________________________________________________________
@@ -190,6 +251,73 @@ void BedmapReader::ReadSurfaceElevation() {
   SurfaceElevationFile.close();
   return;
 } //method ReadSurfaceElevation
+
+
+//_______________________________________________________________________________
+void BedmapReader::ReadSurfaceElevationRampDem() {
+  //Reads the BEDMAP data on the elevation of the surface beneath the ice.  If there is water beneath the ice, the ground elevation is given the value 0.  Assumes the file is in directory "data".  Origianl code by Ryan Nichol.
+  char calibDir[FILENAME_MAX];
+  char *calibEnv=getenv("ANITA_CALIB_DIR");
+  if(!calibEnv) {
+     char *utilEnv=getenv("ANITA_UTIL_INSTALL_DIR");
+     if(!utilEnv)
+	sprintf(calibDir,"calib");
+     else
+	sprintf(calibDir,"%s/share/anitaCalib",utilEnv);
+  }
+  else {
+    strncpy(calibDir,calibEnv,FILENAME_MAX);
+  }
+  char surfaceFile[FILENAME_MAX];
+  sprintf(surfaceFile,"%s/surfaceElevationRampDem.asc",calibDir);
+  ifstream SurfaceElevationFile(surfaceFile);
+  if(!SurfaceElevationFile) {
+    std::cerr << "Couldn't open: " << surfaceFile << std::endl;
+    exit(1);
+  }
+
+  std::cout<<"Reading in BEDMAP data on surface elevation.\n";
+
+ 
+  Double_t latIn = 0;
+  Double_t longIn = 0;
+  Double_t el1In = 0;
+  Double_t el2In = 0;  
+
+
+  rampData dataIn;
+
+  while (!SurfaceElevationFile.eof()){
+	SurfaceElevationFile >> latIn;
+	SurfaceElevationFile >> longIn;
+       	SurfaceElevationFile >> el1In;
+       	SurfaceElevationFile >> el2In;
+
+	dataIn.lat = latIn;
+	dataIn.longi = longIn;
+	dataIn.el1 = el1In;
+	dataIn.el2 = el2In;
+
+	rampDemVec.push_back(dataIn);
+
+       }
+
+  cout << "sorting data" << endl;
+  std::sort(rampDemVec.begin(), rampDemVec.end(), comparitor);
+
+ for (vector<rampData>::iterator it = rampDemVec.begin(); it!=rampDemVec.end(); ++it) {
+ 
+   latVec.push_back(it->lat);
+   longVec.push_back(it->longi);
+   cout << it->lat << "  " << it->longi << endl;
+
+  }
+
+  
+  SurfaceElevationFile.close();
+  return;
+} //method ReadSurfaceElevation
+
 
 
 
