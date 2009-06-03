@@ -171,7 +171,11 @@ else {
    finalVal = *(myIteratorFinal);
     finalEl = distance(longVec.begin()+lowerEl,myIteratorFinal); 
 
-  return 0;
+
+    finalEl = rampDemVec[finalEl+lowerEl].el1;
+    //cout << finalEl << endl;
+
+  return finalEl;
 
 }
 
