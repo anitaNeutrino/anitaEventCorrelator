@@ -30,10 +30,12 @@ class BedmapReader// : public TObject
   //BEDMAP data
   Double_t surface_elevation[1096][911]; //elevation of surface above geoid
 
+
   Double_t Geoid(Double_t latitude);
 
   //BEDMAP data input methods
   void ReadSurfaceElevation();
+  void ReadSurfaceElevationRampDem();
 
 
   //BEDMAP utility methods
@@ -68,6 +70,7 @@ class BedmapReader// : public TObject
   
   Double_t Surface(Double_t longitude, Double_t latitude);
   Double_t SurfaceAboveGeoid(Double_t longitude, Double_t latitude);
+  Double_t SurfaceAboveGeoidRampDem(Double_t longitude, Double_t latitude);
   
  protected:
   static BedmapReader *fgInstance;  
