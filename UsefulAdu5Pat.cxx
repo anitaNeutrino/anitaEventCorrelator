@@ -10,6 +10,8 @@
 #include "AnitaGeomTool.h"
 #include "AnitaConventions.h"
 #include "BedmapReader.h"
+#include "RampdemReader.h"
+#include "TProfile2D.h"
 #include <iostream>
 #include <fstream>
 
@@ -20,7 +22,8 @@
 ClassImp(UsefulAdu5Pat);
 
 AnitaGeomTool *fUPGeomTool=0;
-BedmapReader *fBedmapReader=0;
+//RampdemReader *fRampdemReader=0;
+Int_t fRampdemOpen=0;
 
 
 UsefulAdu5Pat::UsefulAdu5Pat() 
@@ -38,8 +41,9 @@ UsefulAdu5Pat::UsefulAdu5Pat()
    if(!fUPGeomTool){
       fUPGeomTool=AnitaGeomTool::Instance();
    }
-   if(!fBedmapReader){
-      fBedmapReader=BedmapReader::Instance();
+   if(!fRampdemOpen){
+      fRampdemReader=RampdemReader::Instance();
+      fRampdemOpen=1;
    }
 
 }
@@ -66,8 +70,9 @@ UsefulAdu5Pat::UsefulAdu5Pat(Adu5Pat *patPtr,double deltaR,double deltaRL,double
    fBalloonPhi=fBalloonPos.Phi();
    if(fBalloonPhi<0) fBalloonPhi+=TMath::TwoPi();
    fBalloonHeight=fBalloonPos.Mag();
-   if(!fBedmapReader){
-      fBedmapReader=BedmapReader::Instance();
+   if(!fRampdemOpen){
+      fRampdemReader=RampdemReader::Instance();
+      fRampdemOpen=1;
    }
 
 }
@@ -98,8 +103,9 @@ UsefulAdu5Pat::UsefulAdu5Pat(Adu5Pat *patPtr)
    fBalloonPhi=fBalloonPos.Phi();
    if(fBalloonPhi<0) fBalloonPhi+=TMath::TwoPi();
    fBalloonHeight=fBalloonPos.Mag();
-   if(!fBedmapReader){
-      fBedmapReader=BedmapReader::Instance();
+   if(!fRampdemOpen){
+      fRampdemReader=RampdemReader::Instance();
+      fRampdemOpen=1;
    }
 }
 
@@ -325,13 +331,13 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
    
    Double_t reBalloon=fUPGeomTool->getDistanceToCentreOfEarth(latitude);
    //   std::cout << "Radius difference: " << re-re2 << "\t" << re << "\t" << re2 << "\n";
-   Double_t chosenAlt = fBedmapReader->SurfaceAboveGeoid(longitude,latitude);
+   Double_t chosenAlt = fRampdemReader->SurfaceAboveGeoid(longitude,latitude);
 
    Double_t re=reBalloon+chosenAlt;
    Double_t nextRe=re;
    Double_t reh=reBalloon+altitude;
 
-   std::cout << "balloon lat " << latitude << " lon " << longitude << " re " << reBalloon+chosenAlt << " surface elevation " << chosenAlt << std::endl;
+//    std::cout << "balloon lat " << latitude << " lon " << longitude << " re " << reBalloon+chosenAlt << " surface elevation " << chosenAlt << std::endl;
 
    int inTheLoop=0;
    do {
@@ -339,9 +345,9 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
      //This is iterative because the Earth is cruel and isn't flat, and I couldn't be bothered to work out how to do it more elegantly.
      re=nextRe;
      inTheLoop++;
-     std::cout << std::endl << "in do while loop " << inTheLoop << std::endl;
+//      std::cout << std::endl << "in do while loop " << inTheLoop << std::endl;
 
-     std::cout << "pointing lat " << sourceLat << " lon " << sourceLon << " re " << re << " surface elevation " << chosenAlt << std::endl;
+//      std::cout << "pointing lat " << sourceLat << " lon " << sourceLon << " re " << re << " surface elevation " << chosenAlt << std::endl;
 
      Double_t sintw=TMath::Sin(tempThetaWave);
      Double_t costw=TMath::Cos(tempThetaWave);
@@ -396,15 +402,18 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
      fUPGeomTool->getLatLonAltFromCartesian(sourceVec,sourceLat,sourceLon,sourceAlt);
      //std::cout << "SourceLatLonAlt: " << sourceLat << "\t" << sourceLon << "\t" 
      //	       << sourceAlt << "\n";
-     chosenAlt = fBedmapReader->SurfaceAboveGeoid(sourceLon,sourceLat);
+     chosenAlt = fRampdemReader->SurfaceAboveGeoid(sourceLon,sourceLat);
      nextRe=fUPGeomTool->getDistanceToCentreOfEarth(sourceLat)+chosenAlt;
      //std::cout << "Earth radius: " << nextRe << "\t" << re << "\n";
      //     break;
 
-     std::cout << "pointing lat " << sourceLat << " lon " << sourceLon << " re " << nextRe << " surface elevation " << chosenAlt << std::endl;
+//      std::cout << "pointing lat " << sourceLat << " lon " << sourceLon << " re " << nextRe << " surface elevation " << chosenAlt << std::endl;
+
+     std::cout << "sourceLat " << sourceLat << " long " << sourceLon << " alt " << chosenAlt << " re " << re << " nextRe " << nextRe << std::endl;
 
    } while(TMath::Abs(nextRe-re)>1);
 
+//    std::cout << std::endl << "td alt " << AnitaLocations::ALTITUDE_TD << " bepmapTDalt " << fRampdemReader->SurfaceAboveGeoid(AnitaLocations::LONGITUDE_TD,AnitaLocations::LATITUDE_TD) << std::endl;
    sourceAltitude = chosenAlt;
      //   fUPGeomTool->getLonLat(fSourcePos,sourceLon,sourceLat);
    //   sourceLat*=-1;
@@ -413,7 +422,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
 }
 
 
-// int UsefulAdu5Pat::getSourceLonAndLatWithBedmap(BedmapReader *bedmapData,Double_t phiWave, Double_t thetaWave,Double_t &sourceLon, Double_t &sourceLat){
+// int UsefulAdu5Pat::getSourceLonAndLatWithRampdem(RampdemReader *rampdemData,Double_t phiWave, Double_t thetaWave,Double_t &sourceLon, Double_t &sourceLat){
 
 //   double newAlt;
 //   double alt=0.;
@@ -730,3 +739,11 @@ UInt_t UsefulAdu5Pat::getTaylorDomeTriggerTimeNs()
 
 
 }
+
+
+
+
+// TProfile2D *UsefulAdu5Pat::rampMap(int coarseness,UInt_t &xBins,UInt_t &yBins){
+//   TProfile2D *rampMap = fRampdemReader->rampMap(coarseness,0,xBins,yBins);
+//   return rampMap;
+// }
