@@ -17,6 +17,8 @@
 #include "AnitaConventions.h"
 #include "AnitaGeomTool.h"
 #include "BedmapReader.h"
+#include "RampdemReader.h"
+#include "TProfile2D.h"
 
 //!  This is the position and attitude class that inherits from Adu5Pat and has some useful methods for determining the expected plane wave angles and inter-antenna crossing times for a given source.
 /*!
@@ -135,6 +137,9 @@ class UsefulAdu5Pat: public Adu5Pat
      { return fSourceAltitude;} ///< Returns the last calculated source altitude.
   
   UInt_t getTaylorDomeTriggerTimeNs();
+
+/*   TProfile2D *rampMap(int coarseness,UInt_t &xBins,UInt_t &yBins); */
+  RampdemReader *fRampdemReader;
 
  private:
   TVector3 fSourcePos; ///< Private variable to hold the source location in cartesian coordinates.

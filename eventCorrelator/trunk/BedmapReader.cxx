@@ -79,8 +79,8 @@ BedmapReader::BedmapReader()
 {
   //Default constructor
   std::cout << "reading the bedmap data" << std::endl;
-  //ReadSurfaceElevation();
-  ReadSurfaceElevationRampDem();
+  ReadSurfaceElevation();
+  //ReadSurfaceElevationRampDem();
   fgInstance=this;
 }
 
@@ -123,7 +123,7 @@ Double_t BedmapReader::SurfaceAboveGeoid(Double_t lon, Double_t lat) {
   else {
     surface = NODATA;
   }
-  std::cout << "surface height " << surface << " e_co " << e_coord_surface << " n_co " << n_coord_surface << " lon " << lon << " lat " << lat << std::endl;
+//   std::cout << "surface height " << surface << " e_co " << e_coord_surface << " n_co " << n_coord_surface << " lon " << lon << " lat " << lat << std::endl;
   return surface;
 } //method SurfaceAboveGeoid
 
@@ -169,13 +169,13 @@ else {
  myIteratorFinal = lower_bound(longVec.begin()+lowerEl, longVec.begin()+upperEl-1, searchValFinal);
     
    finalVal = *(myIteratorFinal);
-    finalEl = distance(longVec.begin()+lowerEl,myIteratorFinal); 
-
+   finalEl = distance(longVec.begin()+lowerEl,myIteratorFinal); 
 
     finalEl = rampDemVec[finalEl+lowerEl].el1;
     //cout << finalEl << endl;
 
   return finalEl;
+
 
 }
 
@@ -202,6 +202,8 @@ void BedmapReader::ReadSurfaceElevation() {
     std::cerr << "Couldn't open: " << surfaceFile << std::endl;
     exit(1);
   }
+
+  std::cout << calibDir << " " << surfaceFile << std::endl;
 
   std::cout<<"Reading in BEDMAP data on surface elevation.\n";
 
@@ -273,14 +275,15 @@ void BedmapReader::ReadSurfaceElevationRampDem() {
     strncpy(calibDir,calibEnv,FILENAME_MAX);
   }
   char surfaceFile[FILENAME_MAX];
-  sprintf(surfaceFile,"%s/surfaceElevationRampDem.asc",calibDir);
+  //sprintf(surfaceFile,"%s/ramp1kmdem_wgsosu_v2.txt",calibDir);
+  sprintf(surfaceFile,"/unix/anita1/rampDemData/ramp1kmdem_wgsosu_v2.txt");
   ifstream SurfaceElevationFile(surfaceFile);
   if(!SurfaceElevationFile) {
     std::cerr << "Couldn't open: " << surfaceFile << std::endl;
     exit(1);
   }
 
-  std::cout<<"Reading in BEDMAP data on surface elevation.\n";
+  std::cout<<"Reading in RampDEM data on surface elevation.\n";
 
  
   Double_t latIn = 0;
@@ -313,7 +316,7 @@ void BedmapReader::ReadSurfaceElevationRampDem() {
  
    latVec.push_back(it->lat);
    longVec.push_back(it->longi);
-   cout << it->lat << "  " << it->longi << endl;
+   //cout << it->lat << "  " << it->longi << endl;
 
   }
 
