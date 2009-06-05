@@ -108,7 +108,7 @@ Double_t RampdemReader::Geoid(Double_t latitude) {
 //_______________________________________________________________________________
 int RampdemReader::readRAMPDEM()
 {
-  bool debug=true;
+  bool debug=false;
 
   char calibDir[FILENAME_MAX];
   char *calibEnv=getenv("ANITA_CALIB_DIR");
@@ -251,6 +251,7 @@ Double_t RampdemReader::Area(Double_t latitude) {
 //_______________________________________________________________________________
 void RampdemReader::LonLattoEN(Double_t lon, Double_t lat, int& e_coord, int& n_coord) {
   //takes as input a latitude and longitude (in degrees) and converts to indicies for BEDMAP matricies. Needs a location for the corner of the matrix, as not all the BEDMAP files cover the same area.  Code by Stephen Hoover.
+  bool debug=false;
 
   Double_t easting=0;
   Double_t northing=0;
@@ -266,9 +267,12 @@ void RampdemReader::LonLattoEN(Double_t lon, Double_t lat, int& e_coord, int& n_
   LonLatToEastingNorthing(lon,lat,easting,northing);
   EastingNorthingToEN(easting,northing,e_coord,n_coord);
 
+  if(debug){
+    std::cout << "lon " << lon << " lat " << lat << " easting " << easting << " northing " << northing << " e_coord " << e_coord << " n_coord " << n_coord << std::endl;
+  }
 
-  e_coord = (int)((easting - x_min) / cell_size);
-  n_coord = (int)((-1*northing - y_min) / cell_size);
+//   e_coord = (int)((easting - x_min) / cell_size);
+//   n_coord = (int)((-1*northing - y_min) / cell_size);
 
   return;
 } //method LonLattoEN
@@ -278,10 +282,16 @@ void RampdemReader::LonLattoEN(Double_t lon, Double_t lat, int& e_coord, int& n_
 
 //_______________________________________________________________________________
 void RampdemReader::EastingNorthingToEN(Double_t easting,Double_t northing,Int_t &e_coord,Int_t &n_coord){
-
+  bool debug=false;
+  if(debug){
+    std::cout << "easting " << easting << " northing " << northing << " e_coord " << e_coord << " n_coord " << n_coord << " x_min " << x_min << " y_min " << y_min << " cell size " << cell_size << std::endl;
+  }
   e_coord = (int)((easting - x_min) / cell_size);
   n_coord = (int)((-1*northing - y_min) / cell_size);
 
+  if(debug){
+    std::cout << "easting " << easting << " northing " << northing << " e_coord " << e_coord << " n_coord " << n_coord << " x_min " << x_min << " y_min " << y_min << " cell size " << cell_size << std::endl;
+  }
 }
 
 
@@ -355,7 +365,7 @@ void RampdemReader::ENtoLonLat(Int_t e_coord, Int_t n_coord, Double_t& lon, Doub
 
 TProfile2D *RampdemReader::rampMap(int coarseness_factor, int set_log_scale,UInt_t &xBins,UInt_t &yBins){
 
-  Bool_t debug=true;
+  Bool_t debug=false;
 
   UInt_t num_columns = surface_elevation.size()/coarseness_factor;
   UInt_t num_rows = surface_elevation[0].size()/coarseness_factor;
@@ -393,9 +403,9 @@ TProfile2D *RampdemReader::rampMap(int coarseness_factor, int set_log_scale,UInt
 
 
 
-TProfile2D *RampdemReader::rampMapPartial(int coarseness_factor,double centralLon,double centralLat,double rangeMetres,Int_t &xBins,Int_t &yBins){
+TProfile2D *RampdemReader::rampMapPartial(int coarseness_factor,double centralLon,double centralLat,double rangeMetres,Int_t &xBins,Int_t &yBins,Double_t &xMin,Double_t &xMax,Double_t &yMin,Double_t &yMax){
 
-  Bool_t debug=true;
+  Bool_t debug=false;
 
   Int_t central_e_coord,central_n_coord;
   Int_t max_e_coord,min_e_coord;
@@ -423,6 +433,10 @@ TProfile2D *RampdemReader::rampMapPartial(int coarseness_factor,double centralLo
   }
   xBins = max_e_coord-min_e_coord;
   yBins = max_n_coord-min_n_coord;
+  xMin = central_easting-rangeMetres;
+  xMax = central_easting+rangeMetres;
+  yMin = central_northing-rangeMetres;
+  yMax = central_northing+rangeMetres;
 
   char histName[FILENAME_MAX];
   sprintf(histName,"antarctica_surface_elevation_partial_lon%f_lat%f",centralLon,centralLat);

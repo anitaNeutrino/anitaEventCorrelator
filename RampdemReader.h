@@ -63,7 +63,7 @@ class RampdemReader// : public TObject
   Double_t SurfaceAboveGeoidRampDem(Double_t longitude, Double_t latitude);
 
   TProfile2D *rampMap(int coarseness_factor, int set_log_scale,UInt_t &xBins,UInt_t &yBins);
-  TProfile2D *rampMapPartial(int coarseness_factor,double centralLon,double centralLat,double rangeMetres,Int_t &xBins,Int_t &yBins);
+  TProfile2D *rampMapPartial(int coarseness_factor,double centralLon,double centralLat,double rangeMetres,Int_t &xBins,Int_t &yBins,Double_t &xMin,Double_t &xMax,Double_t &yMin,Double_t &yMax);
 
   //Generic method to flip Endianness.
   //WARNING: Flips byte order of anything put in - do not use on things like stuctures or classes!

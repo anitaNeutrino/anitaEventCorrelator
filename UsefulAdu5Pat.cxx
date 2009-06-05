@@ -271,15 +271,15 @@ int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWav
 
 int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat,Double_t &sourceAltitude)
 {
-  //std::cout << "getSourceLonAndLatAltZero " << phiWave << "\t" << thetaWave << "\n";
+
+  bool debug=true;
+
   if(fPhiWave!=phiWave) fPhiWave=phiWave;
   if(fThetaWave!=thetaWave) fThetaWave=thetaWave;
 
 //   Double_t thetaBalloon=fUPGeomTool->getThetaFromLat(TMath::Abs(latitude));
 //   Double_t phiBalloon=fUPGeomTool->getPhiFromLon(longitude);
 //   Double_t balloonHeight=fUPGeomTool->getGeoid(thetaBalloon)+altitude;
-
-   
 
 
    Double_t tempPhiWave=phiWave;
@@ -337,17 +337,27 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
    Double_t nextRe=re;
    Double_t reh=reBalloon+altitude;
 
-//    std::cout << "balloon lat " << latitude << " lon " << longitude << " re " << reBalloon+chosenAlt << " surface elevation " << chosenAlt << std::endl;
+//    if(debug){
+//      std::cout << "balloon lat " << latitude << " lon " << longitude << " re " << reBalloon+chosenAlt << " surface elevation " << chosenAlt << std::endl;
+//      std::cout << "phiW " << phiWave << " thetaW " << thetaWave << " fPhiW " << fPhiWave << " fPhiWave " << " fThetaWave " << fThetaWave << std::endl;
+//      std::cout << "head " << heading << " p " << pitch << " r " << roll << std::endl;
+//    }
 
    int inTheLoop=0;
+   Double_t lastButOneRe=0; //in case we get stuck in the while loop - this is a bad method and needs to be improved!
+   Double_t lastButTwoRe=0; //in case we get stuck in the while loop - this is a bad method and needs to be improved!
+   Double_t lastButThreeRe=0; //in case we get stuck in the while loop - this is a bad method and needs to be improved!
+   Double_t lastButFourRe=0; //in case we get stuck in the while loop - this is a bad method and needs to be improved!
+
    do {
      //Okay so effectively what we do here is switch to cartesian coords with the balloon at RE_balloon + altitude and then try to fins where the line at thetaWave cuts the Earth's surface.
      //This is iterative because the Earth is cruel and isn't flat, and I couldn't be bothered to work out how to do it more elegantly.
+     if(inTheLoop>2) lastButFourRe = lastButThreeRe;
+     if(inTheLoop>2) lastButThreeRe = lastButTwoRe;
+     if(inTheLoop>1) lastButTwoRe = lastButOneRe;
+     if(inTheLoop>0) lastButOneRe = re;
      re=nextRe;
      inTheLoop++;
-//      std::cout << std::endl << "in do while loop " << inTheLoop << std::endl;
-
-//      std::cout << "pointing lat " << sourceLat << " lon " << sourceLon << " re " << re << " surface elevation " << chosenAlt << std::endl;
 
      Double_t sintw=TMath::Sin(tempThetaWave);
      Double_t costw=TMath::Cos(tempThetaWave);
@@ -407,40 +417,46 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
      //std::cout << "Earth radius: " << nextRe << "\t" << re << "\n";
      //     break;
 
-//      std::cout << "pointing lat " << sourceLat << " lon " << sourceLon << " re " << nextRe << " surface elevation " << chosenAlt << std::endl;
+     if(debug)
+       if(inTheLoop>30 && inTheLoop<50) std::cout << "loop " << inTheLoop << " sourceLat " << sourceLat << " long " << sourceLon << " alt " << chosenAlt << " re " << re << " nextRe " << nextRe << " lastButOneRe " << lastButOneRe << " abs(last-next) " << TMath::Abs(lastButOneRe-nextRe) << std::endl;
+   
 
-     std::cout << "sourceLat " << sourceLat << " long " << sourceLon << " alt " << chosenAlt << " re " << re << " nextRe " << nextRe << std::endl;
+     if(TMath::Abs(lastButOneRe-nextRe)<1.){
+//        if(debug)
+// 	 std::cout << "breaking out nextRe " << nextRe << " lastButTwoRe " << lastButOneRe << std::endl;
+       break;//WAY OF MAKING SURE WE DON'T GET STUCK IN THE LOOP WITH ALTERNATING RE VALUES - THIS IS NOT THE WAY TO DO THINGS!
+     }
+     if(TMath::Abs(lastButTwoRe-nextRe)<1.){
+//        if(debug)
+// 	 std::cout << "breaking out nextRe " << nextRe << " lastButOneRe " << lastButTwoRe << std::endl;
+       break;//WAY OF MAKING SURE WE DON'T GET STUCK IN THE LOOP WITH ALTERNATING RE VALUES - THIS IS NOT THE WAY TO DO THINGS!
+     }
+     if(TMath::Abs(lastButThreeRe-nextRe)<1.){
+      if(debug)
+	 std::cout << "breaking out nextRe " << nextRe << " lastButThreeRe " << lastButThreeRe << std::endl;
+       break;//WAY OF MAKING SURE WE DON'T GET STUCK IN THE LOOP WITH ALTERNATING RE VALUES - THIS IS NOT THE WAY TO DO THINGS!
+     }
+     if(TMath::Abs(lastButFourRe-nextRe)<1.){
+      if(debug)
+	 std::cout << "breaking out nextRe " << nextRe << " lastButFourRe " << lastButFourRe << std::endl;
+       break;//WAY OF MAKING SURE WE DON'T GET STUCK IN THE LOOP WITH ALTERNATING RE VALUES - THIS IS NOT THE WAY TO DO THINGS!
+     }
+
+     //fuck it, no sodding loops that go on too long!
+     if(inTheLoop>50) break;
 
    } while(TMath::Abs(nextRe-re)>1);
 
-//    std::cout << std::endl << "td alt " << AnitaLocations::ALTITUDE_TD << " bepmapTDalt " << fRampdemReader->SurfaceAboveGeoid(AnitaLocations::LONGITUDE_TD,AnitaLocations::LATITUDE_TD) << std::endl;
+//    if(debug)
+//      std::cout << "sourceLat " << sourceLat << " long " << sourceLon << " alt " << chosenAlt << " re " << re << " nextRe " << nextRe << std::endl;
    sourceAltitude = chosenAlt;
      //   fUPGeomTool->getLonLat(fSourcePos,sourceLon,sourceLat);
    //   sourceLat*=-1;
-   //   std::cout << "source lat " << sourceLat << " sourceLon " << sourceLon << std::endl;
+
    return 1;
 }
 
 
-// int UsefulAdu5Pat::getSourceLonAndLatWithRampdem(RampdemReader *rampdemData,Double_t phiWave, Double_t thetaWave,Double_t &sourceLon, Double_t &sourceLat){
-
-//   double newAlt;
-//   double alt=0.;
-
-//   getSourceLonAndLatAltZero(phiWave,thetaWave,sourceLon,sourceLat);
-//   newAlt = bedmapData->SurfaceAboveGeoid(sourceLon,sourceLat);
-
-//   while(newAlt!=alt){
-//     alt=newAlt;
-
-//     getSourceLonAndLatAtAlt(phiWave,thetaWave,alt,sourceLon,sourceLat);
-//     newAlt = bedmapData->SurfaceAboveGeoid(sourceLon,sourceLat);
-
-//   }
-
-//   return 1;
-
-// }
 
 
 
