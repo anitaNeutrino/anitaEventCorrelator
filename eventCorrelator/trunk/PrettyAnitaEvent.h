@@ -212,11 +212,11 @@ class PrettyAnitaEvent: public UsefulAnitaEvent
 #endif
 
   void setPassBandFilterFlag( int flag) { fPassBandFilter=flag;}
-  void setNotchFilterFlag( int flag) { fNotchFilter=flag;}
+  void setNotchFilterFlag( int numNotches) { fNotchFilter=numNotches;}
   void setPassBandLimits(Double_t low, Double_t high)
      { fLowPassEdge=low; fHighPassEdge=high;}
-  void setNotchBandLimits(Double_t low, Double_t high)
-     { fLowNotchEdge=low; fHighNotchEdge=high;}
+  void setNotchBandLimits(Int_t notchNum, Double_t low, Double_t high)
+     { fLowNotchEdge[notchNum]=low; fHighNotchEdge[notchNum]=high;}
 
 
  private:
@@ -226,11 +226,11 @@ class PrettyAnitaEvent: public UsefulAnitaEvent
   Double_t fDeltaT; ///< The interpolated sampling rate.
   Double_t fWaveOffset; ///< The difference in T0 of two channels.
   Int_t fPassBandFilter; ///< Whether or not to pass band filter the interpolated waves;
-  Int_t fNotchFilter; ///< Whether or not to notch filter;
+  Int_t fNotchFilter; ///< Whether or not to notch filter, and how many notches
   Double_t fLowPassEdge; ///< The lower edge of the pass band
   Double_t fHighPassEdge; ///< The higher edge of the pass band
-  Double_t fLowNotchEdge; ///< The lower edge of the notch band
-  Double_t fHighNotchEdge; ///< The higher edge of the notch band
+  Double_t fLowNotchEdge[10]; ///< The lower edge of the notch band
+  Double_t fHighNotchEdge[10]; ///< The higher edge of the notch band
   
 
 };

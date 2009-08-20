@@ -136,12 +136,15 @@ class UsefulAdu5Pat: public Adu5Pat
   Double_t getSourceAltitude() 
      { return fSourceAltitude;} ///< Returns the last calculated source altitude.
   
-  UInt_t getTaylorDomeTriggerTimeNs();
+  UInt_t getTaylorDomeTriggerTimeNs(); ///< Gets the time of flight to Taylor Dome
+  void setIncludeGroupDelay(Int_t flag) 
+     {fIncludeGroupDelay=flag;} ///< Toggles the silly group delay correction on and off
 
 /*   TProfile2D *rampMap(int coarseness,UInt_t &xBins,UInt_t &yBins); */
   RampdemReader *fRampdemReader;
 
  private:
+  Int_t fIncludeGroupDelay;
   TVector3 fSourcePos; ///< Private variable to hold the source location in cartesian coordinates.
   Double_t fSourceLongitude; ///< The source longitude.
   Double_t fSourceLatitude; ///< The source latitude.
@@ -160,6 +163,7 @@ class UsefulAdu5Pat: public Adu5Pat
 
  Double_t getDeltaTSeaveyOpt(Int_t ant1, Int_t ant2, Double_t *deltaR, Double_t *deltaZ, Double_t *deltaPhi);
   Double_t getDeltaTExpectedSeaveyOpt(Int_t ant1, Int_t ant2,Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t *deltaR, Double_t *deltaZ, Double_t *deltaPhi);
+  Double_t getGroupDelay(Double_t phiToAntBoresight);
 
   ClassDef(UsefulAdu5Pat,1); ///< ROOT's magic macro.
 };

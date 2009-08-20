@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
   TStopwatch stopy;
   stopy.Start();
   //  makeCorrelationRunTree(run,0,"/Users/simonbevan/Desktop/","/Users/simonbevan/ANITA/outfiles/");
-  makeCorrelationRunTree(run,numEnts,"/unix/anita1/flight0809/root","/unix/anita1/rjn/corTrees/justTaylorNewSimon020509");
+  makeCorrelationRunTree(run,numEnts,"/unix/anita1/flight0809/root","/unix/anita1/rjn/corTrees/justTaylorSvn220509");
   stopy.Stop();
   std::cout << "Run " << run << "\n";
   std::cout << "CPU Time: " << stopy.CpuTime() << "\t" << "Real Time: "
@@ -169,18 +169,14 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
        realEvent = new PrettyAnitaEvent(event,WaveCalType::kVTFullAGCrossCorClock,header);
      }
      //Here we have the option to do some filtering
-       //  realEvent->setPassBandFilterFlag(1);
-        // realEvent->setPassBandLimits(200,1200);
-        // realEvent->setNotchFilterFlag(1);
-        // realEvent->setNotchBandLimits(235,500);
+//      realEvent->setPassBandFilterFlag(1);
+//      realEvent->setPassBandLimits(200,1200);
+//      realEvent->setNotchFilterFlag(2);
+//      realEvent->setNotchBandLimits(0,240,280);
+//      realEvent->setNotchBandLimits(1,400,460);
 
      labChip=realEvent->getLabChip(1);
      
-     // UsefulAdu5Pat contains some generically useful GPS orientation thingies
-     //     pat->pitch=0;
-     //     pat->roll=0;
-     pat->pitch=0.64;
-     pat->roll=0.14;
      UsefulAdu5Pat usefulPat(pat);
      expTaylorTime=usefulPat.getTaylorDomeTriggerTimeNs();
      triggerTimeNs=header->triggerTimeNs;
