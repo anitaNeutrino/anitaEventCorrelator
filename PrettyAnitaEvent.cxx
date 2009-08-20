@@ -18,6 +18,7 @@
 
 //ROOT Includes
 #include "TROOT.h"
+#include "TFile.h"
 #include "TMath.h"
 #include "TStyle.h"
 #include "TVirtualFFT.h"
@@ -762,20 +763,28 @@ TGraph *PrettyAnitaEvent::getInterpolatedGraph(int chanIndex, double deltaT) {
       
    }
 
+   if(fPassBandFilter || fNotchFilter) {
+     TGraph *grInt = FFTtools::getInterpolatedGraph(grWave,1./2.6);
+     delete grWave;     
+     //Now for the filtering
+     if(fPassBandFilter) {
+       TGraph *grFilt = FFTtools::simplePassBandFilter(grInt,fLowPassEdge,fHighPassEdge);
+       delete grInt;
+       grInt=grFilt;
+     }
+     if(fNotchFilter>0) {
+       TGraph *grFilt = FFTtools::multipleSimpleNotchFilters(grInt,fNotchFilter,fLowNotchEdge,fHighNotchEdge);
+       delete grInt;
+       grInt=grFilt;
+     }
+     TGraph *grFinal = FFTtools::getInterpolatedGraph(grInt,deltaT);
+     delete grInt;
+     return grFinal;
+   }
+
+   
    TGraph *grInt = FFTtools::getInterpolatedGraph(grWave,deltaT);
-   delete grWave;
-   //Now for the filtering
-   if(fPassBandFilter) {
-      TGraph *grFilt = FFTtools::simplePassBandFilter(grInt,fLowPassEdge,fHighPassEdge);
-      delete grInt;
-      grInt=grFilt;
-   }
-   if(fNotchFilter) {
-      TGraph *grFilt = FFTtools::simpleNotchFilter(grInt,fLowNotchEdge,fHighNotchEdge);
-      delete grInt;
-      grInt=grFilt;
-   }
-  
+   delete grWave;  
    return grInt;      
 }
 
@@ -850,8 +859,28 @@ TGraph *PrettyAnitaEvent::getCorrelationInterpolated(int chanIndex1, int chanInd
    fDeltaT=x2-x1;
    
    //   std::cout << "CorInt\t" << chanIndex2 << "\t" << x << "\t" << y << "\n";
+
+
+ //   TFile *fp = new TFile("tempCorFile.root","RECREATE");
+//    grCor->SetName("grCor");
+//    grCor->Write();
+//    gr1->SetName("gr1");
+//    gr1->Write();
+//    gr2->SetName("gr2");
+//    gr2->Write();
+//    TGraph *fft1 = FFTtools::makePowerSpectrumMilliVoltsNanoSecondsdB(gr1);
+//    fft1->SetName("fft1");
+//    fft1->Write();
+//    TGraph *fft2 = FFTtools::makePowerSpectrumMilliVoltsNanoSecondsdB(gr2);
+//    fft2->SetName("fft2");
+//    fft2->Write();
+
+//    exit(0);
+
    delete gr1;
    delete gr2;
+
+
    return grCor;
 }
 

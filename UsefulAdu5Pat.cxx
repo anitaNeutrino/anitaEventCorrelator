@@ -30,6 +30,7 @@ UsefulAdu5Pat::UsefulAdu5Pat()
    : Adu5Pat()
 {
    //Default Constructor
+   fIncludeGroupDelay=0;
    fThetaWave=0;
    fPhiWave=0;
    fSourceLongitude=-1;
@@ -51,6 +52,7 @@ UsefulAdu5Pat::UsefulAdu5Pat()
 UsefulAdu5Pat::UsefulAdu5Pat(Adu5Pat *patPtr,double deltaR,double deltaRL,double deltaUD)
    : Adu5Pat(*patPtr)
 {
+   fIncludeGroupDelay=0;
   pitch=STATIC_ADU5_PITCH;
   roll=STATIC_ADU5_ROLL;
   heading+=OFFSET_ADU5_HEADING;
@@ -80,6 +82,7 @@ UsefulAdu5Pat::UsefulAdu5Pat(Adu5Pat *patPtr,double deltaR,double deltaRL,double
 UsefulAdu5Pat::UsefulAdu5Pat(Adu5Pat *patPtr)
    : Adu5Pat(*patPtr)
 {
+   fIncludeGroupDelay=0;
 
   pitch=STATIC_ADU5_PITCH;
   roll=STATIC_ADU5_ROLL;
@@ -560,6 +563,13 @@ void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, D
    fSourceAltitude=sourceAlt;
 }
 
+Double_t UsefulAdu5Pat::getGroupDelay(Double_t phiToAntBoresight)
+{
+   Double_t phiDeg=phiToAntBoresight*TMath::RadToDeg();
+   Double_t delayTime=(phiDeg*phiDeg*phiDeg*phiDeg)*1.45676e-8;
+   delayTime-=(phiDeg*phiDeg)*5.01452e-6;
+   
+}
 
 
 Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt)
@@ -582,7 +592,17 @@ Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t source
    Double_t part1=z1*tanThetaW - r1 * TMath::Cos(fPhiWave-phi1);
    Double_t part2=z2*tanThetaW - r2 * TMath::Cos(fPhiWave-phi2);
 
-   return  1e9*((TMath::Cos(fThetaWave) * (part1 - part2))/C_LIGHT);    //returns time in ns
+   Double_t geomTime= 1e9*((TMath::Cos(fThetaWave) * (part1 - part2))/C_LIGHT);    //returns time in ns
+   if(fIncludeGroupDelay) {
+      Double_t phi1Diff=fUPGeomTool->getPhiDiff(fPhiWave,phi1);
+      Double_t delay1=getGroupDelay(phi1Diff);
+      Double_t phi2Diff=fUPGeomTool->getPhiDiff(fPhiWave,phi2);
+      Double_t delay2=getGroupDelay(phi2Diff);
+      geomTime+=(delay1-delay2);
+   }
+   
+
+   return geomTime;
 }
 
 
