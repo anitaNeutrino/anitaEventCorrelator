@@ -7,7 +7,10 @@ include Makefile.arch
 
 #Site Specific  Flags
 SYSINCLUDES	= 
-SYSLIBS         = -L/unix/anita1/software/install/lib -lprofiler -ltcmalloc
+SYSLIBS         = -lprofiler -ltcmalloc
+DLLSUF = ${DllSuf}
+OBJSUF = ${ObjSuf}
+SRCSUF = ${SrcSuf}
 
 
 ifdef ANITA_UTIL_INSTALL_DIR
@@ -82,15 +85,17 @@ $(ROOT_LIBRARY) : $(LIB_OBJS)
 	@echo "Linking $@ ..."
 ifeq ($(PLATFORM),macosx)
 # We need to make both the .dylib and the .so
-	$(LD)   $(SOFLAGS) $^ $(OutPutOpt) $@
+		$(LD) $(SOFLAGS)$@ $(LDFLAGS) $^ $(OutPutOpt) $@
+ifneq ($(subst $(MACOSX_MINOR),,1234),1234)
 ifeq ($(MACOSX_MINOR),4)
-	ln -sf $@ $(subst .$(DLLSUF),.so,$@)
+		ln -sf $@ $(subst .$(DllSuf),.so,$@)
 else
-	$(LD) -bundle -undefined $(UNDEFOPT)  $(LDFLAGS) $^ \
-	 $(OutPutOpt) $(subst .$(DLLSUF),.so,$@)
+		$(LD) -bundle -undefined $(UNDEFOPT) $(LDFLAGS) $^ \
+		   $(OutPutOpt) $(subst .$(DllSuf),.so,$@)
+endif
 endif
 else
-	$(LD) $(SOFLAGS) $(LDFLAGS) $(LIBS) $(LIB_OBJS) -o $@
+	$(LD) $(SOFLAGS) $(LDFLAGS) $(LIB_OBJS) -o $@
 endif
 
 %.$(OBJSUF) : %.$(SRCSUF)
