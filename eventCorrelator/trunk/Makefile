@@ -64,7 +64,7 @@ correlatorDict.C: $(CLASS_HEADERS)
 	@ rm -f *Dict* 
 	rootcint $@ -c $(CXXFLAGS) $(CLASS_HEADERS) LinkDef.h
 
-progs: makeCorrelationRunTree #makeGoodCorrelationRunTree makeInitialGoodCorrelationRunTree
+progs: makeCorrelationRunTree makeHPolCorrelationRunTree #makeGoodCorrelationRunTree makeInitialGoodCorrelationRunTree
 
 
 makeCorrelationRunTree : $(ROOT_LIBRARY) makeCorrelationRunTree.$(SRCSUF)
@@ -75,9 +75,9 @@ makeGoodCorrelationRunTree : $(ROOT_LIBRARY) makeGoodCorrelationRunTree.$(SRCSUF
 	@echo "<**Compiling**> "  
 	$(LD)  $(CXXFLAGS) $(LDFLAGS) makeGoodCorrelationRunTree.$(SRCSUF) $(ROOT_LIBRARY) $(LIBS) -o $@
 
-makeInitialGoodCorrelationRunTree : $(ROOT_LIBRARY) makeInitialGoodCorrelationRunTree.$(SRCSUF)
+makeHPolCorrelationRunTree : $(ROOT_LIBRARY) makeHPolCorrelationRunTree.$(SRCSUF)
 	@echo "<**Compiling**> "  
-	$(LD)  $(CXXFLAGS) $(LDFLAGS) makeInitialGoodCorrelationRunTree.$(SRCSUF) $(ROOT_LIBRARY) $(LIBS) -o $@
+	$(LD)  $(CXXFLAGS) $(LDFLAGS) makeHPolCorrelationRunTree.$(SRCSUF) $(ROOT_LIBRARY) $(LIBS) -o $@
 
 
 #The library
@@ -115,7 +115,7 @@ else
 endif
 	install -c -m 644  $(CLASS_HEADERS) $(ANITA_UTIL_INC_DIR)
 	install -d $(ANITA_UTIL_CALIB_DIR)
-	for file in data/*.asc; do install -c -m 644 "$${file}" $(ANITA_UTIL_CALIB_DIR); done
+	for file in data/*.asc data/*.bin data/*.hdr; do install -c -m 644 "$${file}" $(ANITA_UTIL_CALIB_DIR); done
 
 clean:
 	@rm -f *Dict*
@@ -124,4 +124,4 @@ clean:
 	@rm -f $(ROOT_LIBRARY)
 	@rm -f $(subst .$(DLLSUF),.so,$(ROOT_LIBRARY))	
 	@rm -f $(TEST)
-	@rm -f makeGoodCorrelationRunTree makeInitialGoodCorrelationRunTree makeCorrelationRunTree
+	@rm -f makeGoodCorrelationRunTree makeHPolCorrelationRunTree makeCorrelationRunTree

@@ -16,6 +16,7 @@
 #include "TObject.h"
 #include "TMath.h"
 #include "TProfile2D.h"
+#include "TGaxis.h"
 #include <vector>
 
 
@@ -55,6 +56,10 @@ class RampdemReader// : public TObject
 			       Double_t lat,
 			       Double_t &easting,
 			       Double_t &northing);
+  void EastingNorthingToLonLat(Double_t easting,
+			       Double_t northing,
+			       Double_t &lon,
+			       Double_t &lat);
   
   //Data Output methods
   
@@ -64,6 +69,7 @@ class RampdemReader// : public TObject
 
   TProfile2D *rampMap(int coarseness_factor, int set_log_scale,UInt_t &xBins,UInt_t &yBins);
   TProfile2D *rampMapPartial(int coarseness_factor,double centralLon,double centralLat,double rangeMetres,Int_t &xBins,Int_t &yBins,Double_t &xMin,Double_t &xMax,Double_t &yMin,Double_t &yMax);
+  TGaxis *distanceScale(Double_t xMin,Double_t xMax,Double_t yMin,Double_t yMax);
 
   //Generic method to flip Endianness.
   //WARNING: Flips byte order of anything put in - do not use on things like stuctures or classes!
@@ -86,6 +92,7 @@ class RampdemReader// : public TObject
     } //template <class thing> inline void AnalysisTools::flipEndian(thing &in) 
 
 
+  void getMapCoordinates(double &xMin,double &yMin,double &xMax,double &yMax);
 
  protected:
   static RampdemReader *fgInstance;  

@@ -275,7 +275,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWav
 int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat,Double_t &sourceAltitude)
 {
 
-  bool debug=true;
+  bool debug=false;
 
   if(fPhiWave!=phiWave) fPhiWave=phiWave;
   if(fThetaWave!=thetaWave) fThetaWave=thetaWave;
@@ -284,6 +284,8 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
 //   Double_t phiBalloon=fUPGeomTool->getPhiFromLon(longitude);
 //   Double_t balloonHeight=fUPGeomTool->getGeoid(thetaBalloon)+altitude;
 
+  bool endlessLoop = 0;
+  bool endlessMess = 0;
 
    Double_t tempPhiWave=phiWave;
    Double_t tempThetaWave=TMath::PiOver2()-thetaWave;
@@ -425,28 +427,35 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
    
 
      if(TMath::Abs(lastButOneRe-nextRe)<1.){
-//        if(debug)
-// 	 std::cout << "breaking out nextRe " << nextRe << " lastButTwoRe " << lastButOneRe << std::endl;
+       if(debug)
+ 	 std::cout << "breaking out nextRe " << nextRe << " lastButTwoRe " << lastButOneRe << std::endl;
+       endlessLoop=1;
        break;//WAY OF MAKING SURE WE DON'T GET STUCK IN THE LOOP WITH ALTERNATING RE VALUES - THIS IS NOT THE WAY TO DO THINGS!
      }
      if(TMath::Abs(lastButTwoRe-nextRe)<1.){
-//        if(debug)
-// 	 std::cout << "breaking out nextRe " << nextRe << " lastButOneRe " << lastButTwoRe << std::endl;
+       if(debug)
+ 	 std::cout << "breaking out nextRe " << nextRe << " lastButOneRe " << lastButTwoRe << std::endl;
+       endlessLoop=1;
        break;//WAY OF MAKING SURE WE DON'T GET STUCK IN THE LOOP WITH ALTERNATING RE VALUES - THIS IS NOT THE WAY TO DO THINGS!
      }
      if(TMath::Abs(lastButThreeRe-nextRe)<1.){
       if(debug)
 	 std::cout << "breaking out nextRe " << nextRe << " lastButThreeRe " << lastButThreeRe << std::endl;
+       endlessLoop=1;
        break;//WAY OF MAKING SURE WE DON'T GET STUCK IN THE LOOP WITH ALTERNATING RE VALUES - THIS IS NOT THE WAY TO DO THINGS!
      }
      if(TMath::Abs(lastButFourRe-nextRe)<1.){
       if(debug)
 	 std::cout << "breaking out nextRe " << nextRe << " lastButFourRe " << lastButFourRe << std::endl;
+       endlessLoop=1;
        break;//WAY OF MAKING SURE WE DON'T GET STUCK IN THE LOOP WITH ALTERNATING RE VALUES - THIS IS NOT THE WAY TO DO THINGS!
      }
 
      //fuck it, no sodding loops that go on too long!
-     if(inTheLoop>50) break;
+     if(inTheLoop>50){
+       endlessMess=1;
+       break;
+     }
 
    } while(TMath::Abs(nextRe-re)>1);
 
@@ -456,7 +465,11 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
      //   fUPGeomTool->getLonLat(fSourcePos,sourceLon,sourceLat);
    //   sourceLat*=-1;
 
-   return 1;
+   if(endlessLoop==1) return 2;
+   else if(endlessMess==1) return 3;
+   else if(int(chosenAlt)==-9999) return 4;
+   else
+     return 1;
 }
 
 
@@ -488,6 +501,11 @@ void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, D
    //Rotate such that balloon is at 0,0,fBalloonHeight
    fSourcePos.RotateZ(-1*fBalloonPhi);
    fSourcePos.RotateY(-1*fBalloonTheta);
+
+
+//    std::cout << "rotated source\tx " << fSourcePos.X() << "\ty " << fSourcePos.Y() << "\tz " << fSourcePos.Z() << std::endl;
+//    std::cout << "balloon\tx " << fBalloonPos.X() << "\ty " << fBalloonPos.Y() << "\tz " << fBalloonPos.Z() << std::endl;
+//    std::cout << "rotated source - balloon\tx " << fSourcePos.X()-fBalloonPos.X() << "\ty " << fSourcePos.Y()-fBalloonPos.Y() << "\tz " << fSourcePos.Z()-fBalloonPos.Z() << std::endl;
 
    //Now find thetaWave and phiWave
    thetaWave=TMath::ATan((fBalloonHeight-fSourcePos.Z())/TMath::Sqrt(fSourcePos.X()*fSourcePos.X() + fSourcePos.Y()*fSourcePos.Y()));
@@ -570,6 +588,56 @@ Double_t UsefulAdu5Pat::getGroupDelay(Double_t phiToAntBoresight)
    delayTime-=(phiDeg*phiDeg)*5.01452e-6;
    
 }
+
+
+
+
+
+void UsefulAdu5Pat::getThetaWaveAtBase(Double_t baseLon, Double_t baseLat, Double_t baseAlt, Double_t &thetaWave) {
+
+  //gets the theta from a base to the balloon - can check if we are beyond horizon
+
+   Double_t pSource[3]={0};
+   fUPGeomTool->getCartesianCoords(TMath::Abs(baseLat),baseLon,baseAlt,pSource);
+   fSourcePos.SetXYZ(pSource[0],pSource[1],pSource[2]);
+
+   //make copy of balloon position and rotate it such that base is at 0,0,baseAlt
+   TVector3 rotatedBalloonPos = fBalloonPos;
+   rotatedBalloonPos.RotateZ(-1*fSourcePos.Phi());   
+   rotatedBalloonPos.RotateY(-1*fSourcePos.Theta()); 
+
+   TVector3 rotatedBase = fSourcePos;
+   rotatedBase.RotateZ(-1*fSourcePos.Phi());   
+   rotatedBase.RotateY(-1*fSourcePos.Theta()); 
+
+
+//    std::cout << "rotated balloon\tx " << rotatedBalloonPos.X() << "\ty " << rotatedBalloonPos.Y() << "\tz " << rotatedBalloonPos.Z() << std::endl;
+//    std::cout << "base\tx " << fSourcePos.X() << "\ty " << fSourcePos.Y() << "\tz " << fSourcePos.Z() << std::endl;
+//    std::cout << "rotated base\tx " << rotatedBase.X() << "\ty " << rotatedBase.Y() << "\tz " << rotatedBase.Z() << std::endl;
+//    std::cout << "rotated balloon - base\tx " << rotatedBalloonPos.X()-fSourcePos.X() << "\ty " << rotatedBalloonPos.Y()-fSourcePos.Y() << "\tz " << rotatedBalloonPos.Z()-fSourcePos.Z() << std::endl;
+
+   //Now find thetaWave
+   thetaWave=TMath::ATan((rotatedBase.Z()-rotatedBalloonPos.Z())/TMath::Sqrt(rotatedBalloonPos.X()*rotatedBalloonPos.X() + rotatedBalloonPos.Y()*rotatedBalloonPos.Y())); 
+
+
+
+
+//    Double_t pSource[3]={0};
+//    fUPGeomTool->getCartesianCoords(TMath::Abs(sourceLat),sourceLon,sourceAlt,pSource);
+//    fSourcePos.SetXYZ(pSource[0],pSource[1],pSource[2]);
+
+//    //std::cout << "SourceLoc: " << pSource[0] << "\t" << pSource[1] << "\t" << pSource[2] << "\n";
+   
+//    //Rotate such that balloon is at 0,0,fBalloonHeight
+//    fSourcePos.RotateZ(-1*fBalloonPhi);
+//    fSourcePos.RotateY(-1*fBalloonTheta);
+
+//    //Now find thetaWave and phiWave
+//    thetaWave=TMath::ATan((fBalloonHeight-fSourcePos.Z())/TMath::Sqrt(fSourcePos.X()*fSourcePos.X() + fSourcePos.Y()*fSourcePos.Y()));
+
+}
+
+
 
 
 Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt)
