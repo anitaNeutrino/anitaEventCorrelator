@@ -18,6 +18,9 @@
 #include "RampdemReader.h"
 #include "AnitaGeomTool.h"
 #include "TProfile2D.h"
+#include "TGaxis.h"
+#include "TStyle.h"
+#include "TColor.h"
 
 
 //Variables for conversion between polar stereographic coordinates and lat/lon.  Conversion equations from ftp://164.214.2.65/pub/gig/tm8358.2/TM8358_2.pdf
@@ -73,24 +76,24 @@ Double_t RampdemReader::Surface(Double_t lon,Double_t lat) {
 Double_t RampdemReader::SurfaceAboveGeoid(Double_t lon, Double_t lat) {
   //This method returns the elevation above the geoid of the surface of the top of the ice ice (or bare ground, if no ice is present) in meters, at a location specified by a latitude and longitude (in degrees). 
   Double_t surface=0;
-
+  //std::cout << "lat " << lat << " lon " << lon << std::endl;
   Int_t e_coord_surface=0;
   Int_t n_coord_surface=0;
   LonLattoEN(lon,lat,e_coord_surface,n_coord_surface);
 
   if(e_coord_surface > nCols_surface || e_coord_surface <0){
-    std::cerr<<"[RampdemReader::surfaceAboveGeoid]  Error!  Trying to access x-element "<<e_coord_surface<<" of the RAMP DEM data! (Longitude, latitude = "<<lon<<", "<<lat<<")\n";
+//     std::cerr<<"[RampdemReader::surfaceAboveGeoid]  Error!  Trying to access x-element "<<e_coord_surface<<" of the RAMP DEM data! (Longitude, latitude = "<<lon<<", "<<lat<<")\n";
     return -9999;
   }
   else if(n_coord_surface > nRows_surface || n_coord_surface <0){
-    std::cerr<<"[RampdemReader::surfaceAboveGeoid]  Error!  Trying to access y-element "<<n_coord_surface<<" of the RAMP DEM data! (Longitude, latitude = "<<lon<<", "<<lat<<")\n";
+//     std::cerr<<"[RampdemReader::surfaceAboveGeoid]  Error!  Trying to access y-element "<<n_coord_surface<<" of the RAMP DEM data! (Longitude, latitude = "<<lon<<", "<<lat<<")\n";
     return -9999;
   }
   else{
     surface = double(surface_elevation[e_coord_surface][n_coord_surface]);
   }
 
-//   std::cout << "surface height " << surface << " e_co " << e_coord_surface << " n_co " << n_coord_surface << " lon " << lon << " lat " << lat << std::endl;
+  //std::cout << "surface height " << surface << " e_co " << e_coord_surface << " n_co " << n_coord_surface << " lon " << lon << " lat " << lat << std::endl;
   return surface;
 } //method SurfaceAboveGeoid
 
@@ -358,12 +361,48 @@ void RampdemReader::ENtoLonLat(Int_t e_coord, Int_t n_coord, Double_t& lon, Doub
 
 
 
+//_______________________________________________________________________________
+void RampdemReader::EastingNorthingToLonLat(Double_t easting,Double_t northing,Double_t &lon,Double_t &lat){
+
+  Int_t e_coord;
+  Int_t n_coord;
+
+  EastingNorthingToEN(easting,northing,e_coord,n_coord);
+  ENtoLonLat(e_coord,n_coord,lon,lat);
+
+  return;
+
+}
+
+
+
+
 
 
 
 //_______________________________________________________________________________
 
 TProfile2D *RampdemReader::rampMap(int coarseness_factor, int set_log_scale,UInt_t &xBins,UInt_t &yBins){
+
+  //TColor mapColors[20];//={10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29};
+//   TColor mapColors;
+//   Int_t mapColorInts[20];
+//   char colorName[FILENAME_MAX];
+//   for(int i=0;i<20;i++){
+//     sprintf(colorName,"mapColor_%d",i);
+//     if(i==0){
+//       //mapColors.SetRGB(0,0,255);
+//       mapColorInts[i] = mapColors.GetColor(51,51,255);
+//     }
+//     else{
+//       //mapColors.SetRGB(204-60+i*3,255,255);
+//       mapColorInts[i] = mapColors.GetColor(255-133+i*7,255,255);
+//     }
+//     //mapColorInts[i] = 10+i;
+//   }
+
+//   //Int_t colz[21]={596,425,425,425,425,425,423,423,423,423,423,422,422,422,422,422,0,0,0,0,0};
+//   gStyle->SetPalette(20,mapColorInts);
 
   Bool_t debug=false;
 
@@ -407,6 +446,24 @@ TProfile2D *RampdemReader::rampMapPartial(int coarseness_factor,double centralLo
 
   Bool_t debug=false;
 
+//   TColor mapColors;
+//   Int_t mapColorInts[20];
+//   char colorName[FILENAME_MAX];
+//   for(int i=0;i<20;i++){
+//     sprintf(colorName,"mapColor_%d",i);
+//     if(i==0){
+//       //mapColors.SetRGB(0,0,255);
+//       mapColorInts[i] = mapColors.GetColor(51,51,255);
+//     }
+//     else{
+//       //mapColors.SetRGB(204-60+i*3,255,255);
+//       mapColorInts[i] = mapColors.GetColor(255-133+i*7,255,255);
+//     }
+//     //mapColorInts[i] = 10+i;
+//   }
+
+//   gStyle->SetPalette(20,mapColorInts);
+
   Int_t central_e_coord,central_n_coord;
   Int_t max_e_coord,min_e_coord;
   Int_t max_n_coord,min_n_coord;
@@ -415,6 +472,7 @@ TProfile2D *RampdemReader::rampMapPartial(int coarseness_factor,double centralLo
   LonLatToEastingNorthing(centralLon,centralLat,central_easting,central_northing);
   EastingNorthingToEN(central_easting+rangeMetres,central_northing+rangeMetres,max_e_coord,max_n_coord);
   EastingNorthingToEN(central_easting-rangeMetres,central_northing-rangeMetres,min_e_coord,min_n_coord);
+
 
   if(debug){
     std::cout << "e_coord: min " << min_e_coord << " central " << central_e_coord << " max " << max_e_coord << std::endl;
@@ -439,7 +497,7 @@ TProfile2D *RampdemReader::rampMapPartial(int coarseness_factor,double centralLo
   yMax = central_northing+rangeMetres;
 
   char histName[FILENAME_MAX];
-  sprintf(histName,"antarctica_surface_elevation_partial_lon%f_lat%f",centralLon,centralLat);
+  sprintf(histName,"antarctica_surface_elevation_partial");
   TProfile2D *theHist = new TProfile2D(histName,"",(max_e_coord-min_e_coord)/coarseness_factor,central_easting-rangeMetres,central_easting+rangeMetres,(max_n_coord-min_n_coord)/coarseness_factor,central_northing-rangeMetres,central_northing+rangeMetres);
 
   if(debug){
@@ -464,4 +522,32 @@ TProfile2D *RampdemReader::rampMapPartial(int coarseness_factor,double centralLo
 
   theHist->SetStats(0);
   return theHist;
+}
+
+
+
+
+TGaxis *RampdemReader::distanceScale(Double_t xMin,Double_t xMax,Double_t yMin,Double_t yMax){
+  //here xmin, xmax etc are the positions in easting/northing of the distance scale
+  if(xMax<=xMin && yMax<=yMin) {
+    std::cerr << "size ordering wrong: xMin " << xMin << " xMax " << xMax << " yMin " << yMin << " yMax " << yMax << std::endl;
+    return NULL;
+  }
+
+  TGaxis *theAxis = new TGaxis(xMin,yMin,xMax,yMax,0,sqrt((xMax-xMin)/1e3*(xMax-xMin)/1e3-(yMax-yMin)/1e3*(yMax-yMin)/1e3),2,"");
+  theAxis->SetTitle("km");
+
+  return theAxis;
+}
+
+
+
+
+void RampdemReader::getMapCoordinates(double &xMin,double &yMin,double &xMax,double &yMax){
+
+  xMin = x_min;
+  yMin = y_min;
+  xMax = x_max;
+  yMax = y_max+cell_size;
+
 }
