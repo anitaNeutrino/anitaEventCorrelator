@@ -586,14 +586,14 @@ Double_t UsefulAdu5Pat::getGroupDelay(Double_t phiToAntBoresight)
    Double_t phiDeg=phiToAntBoresight*TMath::RadToDeg();
    Double_t delayTime=(phiDeg*phiDeg*phiDeg*phiDeg)*1.45676e-8;
    delayTime-=(phiDeg*phiDeg)*5.01452e-6;
-   
+   return delayTime;
 }
 
 
 
 
 
-void UsefulAdu5Pat::getThetaWaveAtBase(Double_t baseLon, Double_t baseLat, Double_t baseAlt, Double_t &thetaWave) {
+void UsefulAdu5Pat::getThetaAndPhiWaveAtBase(Double_t baseLon, Double_t baseLat, Double_t baseAlt, Double_t &thetaWave, Double_t &phiWave) {
 
   //gets the theta from a base to the balloon - can check if we are beyond horizon
 
@@ -607,8 +607,7 @@ void UsefulAdu5Pat::getThetaWaveAtBase(Double_t baseLon, Double_t baseLat, Doubl
    rotatedBalloonPos.RotateY(-1*fSourcePos.Theta()); 
 
    TVector3 rotatedBase = fSourcePos;
-   rotatedBase.RotateZ(-1*fSourcePos.Phi());   
-   rotatedBase.RotateY(-1*fSourcePos.Theta()); 
+   Double_t baseHeight=fSourcePos.Mag();
 
 
 //    std::cout << "rotated balloon\tx " << rotatedBalloonPos.X() << "\ty " << rotatedBalloonPos.Y() << "\tz " << rotatedBalloonPos.Z() << std::endl;
@@ -617,8 +616,8 @@ void UsefulAdu5Pat::getThetaWaveAtBase(Double_t baseLon, Double_t baseLat, Doubl
 //    std::cout << "rotated balloon - base\tx " << rotatedBalloonPos.X()-fSourcePos.X() << "\ty " << rotatedBalloonPos.Y()-fSourcePos.Y() << "\tz " << rotatedBalloonPos.Z()-fSourcePos.Z() << std::endl;
 
    //Now find thetaWave
-   thetaWave=TMath::ATan((rotatedBase.Z()-rotatedBalloonPos.Z())/TMath::Sqrt(rotatedBalloonPos.X()*rotatedBalloonPos.X() + rotatedBalloonPos.Y()*rotatedBalloonPos.Y())); 
-
+   thetaWave=TMath::ATan((baseHeight-rotatedBalloonPos.Z())/TMath::Sqrt(rotatedBalloonPos.X()*rotatedBalloonPos.X() + rotatedBalloonPos.Y()*rotatedBalloonPos.Y())); 
+   phiWave=TMath::ATan2(rotatedBalloonPos.Y(),rotatedBalloonPos.X());
 
 
 
