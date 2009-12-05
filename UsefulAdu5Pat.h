@@ -39,9 +39,12 @@ class UsefulAdu5Pat: public Adu5Pat
     \param thetaWave Elevation angle of plane wave (in payload centric coordinates)
     \param sourceLon Reference to a Double_t in which the longitude of the source will be stored.
     \param sourceLat Reference to a Double_t in which the latitude of the source will be stored.
+    \param desiredAlt Call specified altitude of the payload (if not specified, set to 0.0 so that this function would behave the same as getSourceLonAndLatAltZero() function)
     \return 1 on successful source localisation, o if the solution does not point to the ground.
   */
+
   int getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat);
+  int getSourceLonAndLatAtDesiredAlt(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat, Double_t desiredAlt);
   
   int getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat,Double_t &sourceAltitude);
 
@@ -56,12 +59,6 @@ class UsefulAdu5Pat: public Adu5Pat
     \param thetaWave Reference to a Double_t in which to store the elevation angle of plane wave (in payload centric coordinates with phi equals zero lying in the direction the ADU5 fore antenna)
   */
   void getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave);
-
-  //! For a given base, calculates the theta angle from the base to the balloon - use as a horizon check
-  /*!  
-    \param thetaWave Reference to a Double_t in which to store the elevation angle of plane wave from base to balloon  
-  */
-  void getThetaAndPhiWaveAtBase(Double_t baseLon, Double_t baseLat, Double_t baseAlt, Double_t &thetaWave, Double_t &phiWave);
   //! For a the Williams Field seavey antenna calculates the payload centric azimuthal and elevation angles of the plane wave incident at the payload.
   /*!  
     \param phiWave Reference to a Double_t in which to store the azimuthal angle of plane wave (in payload centric coordinates with phi equals zero lying in the direction the ADU5 fore antenna)
@@ -148,6 +145,8 @@ class UsefulAdu5Pat: public Adu5Pat
 
 /*   TProfile2D *rampMap(int coarseness,UInt_t &xBins,UInt_t &yBins); */
   RampdemReader *fRampdemReader;
+
+  Double_t getAngleBetweenPayloadAndSource(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt); //ACG additional function
 
  private:
   Int_t fIncludeGroupDelay;
