@@ -59,6 +59,12 @@ class UsefulAdu5Pat: public Adu5Pat
     \param thetaWave Reference to a Double_t in which to store the elevation angle of plane wave (in payload centric coordinates with phi equals zero lying in the direction the ADU5 fore antenna)
   */
   void getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave);
+
+  //! For a given base, calculates the theta angle from the base to the balloon - use as a horizon check
+  /*!  
+    \param thetaWave Reference to a Double_t in which to store the elevation angle of plane wave from base to balloon  
+  */
+  void getThetaWaveAtBase(Double_t baseLon, Double_t baseLat, Double_t baseAlt, Double_t &thetaWave);
   //! For a the Williams Field seavey antenna calculates the payload centric azimuthal and elevation angles of the plane wave incident at the payload.
   /*!  
     \param phiWave Reference to a Double_t in which to store the azimuthal angle of plane wave (in payload centric coordinates with phi equals zero lying in the direction the ADU5 fore antenna)
