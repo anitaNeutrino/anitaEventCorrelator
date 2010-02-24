@@ -29,6 +29,8 @@
 #include "TMath.h"
 #include "BedmapReader.h"
 #include "AnitaGeomTool.h"
+#include "TProfile2D.h"
+#include "TGaxis.h"
 
 using namespace std;
 
@@ -52,11 +54,11 @@ vector<double>::iterator myIteratorUp;
 vector<double>::iterator myIteratorFinal;
 
 //Parameters of the BEDMAP ice model. (See http://www.antarctica.ac.uk/data/access/bedmap/download/)
-Int_t cellSize=5000; //in meters, set by header file (should be 5000)
-Int_t nCols_surface=1096;
-Int_t nRows_surface=911;
-Int_t xLowerLeft_surface=-2713600;
-Int_t yLowerLeft_surface=-2304000;
+// Int_t cellSize=5000; //in meters, set by header file (should be 5000)
+// Int_t nCols_surface=1096;
+// Int_t nRows_surface=911;
+// Int_t xLowerLeft_surface=-2713600;
+// Int_t yLowerLeft_surface=-2304000;
 Int_t NODATA=-9999;
 
 //Variables for conversion between BEDMAP polar stereographic coordinates and lat/lon.  Conversion equations from ftp://164.214.2.65/pub/gig/tm8358.2/TM8358_2.pdf
@@ -75,11 +77,11 @@ const Double_t bedmap_nu = bedmap_R / cos(71*TMath::DegToRad());
 
 BedmapReader*  BedmapReader::fgInstance = 0;
 
-BedmapReader::BedmapReader() 
+BedmapReader::BedmapReader(bool icethicknessMode) 
 {
   //Default constructor
   std::cout << "reading the bedmap data" << std::endl;
-  ReadSurfaceElevation();
+  ReadSurfaceElevation(icethicknessMode);
   //ReadSurfaceElevationRampDem();
   fgInstance=this;
 }
@@ -92,10 +94,10 @@ BedmapReader::~BedmapReader()
 
 
 //______________________________________________________________________________
-BedmapReader*  BedmapReader::Instance()
+BedmapReader*  BedmapReader::Instance(bool icethicknessMode)
 {
   //static function
-  return (fgInstance) ? (BedmapReader*) fgInstance : new BedmapReader();
+  return (fgInstance) ? (BedmapReader*) fgInstance : new BedmapReader(icethicknessMode);
 }
 
 
@@ -181,7 +183,7 @@ else {
 
 
 //_______________________________________________________________________________
-void BedmapReader::ReadSurfaceElevation() {
+void BedmapReader::ReadSurfaceElevation(bool icethicknessMode) {
   //Reads the BEDMAP data on the elevation of the surface beneath the ice.  If there is water beneath the ice, the ground elevation is given the value 0.  Assumes the file is in directory "data".  Origianl code by Ryan Nichol.
   char calibDir[FILENAME_MAX];
   char *calibEnv=getenv("ANITA_CALIB_DIR");
@@ -196,7 +198,10 @@ void BedmapReader::ReadSurfaceElevation() {
     strncpy(calibDir,calibEnv,FILENAME_MAX);
   }
   char surfaceFile[FILENAME_MAX];
-  sprintf(surfaceFile,"%s/surfaceElevation.asc",calibDir);
+  if(!icethicknessMode)
+    sprintf(surfaceFile,"%s/surfaceElevation.asc",calibDir);
+  else 
+    sprintf(surfaceFile,"/home/mottram/work/eventCorrelator/data/iceThickness.asc");
   ifstream SurfaceElevationFile(surfaceFile);
   if(!SurfaceElevationFile) {
     std::cerr << "Couldn't open: " << surfaceFile << std::endl;
@@ -238,17 +243,27 @@ void BedmapReader::ReadSurfaceElevation() {
     NODATA=temp6;
   }
 
+  xUpperRight_surface = xLowerLeft_surface + cellSize*nCols_surface;
+  yUpperRight_surface = yLowerLeft_surface + cellSize*nRows_surface;
+
   //std::cout<<"nCols_surface, nRows_surface "<<nCols_surface<<" , "<<nRows_surface<<std::endl;
   //std::cout<<"xLL_surface, yLL_surface, cellsize "<<xLowerLeft_surface<<" , "<<yLowerLeft_surface<<" , "<<cellSize<<std::endl<<std::endl;
   
+  surface_elevation = std::vector< std::vector<short> >( nCols_surface, std::vector<short>( nRows_surface, 0 ) );
+
   Double_t theValue;
   for(Int_t rowNum=0;rowNum<nRows_surface;rowNum++) {
     for(Int_t colNum=0;colNum<nCols_surface;colNum++) {
+
       SurfaceElevationFile >> theValue;
+
       
       // if(theValue==NODATA)
       //	theValue=0; //Set elevation to 0 where we have no data.
-      surface_elevation[colNum][rowNum] = Double_t(theValue);
+
+//       surface_elevation[colNum][rowNum] = Double_t(theValue);
+      surface_elevation[colNum][rowNum] = theValue;
+
       //if (theValue != -96 && theValue != 0)
       //std::cout<<"surface_elevation: "<<theValue<<std::endl;
     }//for
@@ -426,3 +441,70 @@ void BedmapReader::SurfaceENtoLonLat(Int_t e, Int_t n, Double_t& lon, Double_t& 
   ENtoLonLat(e,n,xLowerLeft_surface,yLowerLeft_surface,lon,lat);
 }//SurfaceENtoLonLat
 
+
+
+
+//_______________________________________________________________________________
+
+TProfile2D *BedmapReader::bedmapMap(int coarseness_factor, int set_log_scale,UInt_t &xBins,UInt_t &yBins){
+
+  Bool_t debug=false;
+
+  UInt_t num_columns = surface_elevation.size()/coarseness_factor;
+  UInt_t num_rows = surface_elevation[0].size()/coarseness_factor;
+  //  UInt_t num_columns = 1096/coarseness_factor;
+  //  UInt_t num_rows = 911/coarseness_factor;
+  xBins = num_columns;
+  yBins = num_rows;
+
+  std::cout << "xBins " << xBins << " yBins " << yBins << std::endl;
+
+//   TProfile2D * theHist = new TProfile2D( "antarctica_surface_elevation_hist", "", num_columns, x_min, x_max, num_rows, y_min, y_max+cell_size );
+  TProfile2D * theHist = new TProfile2D( "antarctica_ice_thickness_hist", "", num_columns, xLowerLeft_surface, xUpperRight_surface, num_rows, yLowerLeft_surface, yUpperRight_surface );
+
+  for (unsigned int row_index=0; row_index < surface_elevation[0].size(); ++row_index){
+    if(debug){
+      if(row_index%(surface_elevation[0].size()/100)==0) std::cerr << "*";
+    }
+	
+    for (unsigned int column_index=0; column_index < surface_elevation.size(); ++column_index)
+      {
+
+	if(surface_elevation[column_index][row_index]<-9000)//this is a silly scale for map drawing
+	  surface_elevation[column_index][row_index]=-500;
+
+	if (set_log_scale == 1)
+	  theHist->Fill( xLowerLeft_surface + double(column_index)*cellSize, -(yLowerLeft_surface + double(row_index)*cellSize), log10(surface_elevation[column_index][row_index]+1000) ); //The "+1000" makes sure everything is positive.
+// 	  theHist->Fill( x_min + double(column_index)*cell_size, -(y_min + double(row_index)*cell_size), log10(surface_elevation[column_index][row_index]+1000) ); //The "+1000" makes sure everything is positive.
+	else
+	  theHist->Fill( xLowerLeft_surface + double(column_index)*cellSize, -(yLowerLeft_surface + double(row_index)*cellSize), surface_elevation[column_index][row_index] );
+// 	  theHist->Fill( x_min + double(column_index)*cell_size, -(y_min + double(row_index)*cell_size), surface_elevation[column_index][row_index] );
+      } //end for (loop over surface elevation vector)
+  }
+  if(debug)
+    std::cout << std::endl;
+
+  theHist->SetStats(0);
+
+  return theHist;
+
+
+}
+
+
+
+
+//_______________________________________________________________________________
+
+TGaxis *BedmapReader::distanceScale(Double_t xMin,Double_t xMax,Double_t yMin,Double_t yMax){
+  //here xmin, xmax etc are the positions in easting/northing of the distance scale
+  if(xMax<=xMin && yMax<=yMin) {
+    std::cerr << "size ordering wrong: xMin " << xMin << " xMax " << xMax << " yMin " << yMin << " yMax " << yMax << std::endl;
+    return NULL;
+  }
+
+  TGaxis *theAxis = new TGaxis(xMin,yMin,xMax,yMax,0,sqrt((xMax-xMin)/1e3*(xMax-xMin)/1e3-(yMax-yMin)/1e3*(yMax-yMin)/1e3),2,"");
+  theAxis->SetTitle("km");
+
+  return theAxis;
+}

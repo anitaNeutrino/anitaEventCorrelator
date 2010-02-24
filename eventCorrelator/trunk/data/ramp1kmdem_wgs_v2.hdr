@@ -1,0 +1,26 @@
+                         Description of Grid ramp1kmdem_wgs_v2.bin
+
+Cell Size =            1000.000         Data
+Type:                   Integer
+Number of Rows    =        4916           Number of Values =            4269
+Number of Columns =        5736           Attribute Data (bytes) =         8
+
+           BOUNDARY                               
+STATISTICS
+
+Xmin =             -2868000.000         Minimum Value =              -67.000
+Xmax =              2868000.000         Maximum Value =             4968.000
+Ymin =             -2458000.000         Mean          =              942.294
+Ymax =              2458000.000         Standard Deviation =        1281.699
+
+                          COORDINATE SYSTEM DESCRIPTION
+
+Projection                POLAR
+Datum                     WGS84
+Units                    METERS            
+Spheroid                  WGS84
+Parameters:
+longitude of central meridian                            0  0  0.000
+latitude of true scale                                 -71  0  0.000
+false easting (meters)                                      0.00000
+false northing (meters)                                     0.00000
