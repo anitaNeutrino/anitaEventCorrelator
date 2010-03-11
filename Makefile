@@ -64,12 +64,16 @@ correlatorDict.C: $(CLASS_HEADERS)
 	@ rm -f *Dict* 
 	rootcint $@ -c $(CXXFLAGS) $(CLASS_HEADERS) LinkDef.h
 
-progs: makeCorrelationRunTree makeHPolCorrelationRunTree #makeGoodCorrelationRunTree makeInitialGoodCorrelationRunTree
+progs: makeCorrelationRunTree makeSimpleDST #makeGoodCorrelationRunTree makeInitialGoodCorrelationRunTree  makeHPolCorrelationRunTree
 
 
 makeCorrelationRunTree : $(ROOT_LIBRARY) makeCorrelationRunTree.$(SRCSUF)
 	@echo "<**Compiling**> "  
 	$(LD)  $(CXXFLAGS) $(LDFLAGS) makeCorrelationRunTree.$(SRCSUF) $(ROOT_LIBRARY) $(LIBS) -o $@
+
+makeSimpleDST : $(ROOT_LIBRARY) makeSimpleDST.$(SRCSUF)
+	@echo "<**Compiling**> "  
+	$(LD)  $(CXXFLAGS) $(LDFLAGS) makeSimpleDST.$(SRCSUF) $(ROOT_LIBRARY) $(LIBS) -o $@
 
 makeGoodCorrelationRunTree : $(ROOT_LIBRARY) makeGoodCorrelationRunTree.$(SRCSUF)
 	@echo "<**Compiling**> "  
@@ -124,4 +128,4 @@ clean:
 	@rm -f $(ROOT_LIBRARY)
 	@rm -f $(subst .$(DLLSUF),.so,$(ROOT_LIBRARY))	
 	@rm -f $(TEST)
-	@rm -f makeGoodCorrelationRunTree makeHPolCorrelationRunTree makeCorrelationRunTree
+	@rm -f makeGoodCorrelationRunTree makeHPolCorrelationRunTree makeCorrelationRunTree makeSimpleDST
