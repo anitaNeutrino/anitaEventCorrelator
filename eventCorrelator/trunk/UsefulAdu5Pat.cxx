@@ -874,7 +874,7 @@ Double_t UsefulAdu5Pat::getAngleBetweenPayloadAndSource(Double_t sourceLon, Doub
   Double_t magSource=TMath::Sqrt(fSourcePos.X()*fSourcePos.X() + fSourcePos.Y()*fSourcePos.Y()+fSourcePos.Z()*fSourcePos.Z());
   Double_t magBalloon=balloonHeight;
 
-  Double_t phiEarthCenter=TMath::ACos(fabs(dotProduct/(magSource*magBalloon))); 
+  Double_t phiEarthCenter=TMath::ACos(TMath::Abs(dotProduct/(magSource*magBalloon))); 
 
   return phiEarthCenter;
 
