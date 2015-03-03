@@ -39,6 +39,30 @@
 #include "TGraph.h"
 #include <string>
 
+#include <iostream>
+#include <fstream>
+
+
+//ANITA Includes
+#include "CalibratedAnitaEvent.h"
+#include "AnitaGeomTool.h"
+#include "FFTtools.h"
+#include "FFTWComplex.h"
+
+
+//ROOT Includes
+#include "TROOT.h"
+#include "TFile.h"
+#include "TMath.h"
+#include "TStyle.h"
+#include "TVirtualFFT.h"
+#include "TMinuit.h"
+#include "Math/Interpolator.h"
+#include "Math/InterpolationTypes.h"
+
+
+
+
 
 class CalibratedAnitaEvent;
 
