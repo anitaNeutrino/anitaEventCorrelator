@@ -100,7 +100,7 @@ UsefulAdu5Pat::UsefulAdu5Pat(Adu5Pat *patPtr)
    //std::cout << "LatLonAlt: " << latitude << "\t" << longitude << "\t" << altitude << "\n";
    fUPGeomTool->getCartesianCoords(latitude,longitude,altitude,
 				   fBalloonCoords);
-   //std::cout << "Balloon Coords: " << fBalloonCoords[0] << "\t" << fBalloonCoords[1] << "\t" << fBalloonCoords[2] << "\n";
+   // std::cout << "Balloon Coords: " << fBalloonCoords[0] << "\t" << fBalloonCoords[1] << "\t" << fBalloonCoords[2] << "\n";
    fBalloonPos.SetXYZ(fBalloonCoords[0],fBalloonCoords[1],fBalloonCoords[2]);
    fBalloonTheta=fBalloonPos.Theta();
    fBalloonPhi=fBalloonPos.Phi();
@@ -480,14 +480,33 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
 
 
 
+void UsefulAdu5Pat::getThetaAndPhiWaveAnita3(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave) {
+  /* Wraps the old function and changes coordinates to something a little nicer */
+  
+  getThetaAndPhiWave(sourceLon, sourceLat, sourceAlt, thetaWave, phiWave);
+
+  /* 
+     Corrects for the angular offset between adu5 heading axis and the payload coordinates 
+     starting at phi-sector 1, which is 45 degrees.
+  */
+  phiWave += fUPGeomTool->aftForeOffsetAngleVertical; /* 45 */
+  phiWave = phiWave > TMath::TwoPi() ? phiWave - TMath::TwoPi() : phiWave;
+
+  /* I want the convention that down is -ve theta and up is +ve theta */
+  thetaWave *= -1;
+
+  return;
+
+}
+
 
 void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave) {
-//    Double_t thetaBalloon=fUPGeomTool->getThetaFromLat(TMath::Abs(latitude));
-//    Double_t phiBalloon=fUPGeomTool->getPhiFromLon(longitude);
-//    Double_t balloonHeight=fUPGeomTool->getGeoid(thetaBalloon)+altitude;
-//    std::cout << "Theta " << thetaBalloon << "\t" << fBalloonTheta << "\n";
-//    std::cout << "Phi " << phiBalloon << "\t" << fBalloonPhi << "\n";
-
+  // Double_t thetaBalloon=fUPGeomTool->getThetaFromLat(TMath::Abs(latitude));
+  // Double_t phiBalloon=fUPGeomTool->getPhiFromLon(longitude);
+  // Double_t balloonHeight=fUPGeomTool->getGeoid(thetaBalloon)+altitude;
+  // std::cout << "Theta " << thetaBalloon << "\t" << fBalloonTheta << "\n";
+  // std::cout << "Phi " << phiBalloon << "\t" << fBalloonPhi << "\n";
+   
 //    Double_t thetaSource=fUPGeomTool->getThetaFromLat(TMath::Abs(sourceLat));
 //    Double_t phiSource=fUPGeomTool->getPhiFromLon(sourceLon);
 //    Double_t radiusSource=fUPGeomTool->getGeoid(thetaSource)+sourceAlt;
@@ -796,8 +815,14 @@ Double_t UsefulAdu5Pat::getDeltaTExpectedSeaveyOpt(Int_t ant1, Int_t ant2,Double
 }
 
 
-
 UInt_t UsefulAdu5Pat::getTaylorDomeTriggerTimeNs()
+{
+  return getTriggerTimeNsFromSource(AnitaLocations::LATITUDE_TD, AnitaLocations::LONGITUDE_TD, AnitaLocations::ALTITUDE_TD);
+}
+
+
+
+UInt_t UsefulAdu5Pat::getTriggerTimeNsFromSource(Double_t sourceLat, Double_t sourceLong, Double_t sourceAlt)
 {
    
 //    Double_t thetaBalloon=fUPGeomTool->getThetaFromLat(TMath::Abs(latitude));
@@ -818,9 +843,9 @@ UInt_t UsefulAdu5Pat::getTaylorDomeTriggerTimeNs()
    static Int_t firstTime=1;   
    static Double_t pTaylor[3]={0};
    if(firstTime) {
-      fUPGeomTool->getCartesianCoords(TMath::Abs(AnitaLocations::LATITUDE_TD),
-				      AnitaLocations::LONGITUDE_TD,
-				      AnitaLocations::ALTITUDE_TD,
+      fUPGeomTool->getCartesianCoords(TMath::Abs(sourceLat),
+				      sourceLong,
+				      sourceAlt,
 				      pTaylor);
    }
 
@@ -835,12 +860,15 @@ UInt_t UsefulAdu5Pat::getTaylorDomeTriggerTimeNs()
    Double_t s2=(pTaylor[0]-fBalloonCoords[0])*(pTaylor[0]-fBalloonCoords[0])+
       (pTaylor[1]-fBalloonCoords[1])*(pTaylor[1]-fBalloonCoords[1])+
       (pTaylor[2]-fBalloonCoords[2])*(pTaylor[2]-fBalloonCoords[2]);
+
+   // std::cout << fBalloonCoords[0] << "\t" << fBalloonCoords[1] << "\t" << fBalloonCoords[2] << std::endl;
    
 
    Double_t distanceToFly=TMath::Sqrt(s2);
    Double_t timeOfFlight=distanceToFly/C_LIGHT;
    timeOfFlight*=1e9;
-   Double_t expTime=timeOfFlight-40e3;
+   //   Double_t expTime=timeOfFlight-40e3;
+   Double_t expTime=timeOfFlight;//-40e3;
    UInt_t expTrigTime=(UInt_t)expTime;
    
    //   std::cout << distanceToFly << "\t" << timeOfFlight << "\n";
@@ -848,6 +876,8 @@ UInt_t UsefulAdu5Pat::getTaylorDomeTriggerTimeNs()
 
 
 }
+
+
 
 Double_t UsefulAdu5Pat::getAngleBetweenPayloadAndSource(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt){ //ACG additional function
 

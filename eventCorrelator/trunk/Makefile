@@ -7,7 +7,7 @@ include Makefile.arch
 
 #Site Specific  Flags
 SYSINCLUDES	= 
-SYSLIBS         = -lprofiler -ltcmalloc
+SYSLIBS         = #-lprofiler -ltcmalloc
 DLLSUF = ${DllSuf}
 OBJSUF = ${ObjSuf}
 SRCSUF = ${SrcSuf}
