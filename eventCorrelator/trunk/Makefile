@@ -62,7 +62,8 @@ all : $(ROOT_LIBRARY)
 correlatorDict.C: $(CLASS_HEADERS)
 	@echo "Generating dictionary ..."
 	@ rm -f *Dict* 
-	rootcint $@ -c $(CXXFLAGS) $(CLASS_HEADERS) LinkDef.h
+#	rootcint $@ -c $(CXXFLAGS) $(CLASS_HEADERS) LinkDef.h
+	rootcint $@ -c -p -I$(shell $(RC) --incdir) $(CXXFLAGS) $(CLASS_HEADERS) LinkDef.h
 
 progs: makeCorrelationRunTree makeSimpleDST #makeGoodCorrelationRunTree makeInitialGoodCorrelationRunTree  makeHPolCorrelationRunTree
 
