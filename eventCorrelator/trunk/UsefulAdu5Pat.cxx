@@ -481,23 +481,27 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
 
 
 void UsefulAdu5Pat::getThetaAndPhiWaveAnita3(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave) {
-  /* Wraps the old function and changes coordinates to something a little nicer */
+  // Wraps the old function and changes coordinates to something a little nicer
   
   getThetaAndPhiWave(sourceLon, sourceLat, sourceAlt, thetaWave, phiWave);
 
-  /* 
-     Corrects for the angular offset between adu5 heading axis and the payload coordinates 
-     starting at phi-sector 1, which is 45 degrees.
-  */
-  phiWave += fUPGeomTool->aftForeOffsetAngleVertical; /* 45 */
+  // Corrects for the angular offset between adu5 heading axis and the payload coordinates 
+  // starting at phi-sector 1, which is 45 degrees.
+  phiWave += fUPGeomTool->aftForeOffsetAngleVertical; // 45
   phiWave = phiWave > TMath::TwoPi() ? phiWave - TMath::TwoPi() : phiWave;
 
-  /* I want the convention that down is -ve theta and up is +ve theta */
+  // I want the convention that down is -ve theta and up is +ve theta
   thetaWave *= -1;
 
   return;
 
 }
+
+void UsefulAdu5Pat::getThetaAndPhiWaveAnita3WaisDivide(Double_t &thetaWave, Double_t &phiWave)
+{   
+   return getThetaAndPhiWaveAnita3(AnitaLocations::LONGITUDE_WAIS,AnitaLocations::LATITUDE_WAIS,AnitaLocations::ALTITUDE_WAIS,thetaWave,phiWave);
+}
+
 
 
 void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave) {
@@ -754,7 +758,6 @@ Double_t UsefulAdu5Pat::getDeltaTTaylor(Int_t ant1, Int_t ant2)
    return getDeltaTExpected(ant1,ant2,AnitaLocations::LONGITUDE_TD,AnitaLocations::LATITUDE_TD,AnitaLocations::ALTITUDE_TD);
 }
 
-
 Double_t UsefulAdu5Pat::getDeltaTTaylorOpt(Int_t ant1, Int_t ant2, Double_t *deltaR, Double_t *deltaZ, Double_t *deltaPhi)
 {
   return getDeltaTExpectedOpt(ant1,ant2,AnitaLocations::LONGITUDE_TD,AnitaLocations::LATITUDE_TD,AnitaLocations::ALTITUDE_TD, deltaR, deltaZ,deltaPhi);
@@ -818,6 +821,11 @@ Double_t UsefulAdu5Pat::getDeltaTExpectedSeaveyOpt(Int_t ant1, Int_t ant2,Double
 UInt_t UsefulAdu5Pat::getTaylorDomeTriggerTimeNs()
 {
   return getTriggerTimeNsFromSource(AnitaLocations::LATITUDE_TD, AnitaLocations::LONGITUDE_TD, AnitaLocations::ALTITUDE_TD);
+}
+
+UInt_t UsefulAdu5Pat::getWaisDivideTriggerTimeNs()
+{
+  return getTriggerTimeNsFromSource(AnitaLocations::LATITUDE_WAIS, AnitaLocations::LONGITUDE_WAIS, AnitaLocations::ALTITUDE_WAIS);
 }
 
 

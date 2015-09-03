@@ -72,6 +72,13 @@ class UsefulAdu5Pat: public Adu5Pat
 
   void getThetaAndPhiWaveAnita3(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave);
 
+  //! Returns the expected theta and phi expected from WAIS divide
+  /*!
+    \param phiWave Reference to a Double_t in which to store the azimuthal angle of plane wave (in payload centric coordinates with phi equals zero lying in the direction of phi sector 1)
+    \param thetaWave Reference to a Double_t in which to store the elevation angle of plane wave, in the convention of this function +ve theta is upwards.  
+  */
+
+  void getThetaAndPhiWaveAnita3WaisDivide(Double_t &thetaWave, Double_t &phiWave);
 
   //! For a given base, calculates the theta angle from the base to the balloon - use as a horizon check
   /*!  
@@ -130,7 +137,7 @@ class UsefulAdu5Pat: public Adu5Pat
     \param ant2 The second antenna.
     \return The plane wave crossing time difference between the two antennas (t_1-t_2).
  */
-  Double_t getDeltaTWillySeavey(Int_t ant1, Int_t ant2); 
+  Double_t getDeltaTWillySeavey(Int_t ant1, Int_t ant2);
   //! Calculates the plane wave crossing time difference between two antennas for the Williams Field borehole.
   /*!
     \param ant1 The first antenna.
@@ -145,7 +152,6 @@ class UsefulAdu5Pat: public Adu5Pat
     \return The plane wave crossing time difference between the two antennas (t_1-t_2).
   */
   Double_t getDeltaTTaylor(Int_t ant1, Int_t ant2);
-
   
   Double_t getPhiWave() 
     { return fPhiWave;} ///< Returns the (payload centric with phi equals zero lying along the direction of the ADU5 fore antenna) azimuthal angle last calculated.
@@ -159,6 +165,8 @@ class UsefulAdu5Pat: public Adu5Pat
      { return fSourceAltitude;} ///< Returns the last calculated source altitude.
   
   UInt_t getTaylorDomeTriggerTimeNs(); ///< Gets the time of flight to Taylor Dome
+  UInt_t getWaisDivideTriggerTimeNs(); ///< Gets the time of flight to Wais Divide
+
   UInt_t getTriggerTimeNsFromSource(Double_t sourceLat, Double_t sourceLong, Double_t sourceAlt); ///< Gets time of flight from any source
   void setIncludeGroupDelay(Int_t flag) 
      {fIncludeGroupDelay=flag;} ///< Toggles the silly group delay correction on and off
