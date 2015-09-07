@@ -745,22 +745,35 @@ Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1,Int_t ant2,Double_t cosPhi,
 
 Double_t UsefulAdu5Pat::getDeltaTWillySeavey(Int_t ant1, Int_t ant2)
 {
-   return getDeltaTExpected(ant1,ant2,AnitaLocations::LONGITUDE_SURF_SEAVEY,AnitaLocations::LATITUDE_SURF_SEAVEY,AnitaLocations::ALTITUDE_SURF_SEAVEY);
+   return getDeltaTExpected(ant1, ant2,
+			    AnitaLocations::LONGITUDE_SURF_SEAVEY,
+			    AnitaLocations::LATITUDE_SURF_SEAVEY,
+			    AnitaLocations::ALTITUDE_SURF_SEAVEY);
 }
 
 Double_t UsefulAdu5Pat::getDeltaTWillyBorehole(Int_t ant1, Int_t ant2)
 {
-   return getDeltaTExpected(ant1,ant2,AnitaLocations::LONGITUDE_BH,AnitaLocations::LATITUDE_BH,AnitaLocations::ALTITUDE_BH);
+   return getDeltaTExpected(ant1, ant2,
+			    AnitaLocations::LONGITUDE_BH,
+			    AnitaLocations::LATITUDE_BH,
+			    AnitaLocations::ALTITUDE_BH);
 }
 
 Double_t UsefulAdu5Pat::getDeltaTTaylor(Int_t ant1, Int_t ant2)
 {
-   return getDeltaTExpected(ant1,ant2,AnitaLocations::LONGITUDE_TD,AnitaLocations::LATITUDE_TD,AnitaLocations::ALTITUDE_TD);
+   return getDeltaTExpected(ant1, ant2,
+			    AnitaLocations::LONGITUDE_TD,
+			    AnitaLocations::LATITUDE_TD,
+			    AnitaLocations::ALTITUDE_TD);
 }
 
 Double_t UsefulAdu5Pat::getDeltaTTaylorOpt(Int_t ant1, Int_t ant2, Double_t *deltaR, Double_t *deltaZ, Double_t *deltaPhi)
 {
-  return getDeltaTExpectedOpt(ant1,ant2,AnitaLocations::LONGITUDE_TD,AnitaLocations::LATITUDE_TD,AnitaLocations::ALTITUDE_TD, deltaR, deltaZ,deltaPhi);
+  return getDeltaTExpectedOpt(ant1, ant2,
+			      AnitaLocations::LONGITUDE_TD,
+			      AnitaLocations::LATITUDE_TD,
+			      AnitaLocations::ALTITUDE_TD,
+			      deltaR, deltaZ,deltaPhi);
 }
 
 Double_t UsefulAdu5Pat::getDeltaTExpectedOpt(Int_t ant1, Int_t ant2,Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t *deltaR, Double_t *deltaZ, Double_t *deltaPhi)
@@ -790,7 +803,11 @@ Double_t UsefulAdu5Pat::getDeltaTExpectedOpt(Int_t ant1, Int_t ant2,Double_t sou
 
 Double_t UsefulAdu5Pat::getDeltaTSeaveyOpt(Int_t ant1, Int_t ant2, Double_t *deltaR, Double_t *deltaZ, Double_t *deltaPhi)
 {
-  return getDeltaTExpectedSeaveyOpt(ant1,ant2,AnitaLocations::LONGITUDE_SURF_SEAVEY,AnitaLocations::LATITUDE_SURF_SEAVEY,AnitaLocations::ALTITUDE_SURF_SEAVEY, deltaR, deltaZ,deltaPhi);
+  return getDeltaTExpectedSeaveyOpt(ant1, ant2,
+				    AnitaLocations::LONGITUDE_SURF_SEAVEY,
+				    AnitaLocations::LATITUDE_SURF_SEAVEY,
+				    AnitaLocations::ALTITUDE_SURF_SEAVEY,
+				    deltaR, deltaZ,deltaPhi);
 }
 
 Double_t UsefulAdu5Pat::getDeltaTExpectedSeaveyOpt(Int_t ant1, Int_t ant2,Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t *deltaR, Double_t *deltaZ, Double_t *deltaPhi)
@@ -820,12 +837,16 @@ Double_t UsefulAdu5Pat::getDeltaTExpectedSeaveyOpt(Int_t ant1, Int_t ant2,Double
 
 UInt_t UsefulAdu5Pat::getTaylorDomeTriggerTimeNs()
 {
-  return getTriggerTimeNsFromSource(AnitaLocations::LATITUDE_TD, AnitaLocations::LONGITUDE_TD, AnitaLocations::ALTITUDE_TD);
+  return getTriggerTimeNsFromSource(AnitaLocations::LATITUDE_TD,
+				    AnitaLocations::LONGITUDE_TD,
+				    AnitaLocations::ALTITUDE_TD);
 }
 
 UInt_t UsefulAdu5Pat::getWaisDivideTriggerTimeNs()
 {
-  return getTriggerTimeNsFromSource(AnitaLocations::LATITUDE_WAIS, AnitaLocations::LONGITUDE_WAIS, AnitaLocations::ALTITUDE_WAIS);
+  return getTriggerTimeNsFromSource(AnitaLocations::LATITUDE_WAIS,
+				    AnitaLocations::LONGITUDE_WAIS,
+				    AnitaLocations::ALTITUDE_WAIS);
 }
 
 
