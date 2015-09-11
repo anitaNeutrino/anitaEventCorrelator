@@ -61,24 +61,13 @@ class UsefulAdu5Pat: public Adu5Pat
   void getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave);
 
 
-  /*!
-    
-    \param sourceLon The longitude of the source.
-    \param sourceLat The latitude of the source.
-    \param sourceAlt The altitude of the source.
-    \param phiWave Reference to a Double_t in which to store the azimuthal angle of plane wave (in payload centric coordinates with phi equals zero lying in the direction of phi sector 1)
-    \param thetaWave Reference to a Double_t in which to store the elevation angle of plane wave, in the convention of this function +ve theta is upwards.  
-  */
-
-  void getThetaAndPhiWaveAnita3(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave);
-
   //! Returns the expected theta and phi expected from WAIS divide
   /*!
-    \param phiWave Reference to a Double_t in which to store the azimuthal angle of plane wave (in payload centric coordinates with phi equals zero lying in the direction of phi sector 1)
+    \param phiWave Reference to a Double_t in which to store the azimuthal angle of plane wave (in payload centric coordinates with phi equals zero lying in the direction of the ADU5 fore antenna)
     \param thetaWave Reference to a Double_t in which to store the elevation angle of plane wave, in the convention of this function +ve theta is upwards.  
   */
 
-  void getThetaAndPhiWaveAnita3WaisDivide(Double_t &thetaWave, Double_t &phiWave);
+  void getThetaAndPhiWaveWaisDivide(Double_t &thetaWave, Double_t &phiWave);
 
   //! For a given base, calculates the theta angle from the base to the balloon - use as a horizon check
   /*!  
