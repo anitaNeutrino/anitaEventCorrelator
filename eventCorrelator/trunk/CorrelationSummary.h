@@ -13,9 +13,9 @@
 #include "TGraph.h"
 
 
-//!  This is a poorly thought out class that was meant to be a summary of peaks of the correlations of soem antennas.
+//!  This is a poorly thought out class that was meant to be a summary of peaks of the correlations of some antennas.
 /*!
-  This is a poorly thought outclass that was meant to be a summary of peaks of the correlations of soem antennas.
+  This is a poorly thought outclass that was meant to be a summary of peaks of the correlations of some antennas.
 */
 class CorrelationSummary: public TObject
 {
