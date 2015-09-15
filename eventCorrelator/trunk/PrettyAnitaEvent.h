@@ -33,6 +33,7 @@
 #define PRETTYANITAEVENT_H
 #include "UsefulAnitaEvent.h"
 #include "CorrelationSummary.h"
+#include "CorrelationSummaryAnita3.h"
 #include "AnitaGeomTool.h"
 #include "AnitaConventions.h"
 #include "TCanvas.h"
@@ -126,6 +127,15 @@ class PrettyAnitaEvent: public UsefulAnitaEvent
     \return A pointer to the CorrelationSummary object that is created.
   */  
   CorrelationSummary *getCorrelationSummary(Int_t centreAnt,AnitaPol::AnitaPol_t pol,Double_t deltaT=0);
+
+  //! Generates a CorrelationSummaryAnita3 object for a set of 15 antennas.
+  /*!
+    \param centreAnt The number of one of the antennas in the centre of the set of 10.
+    \param pol Which polarisation to use?
+    \param deltaT An optional value to use if interpolation is required. This value is taking as being the desired sampling period of the interpolated waveforms.
+    \return A pointer to the CorrelationSummaryAnita3 object that is created.
+  */  
+  CorrelationSummaryAnita3 *getCorrelationSummaryAnita3(Int_t centreAnt,AnitaPol::AnitaPol_t pol,Double_t deltaT=0);
 
 
   //Canvas panel getters
@@ -230,6 +240,10 @@ class PrettyAnitaEvent: public UsefulAnitaEvent
   void fillSixAntArrays(int ant, int topAnts[3], int bottomAnts[3]); ///< Utility to get neighbouring antenna numbers
   void fillNextFourAntArrays(int ant, int nextFourAnts[4]);///< Utility to get next to neighbouring antenna numbers
   void fillNadirArrays(int ant, int nadirAnts[9]);
+
+  void fillNineAntArrays(int ant, int nineAnts[9]); ///< Utility to get neighbouring antenna numbers ( Top 0-2, Middle 3-5, Bottom 6-8)
+  void fillNextSixAntArrays(int ant, int nextFourAnts[4]);///< Utility to get next to neighbouring antenna numbers
+
 
 #ifndef PLEASE_IGNORE_ME_DOXYGEN
   ClassDef(PrettyAnitaEvent,1); ///< ROOT's magic macro

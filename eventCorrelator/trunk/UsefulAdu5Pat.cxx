@@ -648,8 +648,6 @@ void UsefulAdu5Pat::getThetaWaveAtBase(Double_t baseLon, Double_t baseLat, Doubl
 }
 
 
-
-
 Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt)
 {
 
