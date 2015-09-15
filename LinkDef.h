@@ -6,6 +6,7 @@
 
 #pragma link C++ class PrettyAnitaEvent+;
 #pragma link C++ class CorrelationSummary+;
+#pragma link C++ class CorrelationSummaryAnita3+;
 #pragma link C++ class UsefulAdu5Pat+;
 
 #endif

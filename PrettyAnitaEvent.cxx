@@ -24,6 +24,19 @@ void CorSumFCN(Int_t& npar, Double_t*gin,
   //  std::cout << par[0] << "\t" << par[1] << "\t" << f << std::endl;
 }
 
+//My incredibly dodgy approach to fitting with MINUIT that I'm going to call from within itself
+// this is horrible and dangerous and should never bve done, but hey ho there we go.
+void CorSumFCNanita3(Int_t& npar, Double_t*gin,
+                       Double_t&f, Double_t* par, Int_t flag)
+{
+   //par[0] is phiWave
+   //par[1] is thetaWave
+   //par[2] is numAnts (11 or 19)
+
+  CorrelationSummaryAnita3* myDodgyCorSumPtr = dynamic_cast<CorrelationSummaryAnita3*>(gMinuit->GetObjectFit());
+  f=myDodgyCorSumPtr->getChiSquared(par[0],par[1],11);
+  //  std::cout << par[0] << "\t" << par[1] << "\t" << f << std::endl;
+}
 
 PrettyAnitaEvent::PrettyAnitaEvent(CalibratedAnitaEvent *eventPtr, WaveCalType::WaveCalType_t calType):UsefulAnitaEvent(eventPtr,calType) {
 fPassBandFilter=0;
@@ -45,8 +58,8 @@ TCanvas *PrettyAnitaEvent::getSixWaveformCanvas(int ant, AnitaPol::AnitaPol_t po
    char graphTitle[180];
    
   TCanvas *can=incan;
-  if(ant<0 || ant>31) {
-    std::cerr << "Antenna " << ant << " is not in range 0-31" << std::endl;
+  if(ant<0 || ant>(NUM_SEAVEYS-1)) {
+    std::cerr << "Antenna " << ant << " is not in range 0-" << (NUM_SEAVEYS-1) << std::endl;
     return NULL;
   }
   setStyleSixCanvas();
@@ -95,8 +108,8 @@ TCanvas *PrettyAnitaEvent::getTenWaveformCanvas(int ant, AnitaPol::AnitaPol_t po
    char graphTitle[180];
    
   TCanvas *can=incan;
-  if(ant<0 || ant>31) {
-    std::cerr << "Antenna " << ant << " is not in range 0-31" << std::endl;
+  if(ant<0 || ant>(NUM_SEAVEYS-1)) {
+    std::cerr << "Antenna " << ant << " is not in range 0-" << (NUM_SEAVEYS-1) << std::endl;
     return NULL;
   }
   setStyleSixCanvas();
@@ -153,8 +166,8 @@ TCanvas *PrettyAnitaEvent::getSixFFTPowerCanvas(int ant, AnitaPol::AnitaPol_t po
    char graphTitle[180];
    
   TCanvas *can=incan;
-  if(ant<0 || ant>31) {
-    std::cerr << "Antenna " << ant << " is not in range 0-31" << std::endl;
+  if(ant<0 || ant>(NUM_SEAVEYS-1)) {
+    std::cerr << "Antenna " << ant << " is not in range 0-" << (NUM_SEAVEYS-1) << std::endl;
     return NULL;
   }
   setStyleSixCanvas();
@@ -203,8 +216,8 @@ TCanvas *PrettyAnitaEvent::getSixPowerEnvelopeCanvas(int ant, AnitaPol::AnitaPol
    char graphTitle[180];
    
   TCanvas *can=incan;
-  if(ant<0 || ant>31) {
-    std::cerr << "Antenna " << ant << " is not in range 0-31" << std::endl;
+  if(ant<0 || ant>(NUM_SEAVEYS-1)) {
+    std::cerr << "Antenna " << ant << " is not in range 0-" <<(NUM_SEAVEYS-1)<< std::endl;
     return NULL;
   }
   setStyleSixCanvas();
@@ -253,8 +266,8 @@ TCanvas *PrettyAnitaEvent::getSixCorrelationCanvas(int ant, AnitaPol::AnitaPol_t
    char graphTitle[180];
    
   TCanvas *can=incan;
-  if(ant<0 || ant>31) {
-    std::cerr << "Antenna " << ant << " is not in range 0-31" << std::endl;
+  if(ant<0 || ant>(NUM_SEAVEYS-1)) {
+    std::cerr << "Antenna " << ant << " is not in range 0-" <<(NUM_SEAVEYS-1) << std::endl;
     return NULL;
   }
   setStyleSixCanvas();
@@ -277,7 +290,7 @@ TCanvas *PrettyAnitaEvent::getSixCorrelationCanvas(int ant, AnitaPol::AnitaPol_t
 
   for(int i=0;i<3;i++) {
     //    std::cout << i << "\t" << topAnts[i] << "\t" << bottomAnts[i] << std::endl;
-     sprintf(graphTitle,"Ants: %d - %d",topAnts[i],bottomAnts[i]);
+    sprintf(graphTitle,"Ants: %d - %d",topAnts[i],bottomAnts[i]);
     can->cd(i+1);
     int ciTop=AnitaGeomTool::getChanIndexFromAntPol(topAnts[i],pol);
     int ciBottom=AnitaGeomTool::getChanIndexFromAntPol(bottomAnts[i],pol);
@@ -305,8 +318,8 @@ TCanvas *PrettyAnitaEvent::getTenCorrelationCanvas(int ant, AnitaPol::AnitaPol_t
    char graphTitle[180];
    
   TCanvas *can=incan;
-  if(ant<0 || ant>31) {
-    std::cerr << "Antenna " << ant << " is not in range 0-31" << std::endl;
+  if(ant<0 || ant>(NUM_SEAVEYS-1)) {
+    std::cerr << "Antenna " << ant << " is not in range 0-" <<(NUM_SEAVEYS-1) << std::endl;
     return NULL;
   }
   setStyleSixCanvas();
@@ -362,8 +375,8 @@ TCanvas *PrettyAnitaEvent::getElevenCorrelationCanvas(int ant, AnitaPol::AnitaPo
    char graphTitle[180];
    
   TCanvas *can=incan;
-  if(ant<0 || ant>31) {
-    std::cerr << "Antenna " << ant << " is not in range 0-31" << std::endl;
+  if(ant<0 || ant>(NUM_SEAVEYS-1)) {
+    std::cerr << "Antenna " << ant << " is not in range 0-" <<(NUM_SEAVEYS-1) << std::endl;
     return NULL;
   }
   setStyleSixCanvas();
@@ -491,8 +504,8 @@ TCanvas *PrettyAnitaEvent::getElevenInterpolationCorrelationCanvas(int ant, Anit
    char graphTitle[180];
    
   TCanvas *can=incan;
-  if(ant<0 || ant>31) {
-    std::cerr << "Antenna " << ant << " is not in range 0-31" << std::endl;
+  if(ant<0 || ant>(NUM_SEAVEYS-1)) {
+    std::cerr << "Antenna " << ant << " is not in range 0-" << (NUM_SEAVEYS-1) <<std::endl;
     return NULL;
   }
   setStyleSixCanvas();
@@ -619,8 +632,8 @@ TCanvas *PrettyAnitaEvent::getSixInterpolatedCorrelationCanvas(int ant, AnitaPol
    char graphTitle[180];
    
   TCanvas *can=incan;
-  if(ant<0 || ant>31) {
-    std::cerr << "Antenna " << ant << " is not in range 0-31" << std::endl;
+  if(ant<0 || ant>(NUM_SEAVEYS-1)) {
+    std::cerr << "Antenna " << ant << " is not in range 0-" << (NUM_SEAVEYS-1) << std::endl;
     return NULL;
   }
   setStyleSixCanvas();
@@ -670,8 +683,8 @@ TCanvas *PrettyAnitaEvent::getSixInterpolatedCanvas(int ant, AnitaPol::AnitaPol_
    char graphTitle[180];
    
   TCanvas *can=incan;
-  if(ant<0 || ant>31) {
-    std::cerr << "Antenna " << ant << " is not in range 0-31" << std::endl;
+  if(ant<0 || ant>(NUM_SEAVEYS-1)) {
+    std::cerr << "Antenna " << ant << " is not in range 0-" << (NUM_SEAVEYS-1) << std::endl;
     return NULL;
   }
   setStyleSixCanvas();
@@ -792,6 +805,7 @@ TGraph *PrettyAnitaEvent::getCorrelation(int chanIndex1, int chanIndex2)
 {
    TGraph *gr1 =getGraph(chanIndex1);
    TGraph *gr2 = getGraph(chanIndex2);
+
    TGraph *grCor = getCorrelation(gr1,gr2);
    Double_t x1,y1,x2,y2;
    gr1->GetPoint(0,x1,y1);
@@ -820,12 +834,15 @@ TGraph *PrettyAnitaEvent::getCorrelation(int chanIndex1, int chanIndex2)
 
 TGraph *PrettyAnitaEvent::getCorrelationInterpolated(int chanIndex1, int chanIndex2, Double_t deltaT) 
 {
-  if(chanIndex1 <0 || chanIndex1>89)
+  if(chanIndex1 <0 || chanIndex1>(NUM_DIGITZED_CHANNELS-1))
     std::cerr << "Invalid channel index:\t" << chanIndex1 << "\n";
-  if(chanIndex2 <0 || chanIndex2>89)
+
+  if(chanIndex2 <0 || chanIndex2>(NUM_DIGITZED_CHANNELS-1))
     std::cerr << "Invalid channel index:\t" << chanIndex2 << "\n";
-   TGraph *gr1 =getInterpolatedGraph(chanIndex1,deltaT);
-   TGraph *gr2 = getInterpolatedGraph(chanIndex2,deltaT);
+
+  TGraph *gr1 =getInterpolatedGraph(chanIndex1,deltaT);
+  TGraph *gr2 = getInterpolatedGraph(chanIndex2,deltaT);
+
    TGraph *grCor = getCorrelation(gr1,gr2);
    Double_t x1,y1,x2,y2;
    gr1->GetPoint(0,x1,y1);
@@ -889,7 +906,8 @@ void PrettyAnitaEvent::fillSixAntArrays(int ant, int topAnts[3], int bottomAnts[
   else {
     bottom=ant;
     top=AnitaGeomTool::getAzimuthPartner(bottom);
-  }
+  } 
+
   //  std::cout << top << "\t" << bottom << std::endl;
   AnitaGeomTool::getThetaPartners(top,leftTop,rightTop);
   AnitaGeomTool::getThetaPartners(bottom,leftBottom,rightBottom);
@@ -901,6 +919,51 @@ void PrettyAnitaEvent::fillSixAntArrays(int ant, int topAnts[3], int bottomAnts[
   bottomAnts[2]=rightBottom;
 
 }
+
+
+void PrettyAnitaEvent::fillNineAntArrays(int ant, int nineAnts[9])
+{
+  // Top 0-2
+  // Middle 3-5
+  // Bottom 6-8
+  
+   //   std::cerr << "fillSixAntArrays( " << ant << ")\n";
+  int top=-1,middle=-1,bottom=-1;
+  int leftTop=-1, rightTop=-1;
+  int leftMiddle=-1, rightMiddle=-1;
+  int leftBottom=-1, rightBottom=-1;
+
+  if(ant<16) {
+    top=ant;
+    middle=AnitaGeomTool::getAzimuthPartner(top);
+    bottom=middle+16;
+  } else if (ant<32){
+    middle = ant;
+    top = AnitaGeomTool::getAzimuthPartner(middle);
+    bottom=middle+16;
+  } else {
+    bottom=ant;
+    middle=AnitaGeomTool::getAzimuthPartner(bottom);
+    top=AnitaGeomTool::getAzimuthPartner(middle);
+  } 
+
+//   std::cout << top << "\t" << bottom << std::endl;
+  AnitaGeomTool::getThetaPartners(top,leftTop,rightTop);
+  AnitaGeomTool::getThetaPartners(middle,leftMiddle,rightMiddle);
+  AnitaGeomTool::getThetaPartners(bottom,leftBottom,rightBottom);
+
+  nineAnts[0] = leftTop;
+  nineAnts[1] = top;
+  nineAnts[2] = rightTop;
+  nineAnts[3] = leftMiddle;
+  nineAnts[4] = middle;
+  nineAnts[5] = rightMiddle;
+  nineAnts[6] = leftBottom;
+  nineAnts[7] = bottom;
+  nineAnts[8] = rightBottom;
+
+}
+
 
 void PrettyAnitaEvent::fillNextFourAntArrays(int ant, int nextFourAnts[4])
 {
@@ -934,6 +997,52 @@ void PrettyAnitaEvent::fillNextFourAntArrays(int ant, int nextFourAnts[4])
 
 }
 
+void PrettyAnitaEvent::fillNextSixAntArrays(int ant, int nextSixAnts[6])
+{
+
+  int top=-1,middle=-1,bottom=-1;
+  int leftTop=-1, rightTop=-1;
+  int leftLeftTop=-1, rightRightTop=-1;
+  int leftMiddle=-1, rightMiddle=-1;
+  int leftLeftMiddle=-1, rightRightMiddle=-1;
+  int leftBottom=-1, rightBottom=-1;
+  int leftLeftBottom=-1, rightRightBottom=-1;
+
+  if(ant<16) {
+    top=ant;
+    middle=AnitaGeomTool::getAzimuthPartner(top);
+    bottom=middle+16;
+  } else if (ant<32){
+    middle = ant;
+    top = AnitaGeomTool::getAzimuthPartner(middle);
+    bottom=middle+16;
+  } else {
+    bottom=ant;
+    middle=AnitaGeomTool::getAzimuthPartner(bottom);
+    top=AnitaGeomTool::getAzimuthPartner(middle);
+  }
+
+
+  int crap;
+  //  std::cout << top << "\t" << bottom << std::endl;
+  AnitaGeomTool::getThetaPartners(top,leftTop,rightTop);
+  AnitaGeomTool::getThetaPartners(middle,leftMiddle,rightMiddle);
+  AnitaGeomTool::getThetaPartners(bottom,leftBottom,rightBottom);
+  AnitaGeomTool::getThetaPartners(leftTop,leftLeftTop,crap);
+  AnitaGeomTool::getThetaPartners(rightTop,crap,rightRightTop);
+  AnitaGeomTool::getThetaPartners(leftMiddle,leftLeftMiddle,crap);
+  AnitaGeomTool::getThetaPartners(rightMiddle,crap,rightRightMiddle);
+  AnitaGeomTool::getThetaPartners(leftBottom,leftLeftBottom,crap);
+  AnitaGeomTool::getThetaPartners(rightBottom,crap,rightRightBottom);
+  nextSixAnts[0]=leftLeftTop;
+  nextSixAnts[1]=rightRightTop;
+  nextSixAnts[2]=leftLeftMiddle;
+  nextSixAnts[3]=rightRightMiddle;
+  nextSixAnts[4]=leftLeftBottom;
+  nextSixAnts[5]=rightRightBottom;
+
+}
+
 
 void PrettyAnitaEvent::fillNadirArrays(int ant, int nadirAnts[5])
 {
@@ -947,7 +1056,6 @@ void PrettyAnitaEvent::fillNadirArrays(int ant, int nadirAnts[5])
 
   int left = -1; int right = -1;
   int leftLeft = -1; int rightRight = -1;
-  int centre = -1;
   int antBottom = ant;  
 
     if(ant<16) {
@@ -1087,17 +1195,29 @@ int PrettyAnitaEvent::getMaxAntennaCorrelationRollingAvg(AnitaPol::AnitaPol_t po
       //Loop over the top antennas
       int otherAnt=AnitaGeomTool::getAzimuthPartner(ant);
       int ciTop=AnitaGeomTool::getChanIndexFromAntPol(ant,pol);
-      int ciBottom=AnitaGeomTool::getChanIndexFromAntPol(otherAnt,pol);
+      int ciMiddle=AnitaGeomTool::getChanIndexFromAntPol(otherAnt,pol);
+      int ciBottom=AnitaGeomTool::getChanIndexFromAntPol(otherAnt+16,pol);
 
-      TGraph *grCor = getCorrelation(ciTop,ciBottom);      
-      Double_t *y = grCor->GetY();
-      Double_t peak=TMath::MaxElement(grCor->GetN(),y);
-      Double_t rms=TMath::RMS(grCor->GetN(),y);
+      TGraph *grCor1 = getCorrelation(ciTop,ciMiddle);      
+      TGraph *grCor2 = getCorrelation(ciTop,ciBottom);      
+      TGraph *grCor3 = getCorrelation(ciMiddle,ciBottom);      
+      Double_t *y1 = grCor1->GetY();
+      Double_t PeakRMS[3];
+      PeakRMS[0]=TMath::MaxElement(grCor1->GetN(),y1)/TMath::RMS(grCor1->GetN(),y1);
+      Double_t *y2 = grCor2->GetY();
+      PeakRMS[1]=TMath::MaxElement(grCor2->GetN(),y2)/TMath::RMS(grCor2->GetN(),y2);
+
+      Double_t *y3 = grCor3->GetY();
+      PeakRMS[2]=TMath::MaxElement(grCor3->GetN(),y3)/TMath::RMS(grCor3->GetN(),y3);
+      Double_t maxPeakRMS = TMath::MaxElement(3, PeakRMS);
+
       //      FFTtools::getPeakRmsSqVal(grCor,peak,rms);
-      if((peak/rms)>maxVals[ant])
-	maxVals[ant]=(peak/rms);
+      if(maxPeakRMS>maxVals[ant])
+	maxVals[ant]=maxPeakRMS;
 
-     delete grCor;
+     delete grCor1;
+     delete grCor2;
+     delete grCor3;
    }
    
    for(int ant=0;ant<16;ant++) {
@@ -1109,7 +1229,8 @@ int PrettyAnitaEvent::getMaxAntennaCorrelationRollingAvg(AnitaPol::AnitaPol_t po
 
      int otherAnt=AnitaGeomTool::getAzimuthPartner(ant);
      int ciTop=AnitaGeomTool::getChanIndexFromAntPol(ant,pol);
-     int ciBottom=AnitaGeomTool::getChanIndexFromAntPol(otherAnt,pol);
+     int ciMiddle=AnitaGeomTool::getChanIndexFromAntPol(otherAnt,pol);
+     int ciBottom=AnitaGeomTool::getChanIndexFromAntPol(otherAnt+16,pol);
      
      Double_t newVal=maxVals[leftAnt]+maxVals[ant]+maxVals[rightAnt];
 
@@ -1117,9 +1238,11 @@ int PrettyAnitaEvent::getMaxAntennaCorrelationRollingAvg(AnitaPol::AnitaPol_t po
        maxVal=newVal;
        maxAnt=ant;
        Double_t maxTop=TMath::MaxElement(fNumPoints[ciTop],fVolts[ciTop]);
+       Double_t maxMiddle=TMath::MaxElement(fNumPoints[ciMiddle],fVolts[ciMiddle]);
        Double_t maxBottom=TMath::MaxElement(fNumPoints[ciBottom],fVolts[ciBottom]);
-       if(maxBottom>maxTop)
-	 maxAnt=otherAnt;
+       if(maxTop>maxBottom && maxTop>maxMiddle) maxAnt = ant;
+       else if (maxMiddle>maxBottom) maxAnt = otherAnt;
+       else maxAnt=otherAnt+16;
      }
 	 
    }
@@ -1346,6 +1469,8 @@ CorrelationSummary *PrettyAnitaEvent::getCorrelationSummary(Int_t centreAnt,Anit
 
       //      std::cout << nadirAnts[0] << "\t" << corInd << "\t"<< ci1 << " " << ci2 << "  " << theSum->firstAnt[corInd] << "\t" << theSum->secondAnt[corInd] <<std::endl;
 
+      //      if (ci1*ci2<0) continue; // Linda added this condition
+
       if(deltaT==0) {
 	 grCor=getCorrelation(ci1,ci2);
       }
@@ -1360,8 +1485,8 @@ CorrelationSummary *PrettyAnitaEvent::getCorrelationSummary(Int_t centreAnt,Anit
       
       int numPoints=grCor->GetN();
       double rmsVal=TMath::RMS(numPoints,theValues);
-      int maxIndex=TMath::LocMax(numPoints,theValues);;
-      double maxVal=theValues[maxIndex];;
+      int maxIndex=TMath::LocMax(numPoints,theValues);
+//       double maxVal=theValues[maxIndex];;
       //      Double_t maxVal,rmsVal;
       //      Int_t maxIndex;
       //      FFTtools::getPeakRmsRectified(grCor,maxVal,rmsVal,&maxIndex);
@@ -1448,6 +1573,258 @@ CorrelationSummary *PrettyAnitaEvent::getCorrelationSummary(Int_t centreAnt,Anit
 
    return theSum;
 }
+
+
+CorrelationSummaryAnita3 *PrettyAnitaEvent::getCorrelationSummaryAnita3(Int_t centreAnt,AnitaPol::AnitaPol_t pol, Double_t deltaT)
+{
+  //Gets the 11 correlations and then takes the max, rms and neighbouring maxima
+  if(centreAnt<0)
+    centreAnt=getMaxAntenna(pol);
+
+  // Anita 3 has 15 antennas in 5 phi sectors
+  // LLT LT CT RT RRT
+  // LLM LM CM RM RRM
+  // LLB LB CB RB RRB
+  // Resulting in 48 correlations
+
+  int nineAnts[9];
+  fillNineAntArrays(centreAnt,nineAnts);
+  int nextSixAnts[6];
+  fillNextSixAntArrays(centreAnt,nextSixAnts);
+
+   CorrelationSummaryAnita3 *theSum = new CorrelationSummaryAnita3(eventNumber, centreAnt, nineAnts,deltaT);
+   for(int i=0;i<6;i++)
+      theSum->nextSixAnts[i]=nextSixAnts[i];
+
+
+   //Now need to make correlation index pairs
+   //Top-Bottom first
+   theSum->firstAnt[0]=nineAnts[0];
+   theSum->secondAnt[0]=nineAnts[3];
+   theSum->firstAnt[1]=nineAnts[1];
+   theSum->secondAnt[1]=nineAnts[4];
+   theSum->firstAnt[2]=nineAnts[2];
+   theSum->secondAnt[2]=nineAnts[5];
+   theSum->firstAnt[3]=nineAnts[3];
+   theSum->secondAnt[3]=nineAnts[6];
+   theSum->firstAnt[4]=nineAnts[4];
+   theSum->secondAnt[4]=nineAnts[7];
+   theSum->firstAnt[5]=nineAnts[5];
+   theSum->secondAnt[5]=nineAnts[8];
+   //Now Left-Right
+   theSum->firstAnt[6]=nineAnts[0];
+   theSum->secondAnt[6]=nineAnts[1];
+   theSum->firstAnt[7]=nineAnts[1];
+   theSum->secondAnt[7]=nineAnts[2];
+   theSum->firstAnt[8]=nineAnts[3];
+   theSum->secondAnt[8]=nineAnts[4];
+   theSum->firstAnt[9]=nineAnts[4];
+   theSum->secondAnt[9]=nineAnts[5];
+   theSum->firstAnt[10]=nineAnts[6];
+   theSum->secondAnt[10]=nineAnts[7];
+   theSum->firstAnt[11]=nineAnts[7];
+   theSum->secondAnt[11]=nineAnts[8];
+   //Now Diagonal
+   theSum->firstAnt[12]=nineAnts[0];
+   theSum->secondAnt[12]=nineAnts[4];
+   theSum->firstAnt[13]=nineAnts[2];
+   theSum->secondAnt[13]=nineAnts[4];
+   theSum->firstAnt[14]=nineAnts[6];
+   theSum->secondAnt[14]=nineAnts[4];
+   theSum->firstAnt[15]=nineAnts[8];
+   theSum->secondAnt[15]=nineAnts[4];
+   theSum->firstAnt[16]=nineAnts[1];
+   theSum->secondAnt[16]=nineAnts[3];
+   theSum->firstAnt[17]=nineAnts[1];
+   theSum->secondAnt[17]=nineAnts[5];
+   theSum->firstAnt[18]=nineAnts[3];
+   theSum->secondAnt[18]=nineAnts[7];
+   theSum->firstAnt[19]=nineAnts[7];
+   theSum->secondAnt[19]=nineAnts[5];
+   //Now Leftmost - centre or centre - rightmost 
+   theSum->firstAnt[20]=nextSixAnts[0];
+   theSum->secondAnt[20]=nineAnts[1];
+   theSum->firstAnt[21]=nineAnts[1];
+   theSum->secondAnt[21]=nextSixAnts[1];
+   theSum->firstAnt[22]=nextSixAnts[2];
+   theSum->secondAnt[22]=nineAnts[4];
+   theSum->firstAnt[23]=nineAnts[4];
+   theSum->secondAnt[23]=nextSixAnts[3];
+   theSum->firstAnt[24]=nextSixAnts[4];
+   theSum->secondAnt[24]=nineAnts[7];
+   theSum->firstAnt[25]=nineAnts[7];
+   theSum->secondAnt[25]=nextSixAnts[5];
+   //Now Leftmost - left or right-rightmost
+   theSum->firstAnt[26]=nextSixAnts[0];
+   theSum->secondAnt[26]=nineAnts[0];
+   theSum->firstAnt[27]=nineAnts[2];
+   theSum->secondAnt[27]=nextSixAnts[1];
+   theSum->firstAnt[28]=nextSixAnts[2];
+   theSum->secondAnt[28]=nineAnts[3];
+   theSum->firstAnt[29]=nineAnts[5];
+   theSum->secondAnt[29]=nextSixAnts[3];
+   theSum->firstAnt[30]=nextSixAnts[4];
+   theSum->secondAnt[30]=nineAnts[6];
+   theSum->firstAnt[31]=nineAnts[8];
+   theSum->secondAnt[31]=nextSixAnts[5];
+   // Now diagonals to LM and RM
+   theSum->firstAnt[32]=nextSixAnts[0];
+   theSum->secondAnt[32]=nineAnts[3];
+   theSum->firstAnt[33]=nextSixAnts[4];
+   theSum->secondAnt[33]=nineAnts[3];
+   theSum->firstAnt[34]=nextSixAnts[1];
+   theSum->secondAnt[34]=nineAnts[5];
+   theSum->firstAnt[35]=nextSixAnts[5];
+   theSum->secondAnt[35]=nineAnts[5];
+   // Now bottom to top
+   theSum->firstAnt[36]=nextSixAnts[0];
+   theSum->secondAnt[36]=nextSixAnts[4];
+   theSum->firstAnt[37]=nineAnts[0];
+   theSum->secondAnt[37]=nineAnts[6];
+   theSum->firstAnt[38]=nineAnts[1];
+   theSum->secondAnt[38]=nineAnts[7];
+   theSum->firstAnt[39]=nineAnts[2];
+   theSum->secondAnt[39]=nineAnts[8];
+   theSum->firstAnt[40]=nextSixAnts[1];
+   theSum->secondAnt[40]=nextSixAnts[5];
+   // Now top to bottom displaced right
+   theSum->firstAnt[41]=nextSixAnts[0];
+   theSum->secondAnt[41]=nineAnts[6];
+   theSum->firstAnt[42]=nineAnts[0];
+   theSum->secondAnt[42]=nineAnts[7];
+   theSum->firstAnt[43]=nineAnts[1];
+   theSum->secondAnt[43]=nineAnts[8];
+   theSum->firstAnt[44]=nineAnts[2];
+   theSum->secondAnt[44]=nextSixAnts[5];
+   // Now top to bottom displaced left
+   theSum->firstAnt[45]=nineAnts[0];
+   theSum->secondAnt[45]=nextSixAnts[4];
+   theSum->firstAnt[46]=nineAnts[1];
+   theSum->secondAnt[46]=nineAnts[6];
+   theSum->firstAnt[47]=nineAnts[2];
+   theSum->secondAnt[47]=nineAnts[7];
+   theSum->firstAnt[48]=nextSixAnts[1];
+   theSum->secondAnt[48]=nineAnts[8];
+
+
+   //Now can make correlations and find max, rms, etc.
+   for(int corInd=0;corInd<NUM_CORRELATIONS_ANITA3;corInd++) {
+      TGraph *grCor;
+      //      std::cout << corInd << "\t" << theSum->firstAnt[corInd] << "\t" << theSum->secondAnt[corInd] << "\n";
+      Int_t ci1=AnitaGeomTool::getChanIndexFromAntPol(theSum->firstAnt[corInd],pol);
+      Int_t ci2=AnitaGeomTool::getChanIndexFromAntPol(theSum->secondAnt[corInd],pol);
+
+      //      std::cout << corInd << "\t"<< ci1 << " " << ci2 << "  " << theSum->firstAnt[corInd] << "\t" << theSum->secondAnt[corInd] <<std::endl;
+
+//       if (ci1*ci2<0) continue; // Linda added this condition
+
+      if(deltaT==0) {
+	 grCor=getCorrelation(ci1,ci2);
+      }
+      else {
+	 grCor=getCorrelationInterpolated(ci1,ci2,deltaT);
+      }
+
+      //      theSum->rmsCorVals[corInd]=grCor->GetRMS(2);
+
+      double *theTimes = grCor->GetX();
+      double *theValues = grCor->GetY();
+      
+      int numPoints=grCor->GetN();
+      double rmsVal=TMath::RMS(numPoints,theValues);
+      int maxIndex=TMath::LocMax(numPoints,theValues);
+//       double maxVal=theValues[maxIndex];
+
+//           Double_t maxVal,rmsVal;
+//           Int_t maxIndex;
+//           FFTtools::getPeakRmsRectified(grCor,maxVal,rmsVal,&maxIndex);
+
+//           FFTtools::getPeakRmsSqVal(grCor,maxVal,rmsVal,&maxIndex);
+//           for(int i=0;i<grCor->GetN();i++) {
+// 	    //     	std::cout << i << "\t" << theTimes[i] << "\t" << theValues[i] << "\n";
+//      	 if(theValues[i]>maxVal) {
+//      	    maxVal=theValues[i];
+//      	    maxIndex=i;
+//      	 }
+//           }
+      theSum->rmsCorVals[corInd]=rmsVal;
+      theSum->maxCorVals[corInd]=theValues[maxIndex];
+      theSum->maxCorTimes[corInd]=theTimes[maxIndex];
+
+      //      std::cout << theSum->firstAnt[corInd] << "\t" << theSum->secondAnt[corInd]
+// 		     << "\t" << theSum->maxCorTimes[corInd] 
+// 		     << "\t" << theSum->maxCorVals[corInd] << "\t" 
+// 		     << "\t" << (theSum->maxCorTimes[corInd]-fWaveOffset)/fDeltaT << "\t"
+// 		     << fWaveOffset << "\t" << fDeltaT << std::endl;
+
+      theSum->secondCorVals[corInd][0]=theSum->maxCorVals[corInd];
+      theSum->secondCorTimes[corInd][0]=theSum->maxCorTimes[corInd];
+      theSum->secondCorVals[corInd][1]=theSum->maxCorVals[corInd];
+      theSum->secondCorTimes[corInd][1]=theSum->maxCorTimes[corInd];
+      for(int i=maxIndex-1;i>=1;i--) {
+	 if(i<1) break;	 
+	 if(theValues[i]>=theValues[i-1] && theValues[i]>=theValues[i+1]) {
+	    theSum->secondCorVals[corInd][0]=theValues[i];
+	    theSum->secondCorTimes[corInd][0]=theTimes[i];
+	    break;
+	 }	  
+      }
+      for(int i=maxIndex+1;i<grCor->GetN();i++) {
+	 if(i>=grCor->GetN()-1) break;	 
+	 if(theValues[i]>=theValues[i-1] && theValues[i]>=theValues[i+1]) {
+	    theSum->secondCorVals[corInd][1]=theValues[i];
+	    theSum->secondCorTimes[corInd][1]=theTimes[i];
+	    break;
+	 }	  
+      }   
+      delete grCor;
+   }
+
+   //Will add a call to
+   theSum->fillErrorsAndFit();
+
+   //Set up MINUIT for the fit
+   static int firstTime=1;
+   if(firstTime) {
+      gMinuit = new TMinuit(2);
+      firstTime=0;
+   }
+   gMinuit->SetObjectFit(theSum);  
+   gMinuit->SetFCN(CorSumFCNanita3);
+   double par[2]={theSum->fAntPhi[1][0],0};               // the start values
+   double stepSize[2]={0.01,0.01};          // step sizes 
+   double minVal[2]={0,-1*TMath::PiOver2()};            // minimum bound on parameter 
+   double maxVal[2]={TMath::TwoPi(),TMath::PiOver2()};            // maximum bound on parameter
+   char parName[2][20];
+   sprintf(parName[0],"phiWave");
+   sprintf(parName[1],"thetaWave");
+   for (int i=0; i<2; i++){
+      gMinuit->DefineParameter(i, parName[i], par[i], stepSize[i], minVal[i], maxVal[i]);
+   }
+   
+   Double_t phiWave,thetaWave;
+   Double_t phiWaveErr,thetaWaveErr;
+   //do the fit and get the answers
+   gMinuit->SetPrintLevel(-1);
+
+   gMinuit->Migrad();       // Minuit's best minimization algorithm   
+
+   gMinuit->GetParameter(0,phiWave,phiWaveErr);
+   gMinuit->GetParameter(1,thetaWave,thetaWaveErr);
+
+
+   Int_t npari,nparx,istat;
+   Double_t fmin,fedm,errdef;
+   gMinuit->mnstat(fmin,fedm,errdef,npari,nparx,istat);
+//    std::cout << fmin << "\t" << fedm << "\t" << npari << "\t" << nparx 
+//    	     << "\t" << istat << std::endl;
+   theSum->setFitResults(phiWave,thetaWave,phiWaveErr,thetaWaveErr,fmin);
+
+
+
+   return theSum;
+}
+
 
 /*
 

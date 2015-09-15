@@ -54,8 +54,8 @@ GLIBS         = $(ROOTGLIBS) $(SYSLIBS)
 #ROOT stuff
 
 ROOT_LIBRARY = libAnitaCorrelator.${DLLSUF}
-LIB_OBJS = PrettyAnitaEvent.o CorrelationSummary.o UsefulAdu5Pat.o  correlatorDict.o BedmapReader.o RampdemReader.o
-CLASS_HEADERS =  PrettyAnitaEvent.h CorrelationSummary.h UsefulAdu5Pat.h BedmapReader.h RampdemReader.h
+LIB_OBJS = PrettyAnitaEvent.o CorrelationSummary.o CorrelationSummaryAnita3.o UsefulAdu5Pat.o  correlatorDict.o BedmapReader.o RampdemReader.o
+CLASS_HEADERS =  PrettyAnitaEvent.h CorrelationSummary.h CorrelationSummaryAnita3.h UsefulAdu5Pat.h BedmapReader.h RampdemReader.h
 
 all : $(ROOT_LIBRARY) 
 

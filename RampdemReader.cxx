@@ -120,7 +120,7 @@ int RampdemReader::readRAMPDEM()
      if(!utilEnv)
 	sprintf(calibDir,"calib");
      else
-	sprintf(calibDir,"%s/share/rampdemData",utilEnv);
+	sprintf(calibDir,"%s/share/anitaCalib",utilEnv);
   }
   else {
     strncpy(calibDir,calibEnv,FILENAME_MAX);
