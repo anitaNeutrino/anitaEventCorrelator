@@ -54,12 +54,13 @@ GLIBS         = $(ROOTGLIBS) $(SYSLIBS)
 #ROOT stuff
 
 ROOT_LIBRARY = libAnitaCorrelator.${DLLSUF}
-LIB_OBJS = PrettyAnitaEvent.o CorrelationSummary.o CorrelationSummaryAnita3.o UsefulAdu5Pat.o  correlatorDict.o BedmapReader.o RampdemReader.o
+DICT=correlatorDict
+LIB_OBJS = PrettyAnitaEvent.o CorrelationSummary.o CorrelationSummaryAnita3.o UsefulAdu5Pat.o BedmapReader.o RampdemReader.o $(DICT).o
 CLASS_HEADERS =  PrettyAnitaEvent.h CorrelationSummary.h CorrelationSummaryAnita3.h UsefulAdu5Pat.h BedmapReader.h RampdemReader.h
 
 all : $(ROOT_LIBRARY) 
 
-correlatorDict.C: $(CLASS_HEADERS)
+$(DICT).C: $(CLASS_HEADERS)
 	@echo "Generating dictionary ..."
 	@ rm -f *Dict* 
 #	rootcint $@ -c $(CXXFLAGS) $(CLASS_HEADERS) LinkDef.h
@@ -124,11 +125,11 @@ endif
 #endif
 #
 
-%.$(OBJSUF) : %.$(SRCSUF)
+%.$(OBJSUF) : %.$(SRCSUF) %.h
 	@echo "<**Compiling**> "$<
 	$(CXX) $(CXXFLAGS) -c $< -o  $@
 
-%.$(OBJSUF) : %.C
+%.$(OBJSUF) : %.C %.h
 	@echo "<**Compiling**> "$<
 	$(CXX) $(CXXFLAGS) $ -c $< -o  $@
 
@@ -141,6 +142,11 @@ else
 endif
 	install -c -m 644  $(CLASS_HEADERS) $(ANITA_UTIL_INC_DIR)
 	install -d $(ANITA_UTIL_CALIB_DIR)
+
+	@if [ $(shell root-config --version | cut -c1) -ge 6 ]; then \
+	install -c -m 755 $(DICT)_rdict.pcm $(ANITA_UTIL_LIB_DIR) ;\
+	fi # Additional install command for ROOTv6
+
 	for file in data/*.asc data/*.bin data/*.hdr; do install -c -m 644 "$${file}" $(ANITA_UTIL_CALIB_DIR); done
 
 clean:
