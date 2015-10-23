@@ -45,7 +45,7 @@ RampdemReader*  RampdemReader::fgInstance = 0;
 RampdemReader::RampdemReader() 
 {
   //Default constructor
-  std::cout << "reading the rampdem data" << std::endl;
+  // std::cout << "reading the rampdem data" << std::endl;
   readRAMPDEM();
   fgInstance=this;
 }
@@ -205,7 +205,7 @@ int RampdemReader::readRAMPDEM()
       return 2;
     } //end if
 
-  std::cout<<"[RampdemReader::readRAMPDEM]  Finished reading in RAMP DEM data.\n";
+  // std::cout<<"[RampdemReader::readRAMPDEM]  Finished reading in RAMP DEM data.\n";
 
   /** For debugging purposes, look through the data we read in. **/
   if (debug)
