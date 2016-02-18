@@ -488,6 +488,11 @@ void UsefulAdu5Pat::getThetaAndPhiWaveWaisDivide(Double_t &thetaWave, Double_t &
   return getThetaAndPhiWave(AnitaLocations::LONGITUDE_WAIS,AnitaLocations::LATITUDE_WAIS,AnitaLocations::ALTITUDE_WAIS,thetaWave,phiWave);
 }
 
+void UsefulAdu5Pat::getThetaAndPhiWaveLDB(Double_t &thetaWave, Double_t &phiWave)
+{   
+  return getThetaAndPhiWave(AnitaLocations::LONGITUDE_LDB,AnitaLocations::LATITUDE_LDB,AnitaLocations::ALTITUDE_LDB,thetaWave,phiWave);
+}
+
 
 
 void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave) {
@@ -834,6 +839,13 @@ UInt_t UsefulAdu5Pat::getWaisDivideTriggerTimeNs()
   return getTriggerTimeNsFromSource(AnitaLocations::LATITUDE_WAIS,
 				    AnitaLocations::LONGITUDE_WAIS,
 				    AnitaLocations::ALTITUDE_WAIS);
+}
+
+UInt_t UsefulAdu5Pat::getLDBTriggerTimeNs()
+{
+  return getTriggerTimeNsFromSource(AnitaLocations::LATITUDE_LDB,
+				    AnitaLocations::LONGITUDE_LDB,
+				    AnitaLocations::ALTITUDE_LDB);
 }
 
 
