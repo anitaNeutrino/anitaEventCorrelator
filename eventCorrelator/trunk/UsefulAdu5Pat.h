@@ -77,6 +77,14 @@ class UsefulAdu5Pat: public Adu5Pat
 
   void getThetaAndPhiWaveWaisDivide(Double_t &thetaWave, Double_t &phiWave);
 
+  //! Returns the expected theta and phi expected from LDB camp
+  /*!
+    \param phiWave Reference to a Double_t in which to store the azimuthal angle of plane wave (in payload centric coordinates with phi equals zero lying in the direction of the ADU5 fore antenna)
+    \param thetaWave Reference to a Double_t in which to store the elevation angle of plane wave, in the convention of this function +ve theta is upwards.  
+  */
+
+  void getThetaAndPhiWaveLDB(Double_t &thetaWave, Double_t &phiWave);
+
   //! For a given base, calculates the theta angle from the base to the balloon - use as a horizon check
   /*!  
     \param thetaWave Reference to a Double_t in which to store the elevation angle of plane wave from base to balloon  
@@ -163,6 +171,7 @@ class UsefulAdu5Pat: public Adu5Pat
   
   UInt_t getTaylorDomeTriggerTimeNs(); ///< Gets the time of flight to Taylor Dome
   UInt_t getWaisDivideTriggerTimeNs(); ///< Gets the time of flight to Wais Divide
+  UInt_t getLDBTriggerTimeNs(); ///< Gets the time of flight to LDB camp
 
   UInt_t getTriggerTimeNsFromSource(Double_t sourceLat, Double_t sourceLong, Double_t sourceAlt); ///< Gets time of flight from any source
   void setIncludeGroupDelay(Int_t flag) 
