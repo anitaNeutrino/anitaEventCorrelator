@@ -19,7 +19,7 @@
 #include "BedmapReader.h"
 #include "RampdemReader.h"
 #include "TProfile2D.h"
-
+#include "TTimeStamp.h"
 
 // For ANITA-3
 namespace AnitaStaticAdu5Offsets{
@@ -181,6 +181,14 @@ class UsefulAdu5Pat: public Adu5Pat
   RampdemReader *fRampdemReader;
 
   Double_t getAngleBetweenPayloadAndSource(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt); //ACG additional function
+
+
+
+
+  void getSunPosition(Double_t& phiDeg, Double_t& thetaDeg);
+  Double_t getAzimuthOfSunRelativeToNorth();
+  Double_t getAzimuthOfSun();
+  Double_t getDifferencePointingToSun(Double_t phiAngle, Bool_t inputInDegrees=true);
 
  private:
   Int_t fIncludeGroupDelay;

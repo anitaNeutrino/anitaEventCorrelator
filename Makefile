@@ -49,8 +49,6 @@ LIBS          = $(ROOTLIBS) -lMathMore -lMinuit $(SYSLIBS) $(LD_ANITA_UTIL) $(FF
 GLIBS         = $(ROOTGLIBS) $(SYSLIBS)
 
 #Now the bits we're actually compiling
-
-
 #ROOT stuff
 
 ROOT_LIBRARY = libAnitaCorrelator.${DLLSUF}
@@ -63,8 +61,6 @@ all : $(ROOT_LIBRARY)
 $(DICT).C: $(CLASS_HEADERS)
 	@echo "Generating dictionary ..."
 	@ rm -f *Dict* 
-#	rootcint $@ -c $(CXXFLAGS) $(CLASS_HEADERS) LinkDef.h
-#	rootcint $@ -c -p -I$(shell $(RC) --incdir) $(CXXFLAGS) $(CLASS_HEADERS) LinkDef.h
 	rootcint $@ -c -p -I$(shell $(RC) --incdir) $(INC_ANITA_UTIL) $(CLASS_HEADERS) LinkDef.h
 
 progs: makeCorrelationRunTree makeSimpleDST #makeGoodCorrelationRunTree makeInitialGoodCorrelationRunTree  makeHPolCorrelationRunTree
@@ -104,26 +100,6 @@ endif
 else
 	$(LD) $(SOFLAGS) $(LDFLAGS) $(LIBS) $(LIB_OBJS) -o $@
 endif
-
-
-#The library
-#$(ROOT_LIBRARY) : $(LIB_OBJS) 
-#	@echo "Linking $@ ..."
-#ifeq ($(PLATFORM),macosx)
-## We need to make both the .dylib and the .so
-#		$(LD) $(SOFLAGS)$@ $(LDFLAGS) $^ $(OutPutOpt) $@
-#ifneq ($(subst $(MACOSX_MINOR),,1234),1234)
-#ifeq ($(MACOSX_MINOR),4)
-#		ln -sf $@ $(subst .$(DllSuf),.so,$@)
-#else
-#		$(LD) -bundle -undefined $(UNDEFOPT) $(LDFLAGS) $^ \
-#		   $(OutPutOpt) $(subst .$(DllSuf),.so,$@)
-#endif
-#endif
-#else
-#	$(LD) $(SOFLAGS) $(LDFLAGS) $(LIB_OBJS) -o $@
-#endif
-#
 
 %.$(OBJSUF) : %.$(SRCSUF) %.h
 	@echo "<**Compiling**> "$<

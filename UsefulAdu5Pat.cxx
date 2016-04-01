@@ -49,7 +49,7 @@ UsefulAdu5Pat::UsefulAdu5Pat()
 
 }
 
-UsefulAdu5Pat::UsefulAdu5Pat(Adu5Pat *patPtr,double deltaR,double deltaRL,double deltaUD)
+UsefulAdu5Pat::UsefulAdu5Pat(Adu5Pat *patPtr, double deltaR, double deltaRL, double deltaUD)
   : Adu5Pat(*patPtr)
 {
   fIncludeGroupDelay=0;
@@ -212,7 +212,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAtDesiredAlt(Double_t phiWave, Double_t the
   Double_t nextRe=re;
   Double_t reh=reBalloon+altitude;
   do {
-    //Okay so effectively what we do here is switch to cartesian coords with the balloon at RE_balloon + altitude and then try to fins where the line at thetaWave cuts the Earth's surface.
+    //Okay so effectively what we do here is switch to cartesian coords with the balloon at RE_balloon + altitude and then try to find where the line at thetaWave cuts the Earth's surface.
     //This is iterative because the Earth is cruel and isn't flat, and I couldn't be bothered to work out how to do it more elegantly.
     re=nextRe;
 
@@ -943,3 +943,254 @@ Double_t UsefulAdu5Pat::getAngleBetweenPayloadAndSource(Double_t sourceLon, Doub
 //   TProfile2D *rampMap = fRampdemReader->rampMap(coarseness,0,xBins,yBins);
 //   return rampMap;
 // }
+
+
+
+//---------------------------------------------------------------------------------------------------------
+/** 
+ * @brief Calculates the azimuth position of the sun if ANITA was facing directly north.
+ * 
+ * @return azimuth (Degrees) relative to heading=0.
+ *
+ * Uses the timeOfDay variable from inside the Adu5Pat to get the sun's azimuth position relative to north.
+ * i.e. returns -1*heading of the sun, as payload phi increases anti-clockwise and heading increases clockwise.
+ * The more useful quantity is probably returned by UsefulAdu5Pat::getAzimuthOfSun().
+ */
+Double_t UsefulAdu5Pat::getAzimuthOfSunRelativeToNorth(){
+
+  //work out the angle to the Sun for heading 0
+  TTimeStamp theTime = this->realTime;
+
+  UInt_t hour = 0;
+  UInt_t min = 0;
+  UInt_t sec = 0;
+  theTime.GetTime(true,0,&hour,&min,&sec);
+  Int_t timeOfDay = hour*3600 + min*60 + sec;
+
+
+  // this would make 12pm at 180 degrees to sun - so we have to subtract 180 from the result  
+  Int_t secondsPerDay = (24*60*60);
+  Double_t zeroLonAngleToSun = 360*Double_t(timeOfDay)/secondsPerDay;
+
+
+  zeroLonAngleToSun-=180.;
+  Double_t thisLonAngleToSun = zeroLonAngleToSun+this->longitude;
+
+  while(thisLonAngleToSun<-180) thisLonAngleToSun+=360.;
+  while(thisLonAngleToSun>180) thisLonAngleToSun-=360.;
+  
+  return thisLonAngleToSun;
+}
+
+
+
+
+
+//---------------------------------------------------------------------------------------------------------
+/** 
+ * Get's the sun's azimuth position in payload phi relative to adu5 aft-fore
+ * 
+ * @return the azimuth position of the sun taking into account ANITA's heading.
+ */
+Double_t UsefulAdu5Pat::getAzimuthOfSun(){
+
+  Double_t sunAngle = UsefulAdu5Pat::getAzimuthOfSunRelativeToNorth();
+  Double_t sunAngleAtHeading = sunAngle + this->heading;
+
+  while(sunAngleAtHeading<-180) sunAngleAtHeading+=360;
+  while(sunAngleAtHeading>180)  sunAngleAtHeading-=360;
+
+  return sunAngleAtHeading;
+
+}
+
+
+
+
+//---------------------------------------------------------------------------------------------------------
+/** 
+ * @brief Quick way of getting difference between any azimuth phi and the sun's azimuth phi.
+ * 
+ * @param phiAngle is the input azimuth in either degrees or radians
+ * @param inputInDegrees is a boolian, which should be true is the phiAngle is in degrees or false if the phiAngle is in radians.
+ * 
+ * @return the difference between the two angles in Degrees (regardless of whether the input is in radians or degrees).
+ */
+Double_t UsefulAdu5Pat::getDifferencePointingToSun(Double_t phiAngle, Bool_t inputInDegrees){
+  
+  //radOrDeg==0 is rad, ==1 is deg
+
+  if(phiAngle>9999 || phiAngle<-9999){
+    std::cerr << "UsefulAdu5Pat::getDifferencePointingToSun() " << phiAngle << " ignore\n";
+    return -9999.;
+  }
+
+  Double_t sunAngle = UsefulAdu5Pat::getAzimuthOfSun();
+
+  Double_t angleFromSun=0;
+  if(inputInDegrees==false){
+    angleFromSun = sunAngle - phiAngle*TMath::RadToDeg();
+  }
+  else{
+    angleFromSun = sunAngle - phiAngle;  
+  }
+  
+  while(angleFromSun<-180){
+    angleFromSun+=360;
+  }
+  while(angleFromSun>=180){
+    angleFromSun-=360;
+  }
+
+  //always returns degrees
+  return angleFromSun;
+
+}
+
+
+
+/** 
+ * @brief Uses realTime, latitude, longitude to calculate the sun's position.
+ * 
+ * @param phiDeg will contain the phi position in ANITA's coordinates after the function call
+ * @param thetaDeg will contain the theta position in ANITA's coordinates after the function call
+ *
+ * The meat of this function was taken from here http://www.psa.es/sdg/sunpos.htm
+ */
+void UsefulAdu5Pat::getSunPosition(Double_t& phiDeg, Double_t& thetaDeg){
+
+// 
+  
+  // Declaration of some constants 
+  const Double_t dEarthMeanRadius = 6371.01;	// In km
+  const Double_t dAstronomicalUnit =149597890;	// In km
+
+  
+  TTimeStamp timeStamp = realTime;
+  UInt_t year, month, day;
+  timeStamp.GetDate(true, 0, &year, &month, &day);
+  UInt_t hour, min, sec;    
+  timeStamp.GetTime(true, 0, &hour, &min, &sec);
+
+  // std::cerr << year << "-" << month << "-" << day << "\t" << hour << ":" << min << ":" << sec << std::endl;
+
+  // need to convert from unsigned to signed ints otherwise this bastard breaks
+  Int_t iDay = day;
+  Int_t iMonth = month;
+  Int_t iYear = year;
+  
+  // Main variables
+  Double_t dAzimuth;
+  Double_t dZenithAngle;
+  Double_t dElapsedJulianDays;
+  Double_t dDecimalHours;
+  Double_t dEclipticLongitude;
+  Double_t dEclipticObliquity;
+  Double_t dRightAscension;
+  Double_t dDeclination;
+
+  // Auxiliary variables
+  Double_t dY;
+  Double_t dX;
+
+  // Calculate difference in days between the current Julian Day 
+  // and JD 2451545.0, which is noon 1 January 2000 Universal Time
+  {
+    Double_t dJulianDate;
+    long int liAux1;
+    long int liAux2;
+    // Calculate time of the day in UT decimal hours
+    dDecimalHours = (double)hour + ((double)min + (double)sec / 60.0 ) / 60.0;
+    // Calculate current Julian Day
+    liAux1 =(iMonth-14)/12;
+    liAux2=(1461*(iYear + 4800 + liAux1))/4 + (367*(iMonth 
+						    - 2-12*liAux1))/12- (3*((iYear + 4900 
+									     + liAux1)/100))/4+iDay-32075;
+    dJulianDate=(double)(liAux2)-0.5+dDecimalHours/24.0;
+    // Calculate difference between current Julian Day and JD 2451545.0 
+    dElapsedJulianDays = dJulianDate-2451545.0;
+  }
+
+  // Calculate ecliptic coordinates (ecliptic longitude and obliquity of the 
+  // ecliptic in radians but without limiting the angle to be less than 2*Pi 
+  // (i.e., the result may be greater than 2*Pi)
+  {
+    Double_t dMeanLongitude;
+    Double_t dMeanAnomaly;
+    Double_t dOmega;
+    dOmega=2.1429-0.0010394594*dElapsedJulianDays;
+    dMeanLongitude = 4.8950630+ 0.017202791698*dElapsedJulianDays; // Radians
+    dMeanAnomaly = 6.2400600+ 0.0172019699*dElapsedJulianDays;
+    dEclipticLongitude = dMeanLongitude + 0.03341607*sin( dMeanAnomaly ) 
+      + 0.00034894*sin( 2*dMeanAnomaly )-0.0001134
+      -0.0000203*sin(dOmega);
+    dEclipticObliquity = 0.4090928 - 6.2140e-9*dElapsedJulianDays
+      +0.0000396*cos(dOmega);
+  }
+
+  // Calculate celestial coordinates ( right ascension and declination ) in radians 
+  // but without limiting the angle to be less than 2*Pi (i.e., the result may be 
+  // greater than 2*Pi)
+  {
+    Double_t dSin_EclipticLongitude;
+    dSin_EclipticLongitude= sin( dEclipticLongitude );
+    dY = cos( dEclipticObliquity ) * dSin_EclipticLongitude;
+    dX = cos( dEclipticLongitude );
+    dRightAscension = atan2( dY,dX );
+    if( dRightAscension < 0.0 ) dRightAscension = dRightAscension + TMath::TwoPi();
+    dDeclination = asin( sin( dEclipticObliquity )*dSin_EclipticLongitude );
+  }
+
+  // Calculate local coordinates ( azimuth and zenith angle ) in degrees
+  {
+    Double_t dGreenwichMeanSiderealTime;
+    Double_t dLocalMeanSiderealTime;
+    Double_t dLatitudeInRadians;
+    Double_t dHourAngle;
+    Double_t dCos_Latitude;
+    Double_t dSin_Latitude;
+    Double_t dCos_HourAngle;
+    Double_t dParallax;
+    dGreenwichMeanSiderealTime = 6.6974243242 + 
+      0.0657098283*dElapsedJulianDays 
+      + dDecimalHours;
+    dLocalMeanSiderealTime = (dGreenwichMeanSiderealTime*15 
+			      + longitude)*TMath::DegToRad();
+    dHourAngle = dLocalMeanSiderealTime - dRightAscension;
+    dLatitudeInRadians = latitude*TMath::DegToRad();
+    dCos_Latitude = cos( dLatitudeInRadians );
+    dSin_Latitude = sin( dLatitudeInRadians );
+    dCos_HourAngle= cos( dHourAngle );
+    dZenithAngle = (acos( dCos_Latitude*dCos_HourAngle
+			  *cos(dDeclination) + sin( dDeclination )*dSin_Latitude));
+    dY = -sin( dHourAngle );
+    dX = tan( dDeclination )*dCos_Latitude - dSin_Latitude*dCos_HourAngle;
+    dAzimuth = atan2( dY, dX );
+    if ( dAzimuth < 0.0 ) 
+      dAzimuth = dAzimuth + TMath::TwoPi();
+    dAzimuth = dAzimuth/TMath::DegToRad();
+    // Parallax Correction
+    dParallax=(dEarthMeanRadius/dAstronomicalUnit)
+      *sin(dZenithAngle);
+    dZenithAngle=(dZenithAngle 
+		  + dParallax)/TMath::DegToRad();
+  }
+
+  // std::cerr << dAzimuth << "\t" << dZenithAngle << std::endl;
+  
+  // finally we need to convert to ANITA's coordinates
+  // from my testing...   
+  // dAzimuth = pat->heading - recoPhiDeg;
+  // therefore
+  
+  phiDeg = heading - dAzimuth;
+  while(phiDeg < 0) phiDeg += 360;
+  while(phiDeg >= 0) phiDeg -= 360;
+
+  // and theta for these guys runs from 
+  thetaDeg = dZenithAngle - 90;
+  
+  // thetaDeg = dZenithAngle;
+  // phiDeg = dAzimuth;
+  
+ }
