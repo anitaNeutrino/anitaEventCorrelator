@@ -37,8 +37,8 @@ class UsefulAdu5Pat: public Adu5Pat
 
  public:
   UsefulAdu5Pat(); ///< Default constructor
-  UsefulAdu5Pat(Adu5Pat *patPtr, double deltaR, double doubleRL, double doubleUD); ///< Assignment constructor
-  UsefulAdu5Pat(Adu5Pat *patPtr); ///< Assignment constructor
+  UsefulAdu5Pat(const Adu5Pat *patPtr, double deltaR, double doubleRL, double doubleUD); ///< Assignment constructor
+  UsefulAdu5Pat(const Adu5Pat *patPtr); ///< Assignment constructor
   ~UsefulAdu5Pat(); ///< Destructor
 
   //! For a given azimuthal and elevation angle of a plane wave (in payload coordinates) calculates the point on the Earth's surface that the source would come from.
