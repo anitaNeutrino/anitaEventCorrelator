@@ -49,7 +49,7 @@ UsefulAdu5Pat::UsefulAdu5Pat()
 
 }
 
-UsefulAdu5Pat::UsefulAdu5Pat(Adu5Pat *patPtr, double deltaR, double deltaRL, double deltaUD)
+UsefulAdu5Pat::UsefulAdu5Pat(const Adu5Pat *patPtr, double deltaR, double deltaRL, double deltaUD)
   : Adu5Pat(*patPtr)
 {
   fIncludeGroupDelay=0;
@@ -80,7 +80,7 @@ UsefulAdu5Pat::UsefulAdu5Pat(Adu5Pat *patPtr, double deltaR, double deltaRL, dou
   }
 }
 
-UsefulAdu5Pat::UsefulAdu5Pat(Adu5Pat *patPtr)
+UsefulAdu5Pat::UsefulAdu5Pat(const Adu5Pat *patPtr)
   : Adu5Pat(*patPtr)
 {
   fIncludeGroupDelay=0;
