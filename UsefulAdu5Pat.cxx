@@ -23,7 +23,6 @@ ClassImp(UsefulAdu5Pat);
 
 AnitaGeomTool *fUPGeomTool=0;
 //RampdemReader *fRampdemReader=0;
-Int_t fRampdemOpen=0;
 
 
 UsefulAdu5Pat::UsefulAdu5Pat() 
@@ -42,10 +41,7 @@ UsefulAdu5Pat::UsefulAdu5Pat()
   if(!fUPGeomTool){
     fUPGeomTool=AnitaGeomTool::Instance();
   }
-  if(!fRampdemOpen){
-    fRampdemReader=RampdemReader::Instance();
-    fRampdemOpen=1;
-  }
+  fRampdemReader=RampdemReader::Instance();
 
 }
 
@@ -74,10 +70,7 @@ UsefulAdu5Pat::UsefulAdu5Pat(const Adu5Pat *patPtr, double deltaR, double deltaR
   fBalloonPhi=fBalloonPos.Phi();
   if(fBalloonPhi<0) fBalloonPhi+=TMath::TwoPi();
   fBalloonHeight=fBalloonPos.Mag();
-  if(!fRampdemOpen){
-    fRampdemReader=RampdemReader::Instance();
-    fRampdemOpen=1;
-  }
+  fRampdemReader=RampdemReader::Instance();
 }
 
 UsefulAdu5Pat::UsefulAdu5Pat(const Adu5Pat *patPtr)
@@ -110,10 +103,7 @@ UsefulAdu5Pat::UsefulAdu5Pat(const Adu5Pat *patPtr)
   fBalloonPhi=fBalloonPos.Phi();
   if(fBalloonPhi<0) fBalloonPhi+=TMath::TwoPi();
   fBalloonHeight=fBalloonPos.Mag();
-  if(!fRampdemOpen){
-    fRampdemReader=RampdemReader::Instance();
-    fRampdemOpen=1;
-  }
+  fRampdemReader=RampdemReader::Instance();
 }
 
 
