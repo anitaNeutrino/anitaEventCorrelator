@@ -81,11 +81,11 @@ Double_t RampdemReader::SurfaceAboveGeoid(Double_t lon, Double_t lat) {
   Int_t n_coord_surface=0;
   LonLattoEN(lon,lat,e_coord_surface,n_coord_surface);
 
-  if(e_coord_surface > nCols_surface || e_coord_surface <0){
+  if(e_coord_surface >= nCols_surface || e_coord_surface <0){
 //     std::cerr<<"[RampdemReader::surfaceAboveGeoid]  Error!  Trying to access x-element "<<e_coord_surface<<" of the RAMP DEM data! (Longitude, latitude = "<<lon<<", "<<lat<<")\n";
     return -9999;
   }
-  else if(n_coord_surface > nRows_surface || n_coord_surface <0){
+  else if(n_coord_surface >= nRows_surface || n_coord_surface <0){
 //     std::cerr<<"[RampdemReader::surfaceAboveGeoid]  Error!  Trying to access y-element "<<n_coord_surface<<" of the RAMP DEM data! (Longitude, latitude = "<<lon<<", "<<lat<<")\n";
     return -9999;
   }
