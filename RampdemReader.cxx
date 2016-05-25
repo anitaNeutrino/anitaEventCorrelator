@@ -86,7 +86,7 @@ Double_t RampdemReader::SurfaceAboveGeoid(Double_t lon, Double_t lat) {
     return -9999;
   }
   else if(n_coord_surface >= nRows_surface || n_coord_surface <0){
-//     std::cerr<<"[RampdemReader::surfaceAboveGeoid]  Error!  Trying to access y-element "<<n_coord_surface<<" of the RAMP DEM data! (Longitude, latitude = "<<lon<<", "<<lat<<")\n";
+    //     std::cerr<<"[RampdemReader::surfaceAboveGeoid]  Error!  Trying to access y-element "<<n_coord_surface<<" of the RAMP DEM data! (Longitude, latitude = "<<lon<<", "<<lat<<")\n";
     return -9999;
   }
   else{
@@ -551,3 +551,4 @@ void RampdemReader::getMapCoordinates(double &xMin,double &yMin,double &xMax,dou
   yMax = y_max+cell_size;
 
 }
+
