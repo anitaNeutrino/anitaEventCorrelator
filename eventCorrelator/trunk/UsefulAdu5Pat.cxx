@@ -140,8 +140,6 @@ int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWav
 int UsefulAdu5Pat::getSourceLonAndLatAtDesiredAlt(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat, Double_t desiredAlt = 0.0)
 {
 
-  //std::cout << "getSourceLonAndLatAtDesiredAlt " << phiWave << "\t" << thetaWave << "\n";
-
   if(fPhiWave!=phiWave) fPhiWave=phiWave;
   if(fThetaWave!=thetaWave) fThetaWave=thetaWave;
 
@@ -189,15 +187,15 @@ int UsefulAdu5Pat::getSourceLonAndLatAtDesiredAlt(Double_t phiWave, Double_t the
     }
     tempThetaWave=arbDir.Theta();
   }
-  else std::cout << "heading bad" << std::endl;
-   
-  //   std::cout << "Get source angles: " <<  tempThetaWave << "\t" << tempPhiWave << "\n";
-
-  //Double_t re=balloonHeight-altitude+2000;
-  //   Double_t re=fBalloonHeight-altitude;
+  else{
+    std::cerr << "Error in " << __PRETTY_FUNCTION__ << ": Bad heading = " << heading << std::endl;
+    sourceLon = -9999;
+    sourceLat = -9999;
+    desiredAlt = -9999;
+    return -1;
+  }
    
   Double_t reBalloon=fUPGeomTool->getDistanceToCentreOfEarth(latitude)+desiredAlt; // ACG mod
-  //   std::cout << "Radius difference: " << re-re2 << "\t" << re << "\t" << re2 << "\n";
   Double_t re=reBalloon;
   Double_t nextRe=re;
   Double_t reh=reBalloon+altitude;
@@ -208,64 +206,39 @@ int UsefulAdu5Pat::getSourceLonAndLatAtDesiredAlt(Double_t phiWave, Double_t the
 
     Double_t sintw=TMath::Sin(tempThetaWave);
     Double_t costw=TMath::Cos(tempThetaWave);
-    //     Double_t sqrtArg=(reh*reh*costw*costw - (reh*reh-re*re));
     Double_t sqrtArg(re*re-reh*reh*sintw*sintw);
     if(sqrtArg<0) {
+      
       // No solution possible
       //     std::cout << "No solution possible\n";
+      sourceLon = -9999;
+      sourceLat = -9999;
+      desiredAlt = -9999;
       return 0;
     }
     Double_t L=reh*costw - TMath::Sqrt(sqrtArg);
     Double_t sinThetaL=L*sintw/re;
     Double_t sourceTheta=TMath::ASin(sinThetaL);
      
-    //std::cout << "Source Theta: " << sourceTheta*TMath::RadToDeg() << "\t" << tempThetaWave << "\t" << reh << "\t" << re << "\t" << fUPGeomTool->getDistanceToCentreOfEarth(latitude) << "\n";
-     
-    //One possible improvement is to reiterate using the radius at the source location.
-     
-     
-    //   Double_t sinSquiggle=(fBalloonHeight/tempRE)*TMath::Sin(tempThetaWave);
-    //   Double_t squiggle=TMath::ASin(sinSquiggle);
-    //   if(squiggle<0) squiggle+=TMath::Pi();
-     
-    //   Double_t sourceTheta=TMath::Pi()-tempThetaWave-squiggle;
-    //   std::cout << thetaWave*TMath::RadToDeg() << "\t" << L << "\t" << sourceTheta*TMath::RadToDeg() << "\t" << phiWave*TMath::RadToDeg() << std::endl;
-    //Start at ground below balloon
     fSourcePos.SetX(0);
     fSourcePos.SetY(0);
     fSourcePos.SetZ(re);
      
-    //std::cout << "00ReLoc: " << fSourcePos.X() << "\t" << fSourcePos.Y() << "\t" << fSourcePos.Z() << "\n";
-     
-    //Rotate to latitude relative to balloon
     fSourcePos.RotateY(sourceTheta);   
-    //Rotate to longitude relative to balloon
     fSourcePos.RotateZ(-1*tempPhiWave);
      
-    //std::cout << "RelBalloonLoc: " << fSourcePos.X() << "\t" << fSourcePos.Y() << "\t" << fSourcePos.Z() << "\n";
-     
-    //Rotate to correct absolute values
-    //std::cout << "Balloon angles: " << fBalloonTheta << "\t" << fBalloonPhi << "\n";
     fSourcePos.RotateY(fBalloonTheta);
     fSourcePos.RotateZ(fBalloonPhi);
-    //Goofy sign thing
-    //   fSourcePos.SetZ(-1*fSourcePos.Z());
      
     Double_t sourceVec[3];
     fSourcePos.GetXYZ(sourceVec);
-    //std::cout << "BalloonPos: " << fBalloonPos.X() << "\t" << fBalloonPos.Y() << "\t" << fBalloonPos.Z() << "\n";
-    //std::cout << "ZeroAltLoc: " << sourceVec[0] << "\t" << sourceVec[1] << "\t" << sourceVec[2] << "\n";
+
     Double_t sourceAlt;
     fUPGeomTool->getLatLonAltFromCartesian(sourceVec,sourceLat,sourceLon,sourceAlt);
-    //std::cout << "SourceLatLonAlt: " << sourceLat << "\t" << sourceLon << "\t" 
-    //	       << sourceAlt << "\n";
     nextRe=fUPGeomTool->getDistanceToCentreOfEarth(sourceLat);
-    //std::cout << "Earth radius: " << nextRe << "\t" << re << "\n";
-    //     break;
+
   } while(TMath::Abs(nextRe-re)>1);
-  //   fUPGeomTool->getLonLat(fSourcePos,sourceLon,sourceLat);
-  //   sourceLat*=-1;
-  //   std::cout << "source lat " << sourceLat << " sourceLon " << sourceLon << std::endl;
+
   return 1;
 }
 
@@ -294,9 +267,6 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
   rollAxis=fUPGeomTool->fRollRotationAxis;
   pitchAxis=fUPGeomTool->fPitchRotationAxis;
 
-  //std::cout << "Attitude: " << heading << "\t" << pitch << "\t" << roll 
-  //	       << "\n";
-
   if(heading>=0 && heading<=360) {
     TVector3 arbDir;
     arbDir.SetMagThetaPhi(1,tempThetaWave,-1*tempPhiWave);
@@ -326,7 +296,13 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
     }
     tempThetaWave=arbDir.Theta();
   }
-  else std::cout << "heading bad" << std::endl;
+  else{
+    std::cerr << "Error in " << __PRETTY_FUNCTION__ << ": Bad heading = " << heading << std::endl;
+    sourceLon = -9999;
+    sourceLat = -9999;
+    sourceAltitude = -9999;
+    return -1;
+  }
    
   //   std::cout << "Get source angles: " <<  tempThetaWave << "\t" << tempPhiWave << "\n";
 
@@ -426,26 +402,30 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
    
 
     if(TMath::Abs(lastButOneRe-nextRe)<1.){
-      if(debug)
+      if(debug){
 	std::cout << "breaking out nextRe " << nextRe << " lastButTwoRe " << lastButOneRe << std::endl;
+      }
       endlessLoop=1;
       break;//WAY OF MAKING SURE WE DON'T GET STUCK IN THE LOOP WITH ALTERNATING RE VALUES - THIS IS NOT THE WAY TO DO THINGS!
     }
     if(TMath::Abs(lastButTwoRe-nextRe)<1.){
-      if(debug)
+      if(debug){
 	std::cout << "breaking out nextRe " << nextRe << " lastButOneRe " << lastButTwoRe << std::endl;
+      }
       endlessLoop=1;
       break;//WAY OF MAKING SURE WE DON'T GET STUCK IN THE LOOP WITH ALTERNATING RE VALUES - THIS IS NOT THE WAY TO DO THINGS!
     }
     if(TMath::Abs(lastButThreeRe-nextRe)<1.){
-      if(debug)
+      if(debug){
 	std::cout << "breaking out nextRe " << nextRe << " lastButThreeRe " << lastButThreeRe << std::endl;
+      }
       endlessLoop=1;
       break;//WAY OF MAKING SURE WE DON'T GET STUCK IN THE LOOP WITH ALTERNATING RE VALUES - THIS IS NOT THE WAY TO DO THINGS!
     }
     if(TMath::Abs(lastButFourRe-nextRe)<1.){
-      if(debug)
+      if(debug){
 	std::cout << "breaking out nextRe " << nextRe << " lastButFourRe " << lastButFourRe << std::endl;
+      }
       endlessLoop=1;
       break;//WAY OF MAKING SURE WE DON'T GET STUCK IN THE LOOP WITH ALTERNATING RE VALUES - THIS IS NOT THE WAY TO DO THINGS!
     }
@@ -464,11 +444,27 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
   //   fUPGeomTool->getLonLat(fSourcePos,sourceLon,sourceLat);
   //   sourceLat*=-1;
 
-  if(endlessLoop==1) return 2;
-  else if(endlessMess==1) return 3;
-  else if(int(chosenAlt)==-9999) return 4;
-  else
+  if(endlessLoop==1){
+    sourceLon = -9999;
+    sourceLat = -9999;
+    sourceAltitude = -9999;
+    return 2;
+  }
+  else if(endlessMess==1){
+    sourceLon = -9999;
+    sourceLat = -9999;
+    sourceAltitude = -9999;
+    return 3;
+  }
+  else if(int(chosenAlt)==-9999){
+    sourceLon = -9999;
+    sourceLat = -9999;
+    sourceAltitude = -9999;
+    return 4;
+  }
+  else{
     return 1;
+  }
 }
 
 
@@ -840,7 +836,7 @@ UInt_t UsefulAdu5Pat::getLDBTriggerTimeNs()
 
 
 
-UInt_t UsefulAdu5Pat::getTriggerTimeNsFromSource(Double_t sourceLat, Double_t sourceLong, Double_t sourceAlt)
+Double_t UsefulAdu5Pat::getDistanceFromSource(Double_t sourceLat, Double_t sourceLong, Double_t sourceAlt)
 {
    
   //    Double_t thetaBalloon=fUPGeomTool->getThetaFromLat(TMath::Abs(latitude));
@@ -858,15 +854,11 @@ UInt_t UsefulAdu5Pat::getTriggerTimeNsFromSource(Double_t sourceLat, Double_t so
   //    fTaylorPos.SetY(radiusTaylor*TMath::Sin(thetaTaylor)*TMath::Sin(phiTaylor));
   //    fTaylorPos.SetZ(radiusTaylor*TMath::Cos(thetaTaylor));
 
-  static Int_t firstTime=1;   
   static Double_t pTaylor[3]={0};
-  if(firstTime) {
-    fUPGeomTool->getCartesianCoords(TMath::Abs(sourceLat),
-				    sourceLong,
-				    sourceAlt,
-				    pTaylor);
-  }
-
+  fUPGeomTool->getCartesianCoords(TMath::Abs(sourceLat),
+				  sourceLong,
+				  sourceAlt,
+				  pTaylor);
   //   std::cout << "Old Geoid Model:\t" << fTaylorPos.x() << "\t" << fTaylorPos.y() << "\t" << fTaylorPos.z() << "\n";
   //    std::cout << "New Model:\t" << pTaylor[0] << "\t" << pTaylor[1] << "\t" << pTaylor << "\n";   
 
@@ -875,14 +867,24 @@ UInt_t UsefulAdu5Pat::getTriggerTimeNsFromSource(Double_t sourceLat, Double_t so
   //    fTaylorPos.RotateZ(-1*phiBalloon);
   //    fTaylorPos.RotateY(-1*thetaBalloon);
   //    Double_t s2=(fTaylorPos.x()*fTaylorPos.x()) + (fTaylorPos.y()*fTaylorPos.y()) + TMath::Power(fBalloonHeight-fTaylorPos.z(),2);
-  Double_t s2=(pTaylor[0]-fBalloonCoords[0])*(pTaylor[0]-fBalloonCoords[0])+
-    (pTaylor[1]-fBalloonCoords[1])*(pTaylor[1]-fBalloonCoords[1])+
-    (pTaylor[2]-fBalloonCoords[2])*(pTaylor[2]-fBalloonCoords[2]);
+  Double_t s2 = ((pTaylor[0]-fBalloonCoords[0])*(pTaylor[0]-fBalloonCoords[0]) +
+		 (pTaylor[1]-fBalloonCoords[1])*(pTaylor[1]-fBalloonCoords[1]) +
+		 (pTaylor[2]-fBalloonCoords[2])*(pTaylor[2]-fBalloonCoords[2]));
 
   // std::cout << fBalloonCoords[0] << "\t" << fBalloonCoords[1] << "\t" << fBalloonCoords[2] << std::endl;
    
 
   Double_t distanceToFly=TMath::Sqrt(s2);
+  return distanceToFly;
+}
+
+
+
+
+
+UInt_t UsefulAdu5Pat::getTriggerTimeNsFromSource(Double_t sourceLat, Double_t sourceLong, Double_t sourceAlt)
+{
+  Double_t distanceToFly = getDistanceFromSource(sourceLat, sourceLong, sourceAlt);
   Double_t timeOfFlight=distanceToFly/C_LIGHT;
   timeOfFlight*=1e9;
   //   Double_t expTime=timeOfFlight-40e3;

@@ -37,8 +37,7 @@ class UsefulAdu5Pat: public Adu5Pat
 
  public:
   UsefulAdu5Pat(); ///< Default constructor
-  UsefulAdu5Pat(const Adu5Pat *patPtr, double deltaR, double doubleRL, double doubleUD); ///< Assignment constructor
-  UsefulAdu5Pat(const Adu5Pat *patPtr); ///< Assignment constructor
+  UsefulAdu5Pat(Adu5Pat *patPtr, double deltaR, double doubleRL, double doubleUD); ///< Assignment construct  UsefulAdu5Pat(const Adu5Pat *patPtr); ///< Assignment constructor
   ~UsefulAdu5Pat(); ///< Destructor
 
   //! For a given azimuthal and elevation angle of a plane wave (in payload coordinates) calculates the point on the Earth's surface that the source would come from.
@@ -174,15 +173,16 @@ class UsefulAdu5Pat: public Adu5Pat
   UInt_t getLDBTriggerTimeNs(); ///< Gets the time of flight to LDB camp
 
   UInt_t getTriggerTimeNsFromSource(Double_t sourceLat, Double_t sourceLong, Double_t sourceAlt); ///< Gets time of flight from any source
+  Double_t getDistanceFromSource(Double_t sourceLat, Double_t sourceLong, Double_t sourceAlt); ///< Gets distance from any source in meters
+
+  
   void setIncludeGroupDelay(Int_t flag) 
      {fIncludeGroupDelay=flag;} ///< Toggles the silly group delay correction on and off
 
-/*   TProfile2D *rampMap(int coarseness,UInt_t &xBins,UInt_t &yBins); */
+  /* TProfile2D *rampMap(int coarseness,UInt_t &xBins,UInt_t &yBins); */
   RampdemReader *fRampdemReader;
 
   Double_t getAngleBetweenPayloadAndSource(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt); //ACG additional function
-
-
 
 
   void getSunPosition(Double_t& phiDeg, Double_t& thetaDeg);
