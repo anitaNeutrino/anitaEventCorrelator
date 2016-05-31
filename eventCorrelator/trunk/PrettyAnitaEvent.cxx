@@ -1363,7 +1363,7 @@ CorrelationSummary *PrettyAnitaEvent::getCorrelationSummary(Int_t centreAnt,Anit
 
  //   -  "[27]" RRN - RRB
    theSum->firstAnt[27]=nadirAnts[1];
-   theSum->secondAnt[27]=nextFourAnts[4];
+   theSum->secondAnt[27]=nextFourAnts[3];
 
    //     -  "[28]" LLN - LLT
    theSum->firstAnt[28]=nadirAnts[0];
@@ -1414,7 +1414,7 @@ CorrelationSummary *PrettyAnitaEvent::getCorrelationSummary(Int_t centreAnt,Anit
 
  //   -  "[24]" RN - RRB
    theSum->firstAnt[24]=nadirAnts[3];
-   theSum->secondAnt[24]=nextFourAnts[4];
+   theSum->secondAnt[24]=nextFourAnts[3];
 
 //   -  "[25]" RN - RB
    theSum->firstAnt[25]=nadirAnts[3];
