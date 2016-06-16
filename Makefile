@@ -5,6 +5,14 @@
 ##############################################################################
 include Makefile.arch
 
+
+### Package subdirectories
+LIBDIR=lib
+BUILDDIR=build
+INCLUDEDIR=include
+BINDIR=bin
+
+
 #Site Specific  Flags
 SYSINCLUDES	= 
 SYSLIBS         = #-lprofiler -ltcmalloc
@@ -51,10 +59,10 @@ GLIBS         = $(ROOTGLIBS) $(SYSLIBS)
 #Now the bits we're actually compiling
 #ROOT stuff
 
-ROOT_LIBRARY = libAnitaCorrelator.${DLLSUF}
+ROOT_LIBRARY = $(LIBDIR)/libAnitaCorrelator.${DLLSUF}
 DICT=correlatorDict
-LIB_OBJS = PrettyAnitaEvent.o CorrelationSummary.o CorrelationSummaryAnita3.o UsefulAdu5Pat.o BedmapReader.o RampdemReader.o $(DICT).o
-CLASS_HEADERS =  PrettyAnitaEvent.h CorrelationSummary.h CorrelationSummaryAnita3.h UsefulAdu5Pat.h BedmapReader.h RampdemReader.h
+LIB_OBJS =  $(addprefix $(BUILDDIR)/, PrettyAnitaEvent.o CorrelationSummary.o CorrelationSummaryAnita3.o UsefulAdu5Pat.o BedmapReader.o RampdemReader.o $(DICT).o )
+CLASS_HEADERS =  $(addprefix $(INCLUDEDIR)/, PrettyAnitaEvent.h CorrelationSummary.h CorrelationSummaryAnita3.h UsefulAdu5Pat.h BedmapReader.h RampdemReader.h )
 
 all : $(ROOT_LIBRARY) 
 
@@ -82,9 +90,20 @@ makeHPolCorrelationRunTree : $(ROOT_LIBRARY) makeHPolCorrelationRunTree.$(SRCSUF
 	@echo "<**Compiling**> "  
 	$(LD)  $(CXXFLAGS) $(LDFLAGS) makeHPolCorrelationRunTree.$(SRCSUF) $(ROOT_LIBRARY) $(LIBS) -o $@
 
+$(LIB_OBJS): | $(BUILDDIR) 
+
+$(BINDIR): 
+	mkdir -p $(BINDIR)
+
+$(BUILDDIR): 
+	mkdir -p $(BUILDDIR)
+
+$(LIBDIR): 
+	mkdir -p $(LIBDIR)
+
 
 #The library
-$(ROOT_LIBRARY) : $(LIB_OBJS)
+$(ROOT_LIBRARY) : $(LIB_OBJS) | $(LIBDIR)
 	@echo "Linking $@ ..."
 ifeq ($(PLATFORM),macosx)
 # We need to make both the .dylib and the .so
@@ -100,14 +119,26 @@ endif
 else
 	$(LD) $(SOFLAGS) $(LDFLAGS) $(LIBS) $(LIB_OBJS) -o $@
 endif
+	@if [ $(shell root-config --version | cut -c1) -ge 6 ]; then \
+	cp $(BUILDDIR)/*.pcm $(LIBDIR); \
+	fi; # Additional install command for ROOTv6
 
-%.$(OBJSUF) : %.$(SRCSUF) %.h
-	@echo "<**Compiling**> "$<
-	$(CXX) $(CXXFLAGS) -c $< -o  $@
 
-%.$(OBJSUF) : %.C %.h
+
+$(BUILDDIR)/%.$(OBJSUF) : src/%.$(SRCSUF) $(CLASS_HEADERS) Makefile | $(BUILDDIR) 
 	@echo "<**Compiling**> "$<
-	$(CXX) $(CXXFLAGS) $ -c $< -o  $@
+	$(CXX) -I$(INCLUDEDIR) $(CXXFLAGS)  -c $< -o  $@
+
+$(BUILDDIR)/%.$(OBJSUF) : $(BUILDDIR)/%.C
+	@echo "<**Compiling**> "$<
+	$(CXX) -I$(INCLUDEDIR) -I./ $(CXXFLAGS) -c $< -o  $@
+
+
+#eventDict.C: $(CLASS_HEADERS)
+$(BUILDDIR)/$(DICT).C: $(CLASS_HEADERS)
+	@echo "Generating dictionary ..."
+	@ rm -f *Dict* 
+	rootcint $@ -c -p -I$(shell $(RC) --incdir) $(INC_ANITA_UTIL) $(CLASS_HEADERS) LinkDef.h
 
 
 install: $(ROOT_LIBRARY)

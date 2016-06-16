@@ -166,7 +166,7 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
      }
      else {
        //If we have RawAnitaEvent then we have to specify the calibration option
-       realEvent = new PrettyAnitaEvent(event,WaveCalType::kVTFullAGCrossCorClock,header);
+       realEvent = new PrettyAnitaEvent(event,WaveCalType::kDefault,header);
      }
      //Here we have the option to do some filtering
 //      realEvent->setPassBandFilterFlag(1);
