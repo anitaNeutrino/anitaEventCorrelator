@@ -151,7 +151,7 @@ endif
 	install -d $(ANITA_UTIL_CALIB_DIR)
 
 	@if [ $(shell root-config --version | cut -c1) -ge 6 ]; then \
-	install -c -m 755 $(DICT)_rdict.pcm $(ANITA_UTIL_LIB_DIR) ;\
+	install -c -m 755 $(BUILDDIR)/$(DICT)_rdict.pcm $(ANITA_UTIL_LIB_DIR) ;\
 	fi # Additional install command for ROOTv6
 
 	for file in data/*.asc data/*.bin data/*.hdr; do install -c -m 644 "$${file}" $(ANITA_UTIL_CALIB_DIR); done
