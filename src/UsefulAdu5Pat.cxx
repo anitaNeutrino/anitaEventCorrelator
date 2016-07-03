@@ -1186,3 +1186,82 @@ void UsefulAdu5Pat::getSunPosition(Double_t& phiDeg, Double_t& thetaDeg){
   // phiDeg = dAzimuth;
   
  }
+
+int UsefulAdu5Pat::traceBackToContinent(Double_t phiWave, Double_t thetaWave, 
+                                        Double_t * lon_ptr, Double_t * lat_ptr, Double_t * alt_ptr, 
+                                        Double_t * adj_ptr, Double_t max_adjust, Int_t max_iter) 
+{
+
+  if (thetaWave < 0) return 0;  // above horizon
+
+  Double_t lon,lat; 
+  Double_t last_theta_tried =0; 
+  Double_t last_successful_theta = 0; 
+  Double_t last_failed_theta = 0; 
+
+  Double_t altitude = 5000; // Mt. Vinson is 4897
+
+  Int_t iter = 0; 
+
+  while(iter++ < max_iter)
+  {
+    Double_t theta_try = last_theta_tried == 0 ? thetaWave
+                       : last_theta_tried == thetaWave
+                          ? thetaWave+max_adjust 
+                          : (last_successful_theta + last_failed_theta)/2; 
+
+//    printf("%f\n",theta_try); 
+    last_theta_tried = theta_try; 
+
+    while (altitude > -200)
+    {
+      Int_t points= getSourceLonAndLatAtDesiredAlt(phiWave,theta_try, lon,lat,altitude); 
+
+      if (points!=1)//oh shoot, we missed
+      {
+        last_failed_theta = theta_try; 
+        if (theta_try == thetaWave + max_adjust)  //it's hopeless, abandon all hope
+        {
+          return 0; 
+        }
+        break; 
+      }
+
+      Double_t altitude_here = fRampdemReader->SurfaceAboveGeoid(lon,lat); 
+      if (altitude_here > altitude)  //yay we did it!! 
+      {
+        // if this is the original theta, we should  celebrate and return, 
+        // otherwise, we should keep bisecting until we run out of iterations
+
+        if (iter == 1) 
+        {
+          if (lat_ptr) *lat_ptr = lat; 
+          if (lon_ptr) *lon_ptr = lon; 
+          if (alt_ptr) *alt_ptr = altitude; 
+          if (adj_ptr) *adj_ptr = 0; 
+
+          return 1; 
+        }
+
+        last_successful_theta = theta_try; 
+        break; 
+      }
+
+
+      Double_t distance_to_ground = altitude - altitude_here; 
+
+      if (distance_to_ground > 1000) altitude -= 100; 
+      else if (distance_to_ground > 500 ) altitude -= 50; 
+      else if (distance_to_ground > 100) altitude -= 10; 
+      else altitude -=1; 
+    }
+  }
+
+  if (lat_ptr) *lat_ptr = lat; 
+  if (lon_ptr) *lon_ptr = lon; 
+  if (alt_ptr) *alt_ptr = altitude; 
+  if (adj_ptr) *adj_ptr = last_successful_theta - thetaWave; 
+
+  return 2; 
+
+}

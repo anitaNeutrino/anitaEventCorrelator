@@ -41,6 +41,8 @@ class UsefulAdu5Pat: public Adu5Pat
   UsefulAdu5Pat(const Adu5Pat *patPtr); ///< Assignment constructor
   ~UsefulAdu5Pat(); ///< Destructor
 
+
+
   //! For a given azimuthal and elevation angle of a plane wave (in payload coordinates) calculates the point on the Earth's surface that the source would come from.
   /*!
     \param phiWave Azimuthal angle of plane wave (in payload centric coordinates)
@@ -57,6 +59,33 @@ class UsefulAdu5Pat: public Adu5Pat
   int getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat,Double_t &sourceAltitude);
 
 /*   int getSourceLonAndLatWithBedmap(BedmapReader *bedmapData,Double_t phiWave, Double_t thetaWave,Double_t &sourceLon, Double_t &sourceLat); */
+
+
+  /** Trace back to continent, based a bit on Abby's code. 
+   *   phiWave and thetaWave are in payload coordinates, and I believe should be in radians (they're just passed to getSourceLonAndLatAtDesiredAlt)
+   *
+   *
+   *   This works by iterating altitude down until it hits the ground. If it never hits the ground, we try adjusting theta slightly, up to max_theta_adjustment, until it does. 
+   * 
+   *   Returns 0 if never hits the ground, even with maximum adjustment
+   *
+   *   Returns 1 if hits the ground with no adjustment
+   *
+   *   Returns 2 if it hits the ground with adjustment
+   *
+   *   If the pointers are passed, they are filled if we return 1 or 2, but not if we return 0. 
+   *
+   *   A binary search with up to max_iter iterations  is used to search for the smallest theta that hits the ground
+   *
+   */ 
+  int traceBackToContinent(Double_t phiWave, Double_t thetaWave, 
+                           Double_t * lat, Double_t * lon, Double_t *alt, Double_t * theta_adjustment_required, 
+                           Double_t max_theta_adjustment = TMath::Pi()/180, Int_t max_iter = 10) ; 
+
+
+
+
+
 //! For a given source latitude, longitude and altitude calculates the payload centric azimuthal and elevation angles of the plane wave incident at the payload.
   /*!
     
