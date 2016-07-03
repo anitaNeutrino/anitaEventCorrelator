@@ -157,6 +157,7 @@ endif
 	for file in data/*.asc data/*.bin data/*.hdr; do install -c -m 644 "$${file}" $(ANITA_UTIL_CALIB_DIR); done
 
 clean:
+	@rm -rf $(BUILDDIR) 
 	@rm -f *Dict*
 	@rm -f *.${OBJSUF}
 	@rm -f $(LIBRARY)
