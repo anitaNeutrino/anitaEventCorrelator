@@ -45,16 +45,22 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${UTIL_SHARE_DIR}/cmake/Modules/")
 find_package(ROOT REQUIRED COMPONENTS MathMore MathCore RIO Hist Tree Net)
 find_package(FFTW REQUIRED)
 find_package(ZLIB REQUIRED)
-find_library(FFTW_WRAPPER
-  NAMES RootFftwWrapper
-  PATHS ${UTIL_LIB_DIR} 
-)
-find_library(ANITA_EVENT
-  NAMES AnitaEvent
-  PATHS ${UTIL_LIB_DIR} 
-)
 
-message("FFTW_WRAPPER is ${FFTW_WRAPPER}")
+
+if(TARGET RootFftwWrapper)
+  message("RootFftwWrapper is a target")
+else()
+ link_directories(${UTIL_LIB_DIR})
+endif()
+
+if(TARGET AnitaEvent)
+  message("AnitaEvent is a target")
+else()
+ link_directories(${UTIL_LIB_DIR})
+endif()
+  
+
+
 
 #---Define useful ROOT functions and macros (e.g. ROOT_GENERATE_DICTIONARY)
 
@@ -85,7 +91,7 @@ ROOT_GENERATE_DICTIONARY(${DICTNAME} ${HEADER_FILES} LINKDEF LinkDef.h)
 
 #---Create a shared library with geneated dictionary
 add_library(${libname} SHARED ${SOURCE_FILES} ${DICTNAME}.cxx)
-target_link_libraries(${libname} ${ZLIB_LIBRARIES} ${ANITA_EVENT} ${FFTW_WRAPPER} ${ROOT_LIBRARIES} ${FFTW_LIBRARIES} MathMore Minuit2 Minuit)
+target_link_libraries(${libname} ${ZLIB_LIBRARIES} AnitaEvent RootFftwWrapper ${ROOT_LIBRARIES} ${FFTW_LIBRARIES} MathMore Minuit2 Minuit)
 
 if( ${ROOT_VERSION} VERSION_GREATER "5.99.99")
     add_custom_target(${DICTNAME}.pcm DEPENDS ${DICTNAME})
