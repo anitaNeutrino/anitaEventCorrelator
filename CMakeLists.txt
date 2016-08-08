@@ -38,7 +38,7 @@ endif()
 
 
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${UTIL_SHARE_DIR}/cmake/Modules/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${UTIL_SHARE_DIR}/cmake/modules/")
 
 
 #---Locate the ROOT package and defines a number of variables (e.g. ROOT_INCLUDE_DIRS)
@@ -115,3 +115,41 @@ if( ${ROOT_VERSION} VERSION_GREATER "5.99.99")
   install (FILES ${PROJECT_BINARY_DIR}/${DICTNAME}_rdict.pcm DESTINATION ${UTIL_LIB_DIR})
 #  install (FILES ${PROJECT_BINARY_DIR}/lib${libname}.rootmap DESTINATION ${UTIL_LIB_DIR})
 endif() 
+
+#################################################################################3
+### The default build configuration is INSANE. No optimization? What is this 1971? 
+
+message (" Adding new build type") 
+
+set(CMAKE_CXX_FLAGS_DEFAULT 
+  "-Os -g -Wall" 
+  CACHE STRING "c++ Flags used during default eventReaderRoot builds" 
+  FORCE ) 
+
+set(CMAKE_C_FLAGS_DEFAULT 
+  "-Os -g -Wall"
+  CACHE STRING "c Flags used during default eventReaderRoot builds" 
+  FORCE ) 
+
+set(CMAKE_EXE_LINKER_FLAGS_DEFAULT 
+  "-g"
+  CACHE STRING "ld Flags used during default eventReaderRoot builds" 
+  FORCE ) 
+
+set(CMAKE_SHARED_LINKER_FLAGS_DEFAULT 
+  "-g"
+  CACHE STRING "ld Flags used during default eventReaderRoot builds" 
+  FORCE ) 
+
+
+mark_as_advanced ( CMAKE_CXX_FLAGS_DEFAULT CMAKE_C_FLAGS_DEFAULT CMAKE_EXE_LINKER_FLAGS_DEFAULT CMAKE_SHARED_LINKER_FLAGS_DEFAULT) 
+
+if (NOT CMAKE_BUILD_TYPE) 
+  set (CMAKE_BUILD_TYPE Default
+    CACHE STRING "Choose tye type of build: None Debug Release RelWithDebInfo MinSizeRel Default"
+    FORCE ) 
+endif()
+
+
+add_definitions("-DUSE_FFT_TOOLS") 
+
