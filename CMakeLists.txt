@@ -116,6 +116,8 @@ if( ${ROOT_VERSION} VERSION_GREATER "5.99.99")
 #  install (FILES ${PROJECT_BINARY_DIR}/lib${libname}.rootmap DESTINATION ${UTIL_LIB_DIR})
 endif() 
 
+install (DIRECTORY data/ DESTINATION ${UTIL_SHARE_DIR}/anitaCalib)
+
 #################################################################################3
 ### The default build configuration is INSANE. No optimization? What is this 1971? 
 
