@@ -221,7 +221,11 @@ class UsefulAdu5Pat: public Adu5Pat
 
 
   /** Gets the astronomical coordinates corresponding to a wave coming from phiWave, thetaWave 
-   * All values in degrees. 
+   *  
+   *  The sign convention for thetaWave is the same as elsewhere, where thetaWave is positive going down. 
+   *
+   *  Computed RA is in hours, dec, l and b in degrees. 
+   * 
    **/ 
   int astronomicalCoordinates(Double_t phiWave, Double_t thetaWave, Double_t * RA = 0, Double_t * dec = 0, Double_t * l = 0, Double_t * b = 0); 
 

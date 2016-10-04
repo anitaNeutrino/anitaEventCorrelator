@@ -1270,6 +1270,8 @@ int UsefulAdu5Pat::traceBackToContinent(Double_t phiWave, Double_t thetaWave,
 
 int UsefulAdu5Pat::astronomicalCoordinates(Double_t phiWave, Double_t thetaWave, Double_t * RA_ptr, Double_t * dec_ptr, Double_t * l_ptr, Double_t * b_ptr) 
 {
+
+  // I used coordinate conversions based on Az going north
   double Az = phiWave - heading;  
   double el = -thetaWave; 
 
@@ -1279,18 +1281,26 @@ int UsefulAdu5Pat::astronomicalCoordinates(Double_t phiWave, Double_t thetaWave,
   el *= M_PI/180; 
   double lat = latitude * M_PI/180; 
 
-  //hour angle 
-  double h  = atan2 ( sin(Az) , cos(Az) * sin(lat) - tan(el) *cos(lat)); 
 
   //declination 
-  double dec = asin( sin(lat) * sin(el) - cos(lat) *cos(el)  *cos(Az)); 
+  double dec = asin( sin(lat) * sin(el) + cos(lat) *cos(el)  *cos(Az)); 
 
+  //hour angle 
+  double h  = atan2 ( sin(Az) , -cos(Az)* sin(lat)  + tan(el) * cos(lat)); 
+
+//  printf("%f\n", h * 12 / M_PI); 
   TTimeStamp ts ( realTime, (timeOfDay % 1000)  * 1e6); 
 
-  double lst = ts.AsLAST(longitude)  *( M_PI / 12);  //hour -> degres
+  //should this be AsLAST or AsLMST? Need to find a real astronomer 
+  // Also, the UT1 offset seems like a royal pain 
+  double lst = ts.AsLMST(longitude); 
+
+ // printf("lst: %f\n", lst); 
+
+  lst*= ( M_PI / 12);  //hour -> radians
   double RA = lst -h; 
 
-  if (RA_ptr) *RA_ptr = RA * 180 / M_PI; 
+  if (RA_ptr) *RA_ptr = RA * 12 / M_PI; 
   if (dec_ptr) *dec_ptr = dec* 180 / M_PI; 
 
   if (!l_ptr && ! b_ptr) return 0; 
@@ -1299,6 +1309,7 @@ int UsefulAdu5Pat::astronomicalCoordinates(Double_t phiWave, Double_t thetaWave,
 
   double b1950 = 2433282.4235;  // julian day of B1950
   double jd = ts.AsJulianDate(); 
+//  printf("%f\n",jd); 
   double T = ( jd - 2451545) / (36525);  // offset from J2000 in centidays... ? 
   double t = (b1950 - jd) / 36525; //offset from B1950... in centidays? 
   double sectodeg = 1./3600 ; 
@@ -1331,15 +1342,20 @@ int UsefulAdu5Pat::astronomicalCoordinates(Double_t phiWave, Double_t thetaWave,
              atan2(   sin(192.25 * M_PI/180 - ra1950), 
                       cos (192.25 * M_PI/180  - ra1950) * sin(27.5 * M_PI/180) - tan(dec1950) * cos (27.4 * M_PI/180) 
                    ); 
+
+    while (*l_ptr > 180) *l_ptr -= 360 ; 
+    while (*l_ptr < -180) *l_ptr += 360 ; 
+
+
   }
 
 
   if (b_ptr) 
   {
-    *b_ptr = 180 / M_PI * asin(
+    *b_ptr =  180 / M_PI * asin(
                                  sin(dec1950) * sin(27.4 * M_PI/180) + 
                                  cos(dec1950) * cos(27.4 * M_PI/180) * cos (192.25 * M_PI/180 - ra1950) 
-                                ); 
+                                ) ;
 
   }
 
