@@ -1265,3 +1265,85 @@ int UsefulAdu5Pat::traceBackToContinent(Double_t phiWave, Double_t thetaWave,
   return 2; 
 
 }
+
+
+
+int UsefulAdu5Pat::astronomicalCoordinates(Double_t phiWave, Double_t thetaWave, Double_t * RA_ptr, Double_t * dec_ptr, Double_t * l_ptr, Double_t * b_ptr) 
+{
+  double Az = phiWave - heading;  
+  double el = -thetaWave; 
+
+
+  //to radians
+  Az *= M_PI/180; 
+  el *= M_PI/180; 
+  double lat = latitude * M_PI/180; 
+
+  //hour angle 
+  double h  = atan2 ( sin(Az) , cos(Az) * sin(lat) - tan(el) *cos(lat)); 
+
+  //declination 
+  double dec = asin( sin(lat) * sin(el) - cos(lat) *cos(el)  *cos(Az)); 
+
+  TTimeStamp ts ( realTime, (timeOfDay % 1000)  * 1e6); 
+
+  double lst = ts.AsLAST(longitude)  *( M_PI / 12);  //hour -> degres
+  double RA = lst -h; 
+
+  if (RA_ptr) *RA_ptr = RA * 180 / M_PI; 
+  if (dec_ptr) *dec_ptr = dec* 180 / M_PI; 
+
+  if (!l_ptr && ! b_ptr) return 0; 
+
+  //we gotta precess to B1950 
+
+  double b1950 = 2433282.4235;  // julian day of B1950
+  double jd = ts.AsJulianDate(); 
+  double T = ( jd - 2451545) / (36525);  // offset from J2000 in centidays... ? 
+  double t = (b1950 - jd) / 36525; //offset from B1950... in centidays? 
+  double sectodeg = 1./3600 ; 
+
+  //tons of magic numbers! stolen from DMTPC code. Sorry Asher. 
+  double zeta = (2306.2181*sectodeg+1.39656*sectodeg*T-0.000139*sectodeg*T*T)*t+
+               (0.30188*sectodeg-0.000344*sectodeg*T)*t*t+
+               0.017998*sectodeg*t*t*t;
+  double z = (2306.2181*sectodeg+1.39656*sectodeg*T-0.000139*sectodeg*T*T)*t+
+            (1.09468*sectodeg+0.000066*sectodeg*T)*t*t+
+             0.018203*sectodeg*t*t*t;
+  double theta = (2004.3109*sectodeg-0.85330*sectodeg*T-0.000217*sectodeg*T*T)*t-
+                  (0.42665*sectodeg+0.000217*sectodeg*T)*t*t+0.041833*sectodeg*t*t*t;
+  zeta *=M_PI/180; 
+  z *=M_PI/180; 
+  theta *=M_PI/180; 
+
+
+  double A = cos(dec)*sin(RA+zeta);
+  double B = cos(theta)*cos(dec)*cos(RA+zeta)-sin(theta)*sin(dec);
+  double C = sin(theta)*cos(dec)*cos(RA+zeta)+cos(theta)*sin(dec);
+
+  double ra1950 = (atan2(A,B)+z); 
+  double dec1950 = asin(C); 
+             
+
+  if (l_ptr) 
+  {
+    *l_ptr = 303 - 180 / M_PI * 
+             atan2(   sin(192.25 * M_PI/180 - ra1950), 
+                      cos (192.25 * M_PI/180  - ra1950) * sin(27.5 * M_PI/180) - tan(dec1950) * cos (27.4 * M_PI/180) 
+                   ); 
+  }
+
+
+  if (b_ptr) 
+  {
+    *b_ptr = 180 / M_PI * asin(
+                                 sin(dec1950) * sin(27.4 * M_PI/180) + 
+                                 cos(dec1950) * cos(27.4 * M_PI/180) * cos (192.25 * M_PI/180 - ra1950) 
+                                ); 
+
+  }
+
+  return 0; 
+
+
+}
