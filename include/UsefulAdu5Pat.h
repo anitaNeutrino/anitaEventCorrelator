@@ -85,7 +85,6 @@ class UsefulAdu5Pat: public Adu5Pat
 
 
 
-
 //! For a given source latitude, longitude and altitude calculates the payload centric azimuthal and elevation angles of the plane wave incident at the payload.
   /*!
     
@@ -219,6 +218,19 @@ class UsefulAdu5Pat: public Adu5Pat
   Double_t getAzimuthOfSunRelativeToNorth();
   Double_t getAzimuthOfSun();
   Double_t getDifferencePointingToSun(Double_t phiAngle, Bool_t inputInDegrees=true);
+
+
+  /** Gets the astronomical coordinates corresponding to a wave coming from phiWave, thetaWave 
+   *  
+   *  The sign convention for thetaWave is the same as elsewhere, where thetaWave is positive going down. 
+   *
+   *  Computed RA is in hours, dec, l and b in degrees. 
+   * 
+   **/ 
+  int astronomicalCoordinates(Double_t phiWave, Double_t thetaWave, Double_t * RA = 0, Double_t * dec = 0, Double_t * l = 0, Double_t * b = 0); 
+
+
+
 
  private:
   Int_t fIncludeGroupDelay;
