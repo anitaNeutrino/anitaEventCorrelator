@@ -1270,6 +1270,11 @@ int UsefulAdu5Pat::traceBackToContinent(Double_t phiWave, Double_t thetaWave,
 
 int UsefulAdu5Pat::astronomicalCoordinates(Double_t phiWave, Double_t thetaWave, Double_t * RA_ptr, Double_t * dec_ptr, Double_t * l_ptr, Double_t * b_ptr) 
 {
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,0,0)
+  std::cerr << "Your  version of ROOT does not support all the features of eventReaderRoot\n";
+  return 0;
+#else
+
 
   // I used coordinate conversions based on Az going north
   double Az = phiWave - heading;  
@@ -1360,6 +1365,6 @@ int UsefulAdu5Pat::astronomicalCoordinates(Double_t phiWave, Double_t thetaWave,
   }
 
   return 0; 
-
+#endif
 
 }
