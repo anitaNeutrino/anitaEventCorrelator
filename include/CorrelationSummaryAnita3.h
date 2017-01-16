@@ -16,7 +16,7 @@
 #include "TGraph.h"
 
 
-#define NUM_CORRELATIONS_ANITA3 49 ///< The number of correlations from 15 antennas (5 phi-sectors) in ANITA-3.
+#define NUM_CORRELATIONS_ANITA3 52 ///< The number of correlations from 15 antennas (5 phi-sectors) in ANITA-3.
 
 
 

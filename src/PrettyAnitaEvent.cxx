@@ -1705,7 +1705,14 @@ CorrelationSummaryAnita3 *PrettyAnitaEvent::getCorrelationSummaryAnita3(Int_t ce
    theSum->secondAnt[47]=nineAnts[7];
    theSum->firstAnt[48]=nextSixAnts[1];
    theSum->secondAnt[48]=nineAnts[8];
-
+   // horizontal across center
+   theSum->firstAnt[49]  = nineAnts[0];
+   theSum->secondAnt[49] = nineAnts[2];
+   theSum->firstAnt[50]  = nineAnts[3];
+   theSum->secondAnt[50] = nineAnts[5];
+   theSum->firstAnt[51]  = nineAnts[6];
+   theSum->secondAnt[51] = nineAnts[8];
+   
 
    //Now can make correlations and find max, rms, etc.
    for(int corInd=0;corInd<NUM_CORRELATIONS_ANITA3;corInd++) {
