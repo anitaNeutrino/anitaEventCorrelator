@@ -37,7 +37,10 @@ class UsefulAdu5Pat: public Adu5Pat
 
  public:
   UsefulAdu5Pat(); ///< Default constructor
-  UsefulAdu5Pat(const Adu5Pat *patPtr, double deltaR, double doubleRL, double doubleUD); ///< Assignment construct
+
+  /* This invalidates AnitaGeomTool... wtf! */ 
+//  UsefulAdu5Pat(const Adu5Pat *patPtr, double deltaR, double doubleRL, double doubleUD); ///< Assignment construct
+//
   UsefulAdu5Pat(const Adu5Pat *patPtr); ///< Assignment constructor
   ~UsefulAdu5Pat(); ///< Destructor
 
@@ -210,6 +213,7 @@ class UsefulAdu5Pat: public Adu5Pat
 
   /* TProfile2D *rampMap(int coarseness,UInt_t &xBins,UInt_t &yBins); */
   RampdemReader *fRampdemReader;
+  AnitaGeomTool * fUPGeomTool; 
 
   Double_t getAngleBetweenPayloadAndSource(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt); //ACG additional function
 
@@ -254,7 +258,7 @@ class UsefulAdu5Pat: public Adu5Pat
   Double_t getDeltaTExpectedSeaveyOpt(Int_t ant1, Int_t ant2,Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t *deltaR, Double_t *deltaZ, Double_t *deltaPhi);
   Double_t getGroupDelay(Double_t phiToAntBoresight);
 
-  ClassDef(UsefulAdu5Pat,1); ///< ROOT's magic macro.
+  ClassDef(UsefulAdu5Pat,0); ///< ROOT's magic macro.
 };
 
 

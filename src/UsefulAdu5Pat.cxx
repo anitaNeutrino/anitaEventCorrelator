@@ -21,7 +21,6 @@
 
 ClassImp(UsefulAdu5Pat);
 
-AnitaGeomTool *fUPGeomTool=0;
 //RampdemReader *fRampdemReader=0;
 
 
@@ -38,13 +37,11 @@ UsefulAdu5Pat::UsefulAdu5Pat()
   fBalloonCoords[1]=0;
   fBalloonCoords[2]=0;
   fBalloonHeight=0;
-  if(!fUPGeomTool){
-    fUPGeomTool=AnitaGeomTool::Instance();
-  }
   fRampdemReader=RampdemReader::Instance();
 
 }
 
+/*
 UsefulAdu5Pat::UsefulAdu5Pat(const Adu5Pat *patPtr, double deltaR, double deltaRL, double deltaUD)
   : Adu5Pat(*patPtr)
 {
@@ -60,10 +57,10 @@ UsefulAdu5Pat::UsefulAdu5Pat(const Adu5Pat *patPtr, double deltaR, double deltaR
   fPhiWave=0;
   fSourceLongitude=-1;
   fSourceLatitude=-1;
-  if(!fUPGeomTool)
-    fUPGeomTool=AnitaGeomTool::Instance();
-  fUPGeomTool->updateAnt(deltaR,deltaRL,deltaUD);
-  fUPGeomTool->getCartesianCoords(latitude,longitude,altitude,
+  if(!AnitaGeomTool::Instance())
+    AnitaGeomTool::Instance()=AnitaGeomTool::Instance();
+  AnitaGeomTool::Instance()->updateAnt(deltaR,deltaRL,deltaUD);
+  AnitaGeomTool::Instance()->getCartesianCoords(latitude,longitude,altitude,
 				  fBalloonCoords);
   fBalloonPos.SetXYZ(fBalloonCoords[0],fBalloonCoords[1],fBalloonCoords[2]);
   fBalloonTheta=fBalloonPos.Theta();
@@ -72,6 +69,7 @@ UsefulAdu5Pat::UsefulAdu5Pat(const Adu5Pat *patPtr, double deltaR, double deltaR
   fBalloonHeight=fBalloonPos.Mag();
   fRampdemReader=RampdemReader::Instance();
 }
+*/
 
 UsefulAdu5Pat::UsefulAdu5Pat(const Adu5Pat *patPtr)
   : Adu5Pat(*patPtr)
@@ -90,12 +88,8 @@ UsefulAdu5Pat::UsefulAdu5Pat(const Adu5Pat *patPtr)
   fPhiWave=0;
   fSourceLongitude=-1;
   fSourceLatitude=-1;
-  if(!fUPGeomTool){
-    fUPGeomTool=AnitaGeomTool::Instance();
-    //     std::cout << "making the geom" << std::endl;
-  }
   //std::cout << "LatLonAlt: " << latitude << "\t" << longitude << "\t" << altitude << "\n";
-  fUPGeomTool->getCartesianCoords(latitude,longitude,altitude,
+  AnitaGeomTool::Instance()->getCartesianCoords(latitude,longitude,altitude,
 				  fBalloonCoords);
   // std::cout << "Balloon Coords: " << fBalloonCoords[0] << "\t" << fBalloonCoords[1] << "\t" << fBalloonCoords[2] << "\n";
   fBalloonPos.SetXYZ(fBalloonCoords[0],fBalloonCoords[1],fBalloonCoords[2]);
@@ -143,17 +137,18 @@ int UsefulAdu5Pat::getSourceLonAndLatAtDesiredAlt(Double_t phiWave, Double_t the
   if(fPhiWave!=phiWave) fPhiWave=phiWave;
   if(fThetaWave!=thetaWave) fThetaWave=thetaWave;
 
-  //   Double_t thetaBalloon=fUPGeomTool->getThetaFromLat(TMath::Abs(latitude));
-  //   Double_t phiBalloon=fUPGeomTool->getPhiFromLon(longitude);
-  //   Double_t balloonHeight=fUPGeomTool->getGeoid(thetaBalloon)+altitude;
+  AnitaGeomTool * geom = AnitaGeomTool::Instance(); 
+  //   Double_t thetaBalloon=AnitaGeomTool::Instance()->getThetaFromLat(TMath::Abs(latitude));
+  //   Double_t phiBalloon=AnitaGeomTool::Instance()->getPhiFromLon(longitude);
+  //   Double_t balloonHeight=AnitaGeomTool::Instance()->getGeoid(thetaBalloon)+altitude;
    
   Double_t tempPhiWave=phiWave;
   Double_t tempThetaWave=TMath::PiOver2()-thetaWave;
   //Now need to take account of balloon heading
 
   TVector3 rollAxis,pitchAxis;
-  rollAxis=fUPGeomTool->fRollRotationAxis;
-  pitchAxis=fUPGeomTool->fPitchRotationAxis;
+  rollAxis=geom->fRollRotationAxis;
+  pitchAxis=geom->fPitchRotationAxis;
 
   //std::cout << "Attitude: " << heading << "\t" << pitch << "\t" << roll 
   //	       << "\n";
@@ -164,9 +159,9 @@ int UsefulAdu5Pat::getSourceLonAndLatAtDesiredAlt(Double_t phiWave, Double_t the
 
     //std::cout << "tempPhiWave3: " << arbDir.Phi() << "\t" << tempPhiWave << "\n";
 
-    arbDir.Rotate(heading*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
-    rollAxis.Rotate((heading)*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
-    pitchAxis.Rotate((heading)*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
+    arbDir.Rotate(heading*TMath::DegToRad(),geom->fHeadingRotationAxis);
+    rollAxis.Rotate((heading)*TMath::DegToRad(),geom->fHeadingRotationAxis);
+    pitchAxis.Rotate((heading)*TMath::DegToRad(),geom->fHeadingRotationAxis);
     //     std::cout << arbDir.Phi() << "\t" << arbDir.Theta() << "\n";
     //     std::cout << "Pitch Axis\t" << pitchAxis.X() << " " 
     //	       << pitchAxis.Y() << " " << pitchAxis.Z() << "\t" << pitch << "\n";
@@ -195,7 +190,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAtDesiredAlt(Double_t phiWave, Double_t the
     return -1;
   }
    
-  Double_t reBalloon=fUPGeomTool->getDistanceToCentreOfEarth(latitude)+desiredAlt; // ACG mod
+  Double_t reBalloon=geom->getDistanceToCentreOfEarth(latitude)+desiredAlt; // ACG mod
   Double_t re=reBalloon;
   Double_t nextRe=re;
   Double_t reh=reBalloon+altitude;
@@ -234,8 +229,8 @@ int UsefulAdu5Pat::getSourceLonAndLatAtDesiredAlt(Double_t phiWave, Double_t the
     fSourcePos.GetXYZ(sourceVec);
 
     Double_t sourceAlt;
-    fUPGeomTool->getLatLonAltFromCartesian(sourceVec,sourceLat,sourceLon,sourceAlt);
-    nextRe=fUPGeomTool->getDistanceToCentreOfEarth(sourceLat);
+    geom->getLatLonAltFromCartesian(sourceVec,sourceLat,sourceLon,sourceAlt);
+    nextRe=geom->getDistanceToCentreOfEarth(sourceLat);
 
   } while(TMath::Abs(nextRe-re)>1);
 
@@ -252,9 +247,11 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
   if(fPhiWave!=phiWave) fPhiWave=phiWave;
   if(fThetaWave!=thetaWave) fThetaWave=thetaWave;
 
-  //   Double_t thetaBalloon=fUPGeomTool->getThetaFromLat(TMath::Abs(latitude));
-  //   Double_t phiBalloon=fUPGeomTool->getPhiFromLon(longitude);
-  //   Double_t balloonHeight=fUPGeomTool->getGeoid(thetaBalloon)+altitude;
+  AnitaGeomTool * geom = AnitaGeomTool::Instance(); 
+
+  //   Double_t thetaBalloon=AnitaGeomTool::Instance()->getThetaFromLat(TMath::Abs(latitude));
+  //   Double_t phiBalloon=AnitaGeomTool::Instance()->getPhiFromLon(longitude);
+  //   Double_t balloonHeight=AnitaGeomTool::Instance()->getGeoid(thetaBalloon)+altitude;
 
   bool endlessLoop = 0;
   bool endlessMess = 0;
@@ -264,8 +261,8 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
   //Now need to take account of balloon heading
 
   TVector3 rollAxis,pitchAxis;
-  rollAxis=fUPGeomTool->fRollRotationAxis;
-  pitchAxis=fUPGeomTool->fPitchRotationAxis;
+  rollAxis=geom->fRollRotationAxis;
+  pitchAxis=geom->fPitchRotationAxis;
 
   if(heading>=0 && heading<=360) {
     TVector3 arbDir;
@@ -273,9 +270,9 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
 
     //std::cout << "tempPhiWave3: " << arbDir.Phi() << "\t" << tempPhiWave << "\n";
 
-    arbDir.Rotate(heading*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
-    rollAxis.Rotate((heading)*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
-    pitchAxis.Rotate((heading)*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
+    arbDir.Rotate(heading*TMath::DegToRad(),geom->fHeadingRotationAxis);
+    rollAxis.Rotate((heading)*TMath::DegToRad(),geom->fHeadingRotationAxis);
+    pitchAxis.Rotate((heading)*TMath::DegToRad(),geom->fHeadingRotationAxis);
     //     std::cout << arbDir.Phi() << "\t" << arbDir.Theta() << "\n";
     //     std::cout << "Pitch Axis\t" << pitchAxis.X() << " " 
     //	       << pitchAxis.Y() << " " << pitchAxis.Z() << "\t" << pitch << "\n";
@@ -309,7 +306,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
   //Double_t re=balloonHeight-altitude+2000;
   //   Double_t re=fBalloonHeight-altitude;
    
-  Double_t reBalloon=fUPGeomTool->getDistanceToCentreOfEarth(latitude);
+  Double_t reBalloon=geom->getDistanceToCentreOfEarth(latitude);
   //   std::cout << "Radius difference: " << re-re2 << "\t" << re << "\t" << re2 << "\n";
   Double_t chosenAlt = fRampdemReader->SurfaceAboveGeoid(longitude,latitude);
 
@@ -352,7 +349,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
     Double_t sinThetaL=L*sintw/re;
     Double_t sourceTheta=TMath::ASin(sinThetaL);
      
-    //std::cout << "Source Theta: " << sourceTheta*TMath::RadToDeg() << "\t" << tempThetaWave << "\t" << reh << "\t" << re << "\t" << fUPGeomTool->getDistanceToCentreOfEarth(latitude) << "\n";
+    //std::cout << "Source Theta: " << sourceTheta*TMath::RadToDeg() << "\t" << tempThetaWave << "\t" << reh << "\t" << re << "\t" << AnitaGeomTool::Instance()->getDistanceToCentreOfEarth(latitude) << "\n";
      
     //One possible improvement is to reiterate using the radius at the source location.
      
@@ -389,11 +386,11 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
     //std::cout << "BalloonPos: " << fBalloonPos.X() << "\t" << fBalloonPos.Y() << "\t" << fBalloonPos.Z() << "\n";
     //std::cout << "ZeroAltLoc: " << sourceVec[0] << "\t" << sourceVec[1] << "\t" << sourceVec[2] << "\n";
     Double_t sourceAlt;
-    fUPGeomTool->getLatLonAltFromCartesian(sourceVec,sourceLat,sourceLon,sourceAlt);
+    geom->getLatLonAltFromCartesian(sourceVec,sourceLat,sourceLon,sourceAlt);
     //std::cout << "SourceLatLonAlt: " << sourceLat << "\t" << sourceLon << "\t" 
     //	       << sourceAlt << "\n";
     chosenAlt = fRampdemReader->SurfaceAboveGeoid(sourceLon,sourceLat);
-    nextRe=fUPGeomTool->getDistanceToCentreOfEarth(sourceLat)+chosenAlt;
+    nextRe=geom->getDistanceToCentreOfEarth(sourceLat)+chosenAlt;
     //std::cout << "Earth radius: " << nextRe << "\t" << re << "\n";
     //     break;
 
@@ -441,7 +438,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
   //    if(debug)
   //      std::cout << "sourceLat " << sourceLat << " long " << sourceLon << " alt " << chosenAlt << " re " << re << " nextRe " << nextRe << std::endl;
   sourceAltitude = chosenAlt;
-  //   fUPGeomTool->getLonLat(fSourcePos,sourceLon,sourceLat);
+  //   AnitaGeomTool::Instance()->getLonLat(fSourcePos,sourceLon,sourceLat);
   //   sourceLat*=-1;
 
   if(endlessLoop==1){
@@ -482,15 +479,15 @@ void UsefulAdu5Pat::getThetaAndPhiWaveLDB(Double_t &thetaWave, Double_t &phiWave
 
 
 void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave) {
-  // Double_t thetaBalloon=fUPGeomTool->getThetaFromLat(TMath::Abs(latitude));
-  // Double_t phiBalloon=fUPGeomTool->getPhiFromLon(longitude);
-  // Double_t balloonHeight=fUPGeomTool->getGeoid(thetaBalloon)+altitude;
+  // Double_t thetaBalloon=AnitaGeomTool::Instance()->getThetaFromLat(TMath::Abs(latitude));
+  // Double_t phiBalloon=AnitaGeomTool::Instance()->getPhiFromLon(longitude);
+  // Double_t balloonHeight=AnitaGeomTool::Instance()->getGeoid(thetaBalloon)+altitude;
   // std::cout << "Theta " << thetaBalloon << "\t" << fBalloonTheta << "\n";
   // std::cout << "Phi " << phiBalloon << "\t" << fBalloonPhi << "\n";
    
-  //    Double_t thetaSource=fUPGeomTool->getThetaFromLat(TMath::Abs(sourceLat));
-  //    Double_t phiSource=fUPGeomTool->getPhiFromLon(sourceLon);
-  //    Double_t radiusSource=fUPGeomTool->getGeoid(thetaSource)+sourceAlt;
+  //    Double_t thetaSource=AnitaGeomTool::Instance()->getThetaFromLat(TMath::Abs(sourceLat));
+  //    Double_t phiSource=AnitaGeomTool::Instance()->getPhiFromLon(sourceLon);
+  //    Double_t radiusSource=AnitaGeomTool::Instance()->getGeoid(thetaSource)+sourceAlt;
 
   //    //Get vector from Earth's centre to source
   //    fSourcePos.SetX(radiusSource*TMath::Sin(thetaSource)*TMath::Cos(phiSource));
@@ -498,7 +495,8 @@ void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, D
   //    fSourcePos.SetZ(radiusSource*TMath::Cos(thetaSource));
 
   Double_t pSource[3]={0};
-  fUPGeomTool->getCartesianCoords(TMath::Abs(sourceLat),sourceLon,sourceAlt,pSource);
+  AnitaGeomTool * geom = AnitaGeomTool::Instance(); 
+  geom->getCartesianCoords(TMath::Abs(sourceLat),sourceLon,sourceAlt,pSource);
   fSourcePos.SetXYZ(pSource[0],pSource[1],pSource[2]);
 
   //std::cout << "SourceLoc: " << pSource[0] << "\t" << pSource[1] << "\t" << pSource[2] << "\n";
@@ -543,8 +541,8 @@ void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, D
   //   std::cout << "Pre rotate: " << TMath::PiOver2()-thetaWave << "\t" << TMath::TwoPi()-phiWave << "\n";
 
   TVector3 rollAxis,pitchAxis;
-  rollAxis=fUPGeomTool->fRollRotationAxis;
-  pitchAxis=fUPGeomTool->fPitchRotationAxis;
+  rollAxis=geom->fRollRotationAxis;
+  pitchAxis=geom->fPitchRotationAxis;
 
   Double_t tempThetaWave=TMath::PiOver2()-thetaWave;
 
@@ -552,8 +550,8 @@ void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, D
     TVector3 arbDir;
     arbDir.SetMagThetaPhi(1,tempThetaWave,-1*phiWave);
      
-    rollAxis.Rotate(heading*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
-    pitchAxis.Rotate(heading*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
+    rollAxis.Rotate(heading*TMath::DegToRad(),geom->fHeadingRotationAxis);
+    pitchAxis.Rotate(heading*TMath::DegToRad(),geom->fHeadingRotationAxis);
     rollAxis.Rotate(pitch*TMath::DegToRad(),pitchAxis);
      
     arbDir.Rotate(-1.*roll*TMath::DegToRad(),rollAxis);
@@ -561,14 +559,14 @@ void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, D
 
     // std::cout << roll << "\t" << pitch << "\t in function " << __PRETTY_FUNCTION__ << std::endl;
      
-    arbDir.Rotate(-1*heading*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
+    arbDir.Rotate(-1*heading*TMath::DegToRad(),geom->fHeadingRotationAxis);
 
     //need to rotate roll and pitch axes - in this function heading has been
     //chosen as +ve x axis, pitch and roll axes are defined in terms of x and
     //y axes from ANITA setup document
-    //rollAxis.Rotate(-135.*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
-    //pitchAxis.Rotate(45.*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
-    //pitchAxis.Rotate(-1*heading*TMath::DegToRad(),fUPGeomTool->fHeadingRotationAxis);
+    //rollAxis.Rotate(-135.*TMath::DegToRad(),AnitaGeomTool::Instance()->fHeadingRotationAxis);
+    //pitchAxis.Rotate(45.*TMath::DegToRad(),AnitaGeomTool::Instance()->fHeadingRotationAxis);
+    //pitchAxis.Rotate(-1*heading*TMath::DegToRad(),AnitaGeomTool::Instance()->fHeadingRotationAxis);
 
     phiWave=arbDir.Phi();
     phiWave*=-1;
@@ -606,7 +604,7 @@ void UsefulAdu5Pat::getThetaWaveAtBase(Double_t baseLon, Double_t baseLat, Doubl
   //gets the theta from a base to the balloon - can check if we are beyond horizon
 
   Double_t pSource[3]={0};
-  fUPGeomTool->getCartesianCoords(TMath::Abs(baseLat),baseLon,baseAlt,pSource);
+  AnitaGeomTool::Instance()->getCartesianCoords(TMath::Abs(baseLat),baseLon,baseAlt,pSource);
   fSourcePos.SetXYZ(pSource[0],pSource[1],pSource[2]);
 
   //make copy of balloon position and rotate it such that base is at 0,0,baseAlt
@@ -631,7 +629,7 @@ void UsefulAdu5Pat::getThetaWaveAtBase(Double_t baseLon, Double_t baseLat, Doubl
 
 
   //    Double_t pSource[3]={0};
-  //    fUPGeomTool->getCartesianCoords(TMath::Abs(sourceLat),sourceLon,sourceAlt,pSource);
+  //    AnitaGeomTool::Instance()->getCartesianCoords(TMath::Abs(sourceLat),sourceLon,sourceAlt,pSource);
   //    fSourcePos.SetXYZ(pSource[0],pSource[1],pSource[2]);
 
   //    //std::cout << "SourceLoc: " << pSource[0] << "\t" << pSource[1] << "\t" << pSource[2] << "\n";
@@ -653,14 +651,15 @@ Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t source
   if(fSourceAltitude!=sourceAlt || fSourceLongitude!=sourceLon || fSourceLatitude!=sourceLat)
     getThetaAndPhiWave(sourceLon,sourceLat,sourceAlt,tempTheta,tempPhi);
 
+  AnitaGeomTool *geom = AnitaGeomTool::Instance(); 
   //Now fThetaWave and fPhiWave should be correctly set.
-  Double_t phi1=fUPGeomTool->getAntPhiPositionRelToAftFore(ant1);
-  Double_t r1=fUPGeomTool->getAntR(ant1);
-  Double_t z1=fUPGeomTool->getAntZ(ant1);
+  Double_t phi1=geom->getAntPhiPositionRelToAftFore(ant1);
+  Double_t r1=geom->getAntR(ant1);
+  Double_t z1=geom->getAntZ(ant1);
 
-  Double_t phi2=fUPGeomTool->getAntPhiPositionRelToAftFore(ant2);
-  Double_t r2=fUPGeomTool->getAntR(ant2);
-  Double_t z2=fUPGeomTool->getAntZ(ant2);
+  Double_t phi2=geom->getAntPhiPositionRelToAftFore(ant2);
+  Double_t r2=geom->getAntR(ant2);
+  Double_t z2=geom->getAntZ(ant2);
 
   Double_t tanThetaW=TMath::Tan(fThetaWave);
   Double_t part1=z1*tanThetaW - r1 * TMath::Cos(fPhiWave-phi1);
@@ -668,9 +667,9 @@ Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t source
 
   Double_t geomTime= 1e9*((TMath::Cos(fThetaWave) * (part1 - part2))/C_LIGHT);    //returns time in ns
   if(fIncludeGroupDelay) {
-    Double_t phi1Diff=fUPGeomTool->getPhiDiff(fPhiWave,phi1);
+    Double_t phi1Diff=geom->getPhiDiff(fPhiWave,phi1);
     Double_t delay1=getGroupDelay(phi1Diff);
-    Double_t phi2Diff=fUPGeomTool->getPhiDiff(fPhiWave,phi2);
+    Double_t phi2Diff=geom->getPhiDiff(fPhiWave,phi2);
     Double_t delay2=getGroupDelay(phi2Diff);
     geomTime+=(delay1-delay2);
   }
@@ -689,13 +688,14 @@ Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t phiWav
     fPhiWave=phiWave;
   }
 
-  Double_t phi1=fUPGeomTool->getAntPhiPositionRelToAftFore(ant1);
-  Double_t r1=fUPGeomTool->getAntR(ant1);
-  Double_t z1=fUPGeomTool->getAntZ(ant1);
+  AnitaGeomTool *geom = AnitaGeomTool::Instance(); 
+  Double_t phi1=geom->getAntPhiPositionRelToAftFore(ant1);
+  Double_t r1=geom->getAntR(ant1);
+  Double_t z1=geom->getAntZ(ant1);
 
-  Double_t phi2=fUPGeomTool->getAntPhiPositionRelToAftFore(ant2);
-  Double_t r2=fUPGeomTool->getAntR(ant2);
-  Double_t z2=fUPGeomTool->getAntZ(ant2);
+  Double_t phi2=geom->getAntPhiPositionRelToAftFore(ant2);
+  Double_t r2=geom->getAntR(ant2);
+  Double_t z2=geom->getAntZ(ant2);
 
   Double_t tanThetaW=TMath::Tan(fThetaWave);
   Double_t part1=z1*tanThetaW - r1 * TMath::Cos(fPhiWave-phi1);
@@ -709,10 +709,11 @@ Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t phiWav
 Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1,Int_t ant2,Double_t cosPhi,Double_t sinPhi,Double_t cosTheta,Double_t sinTheta)
 {
   Double_t x1,y1,z1;
-  fUPGeomTool->getAntXYZ(ant1,x1,y1,z1);
+  AnitaGeomTool *geom = AnitaGeomTool::Instance(); 
+  geom->getAntXYZ(ant1,x1,y1,z1);
 
   Double_t x2,y2,z2;
-  fUPGeomTool->getAntXYZ(ant2,x2,y2,z2);
+  geom->getAntXYZ(ant2,x2,y2,z2);
 
   Double_t part1 = x1*cosTheta*cosPhi + y1*cosTheta*sinPhi + z1*sinTheta;
   Double_t part2 = x2*cosTheta*cosPhi + y2*cosTheta*sinPhi + z2*sinTheta;
@@ -761,13 +762,14 @@ Double_t UsefulAdu5Pat::getDeltaTExpectedOpt(Int_t ant1, Int_t ant2,Double_t sou
     getThetaAndPhiWave(sourceLon,sourceLat,sourceAlt,tempTheta,tempPhi);
 
   //Now fThetaWave and fPhiWave should be correctly set.
-  Double_t phi1=fUPGeomTool->getAntPhiPositionRelToAftFore(ant1)+deltaPhi[ant1];
-  Double_t r1=fUPGeomTool->getAntR(ant1)+deltaR[ant1];
-  Double_t z1=fUPGeomTool->getAntZ(ant1)+deltaZ[ant1];
+  AnitaGeomTool *geom = AnitaGeomTool::Instance(); 
+  Double_t phi1=geom->getAntPhiPositionRelToAftFore(ant1)+deltaPhi[ant1];
+  Double_t r1=geom->getAntR(ant1)+deltaR[ant1];
+  Double_t z1=geom->getAntZ(ant1)+deltaZ[ant1];
 
-  Double_t phi2=fUPGeomTool->getAntPhiPositionRelToAftFore(ant2)+deltaPhi[ant2];
-  Double_t r2=fUPGeomTool->getAntR(ant2)+deltaR[ant2];
-  Double_t z2=fUPGeomTool->getAntZ(ant2)+deltaZ[ant2];
+  Double_t phi2=geom->getAntPhiPositionRelToAftFore(ant2)+deltaPhi[ant2];
+  Double_t r2=geom->getAntR(ant2)+deltaR[ant2];
+  Double_t z2=geom->getAntZ(ant2)+deltaZ[ant2];
 
   //   std::cout << ant1 << deltaPhi[ant1] << "  " << deltaPhi[ant2]<< std::endl;
 
@@ -795,13 +797,14 @@ Double_t UsefulAdu5Pat::getDeltaTExpectedSeaveyOpt(Int_t ant1, Int_t ant2,Double
     getThetaAndPhiWave(sourceLon,sourceLat,sourceAlt,tempTheta,tempPhi);
 
   //Now fThetaWave and fPhiWave should be correctly set.
-  Double_t phi1=fUPGeomTool->getAntPhiPositionRelToAftFore(ant1)+deltaPhi[ant1];
-  Double_t r1=fUPGeomTool->getAntR(ant1)+deltaR[ant1];
-  Double_t z1=fUPGeomTool->getAntZ(ant1)+deltaZ[ant1];
+  AnitaGeomTool *geom = AnitaGeomTool::Instance(); 
+  Double_t phi1=geom->getAntPhiPositionRelToAftFore(ant1)+deltaPhi[ant1];
+  Double_t r1=geom->getAntR(ant1)+deltaR[ant1];
+  Double_t z1=geom->getAntZ(ant1)+deltaZ[ant1];
 
-  Double_t phi2=fUPGeomTool->getAntPhiPositionRelToAftFore(ant2)+deltaPhi[ant2];
-  Double_t r2=fUPGeomTool->getAntR(ant2)+deltaR[ant2];
-  Double_t z2=fUPGeomTool->getAntZ(ant2)+deltaZ[ant2];
+  Double_t phi2=geom->getAntPhiPositionRelToAftFore(ant2)+deltaPhi[ant2];
+  Double_t r2=geom->getAntR(ant2)+deltaR[ant2];
+  Double_t z2=geom->getAntZ(ant2)+deltaZ[ant2];
 
   //   std::cout << ant1 << deltaPhi[ant1] << "  " << deltaPhi[ant2]<< std::endl;
 
@@ -839,13 +842,13 @@ UInt_t UsefulAdu5Pat::getLDBTriggerTimeNs()
 Double_t UsefulAdu5Pat::getDistanceFromSource(Double_t sourceLat, Double_t sourceLong, Double_t sourceAlt)
 {
    
-  //    Double_t thetaBalloon=fUPGeomTool->getThetaFromLat(TMath::Abs(latitude));
-  //    Double_t phiBalloon=fUPGeomTool->getPhiFromLon(longitude);
-  //    Double_t balloonHeight=fUPGeomTool->getGeoid(thetaBalloon)+altitude;
+  //    Double_t thetaBalloon=AnitaGeomTool::Instance()->getThetaFromLat(TMath::Abs(latitude));
+  //    Double_t phiBalloon=AnitaGeomTool::Instance()->getPhiFromLon(longitude);
+  //    Double_t balloonHeight=AnitaGeomTool::Instance()->getGeoid(thetaBalloon)+altitude;
    
-  //    static Double_t thetaTaylor=fUPGeomTool->getThetaFromLat(TMath::Abs(AnitaLocations::LATITUDE_TD));
-  //    static Double_t phiTaylor=fUPGeomTool->getPhiFromLon(AnitaLocations::LONGITUDE_TD);
-  //    static Double_t radiusTaylor=fUPGeomTool->getGeoid(thetaTaylor)+AnitaLocations::ALTITUDE_TD;
+  //    static Double_t thetaTaylor=AnitaGeomTool::Instance()->getThetaFromLat(TMath::Abs(AnitaLocations::LATITUDE_TD));
+  //    static Double_t phiTaylor=AnitaGeomTool::Instance()->getPhiFromLon(AnitaLocations::LONGITUDE_TD);
+  //    static Double_t radiusTaylor=AnitaGeomTool::Instance()->getGeoid(thetaTaylor)+AnitaLocations::ALTITUDE_TD;
    
 
   //    //Get vector from Earth's centre to taylor
@@ -855,7 +858,7 @@ Double_t UsefulAdu5Pat::getDistanceFromSource(Double_t sourceLat, Double_t sourc
   //    fTaylorPos.SetZ(radiusTaylor*TMath::Cos(thetaTaylor));
 
   static Double_t pTaylor[3]={0};
-  fUPGeomTool->getCartesianCoords(TMath::Abs(sourceLat),
+  AnitaGeomTool::Instance()->getCartesianCoords(TMath::Abs(sourceLat),
 				  sourceLong,
 				  sourceAlt,
 				  pTaylor);
@@ -901,13 +904,14 @@ UInt_t UsefulAdu5Pat::getTriggerTimeNsFromSource(Double_t sourceLat, Double_t so
 
 Double_t UsefulAdu5Pat::getAngleBetweenPayloadAndSource(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt){ //ACG additional function
 
-  Double_t thetaBalloon=fUPGeomTool->getThetaFromLat(TMath::Abs(latitude));
-  Double_t phiBalloon=fUPGeomTool->getPhiFromLon(longitude);
-  Double_t balloonHeight=fUPGeomTool->getGeoid(thetaBalloon)+altitude;
+  AnitaGeomTool * geom = AnitaGeomTool::Instance(); 
+  Double_t thetaBalloon=geom->getThetaFromLat(TMath::Abs(latitude));
+  Double_t phiBalloon=geom->getPhiFromLon(longitude);
+  Double_t balloonHeight=geom->getGeoid(thetaBalloon)+altitude;
 
-  Double_t thetaSource=fUPGeomTool->getThetaFromLat(TMath::Abs(sourceLat));
-  Double_t phiSource=fUPGeomTool->getPhiFromLon(sourceLon);
-  Double_t radiusSource=fUPGeomTool->getGeoid(thetaSource)+sourceAlt;
+  Double_t thetaSource=geom->getThetaFromLat(TMath::Abs(sourceLat));
+  Double_t phiSource=geom->getPhiFromLon(sourceLon);
+  Double_t radiusSource=geom->getGeoid(thetaSource)+sourceAlt;
 
   //Get vector from Earth's centre to source
 
