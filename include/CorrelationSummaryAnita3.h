@@ -39,7 +39,7 @@ class CorrelationSummaryAnita3: public TObject
     \param nineAnts An array of the nine antennas used.
     \param deltaT The sampling period used in the interpolation (or zero)    
   */
-  CorrelationSummaryAnita3(int teventNumber, int tcentreAnt, int nineAnts[6], double deltaT=0);
+  CorrelationSummaryAnita3(int teventNumber, int tcentreAnt, int nineAnts[9], double deltaT=0);
   void fillErrorsAndFit(); ///< The worker function that actually does the fitting.
 
   //! Tests a given plane wave hypothesis using a either six or ten antennas.
