@@ -347,12 +347,16 @@ void RampdemReader::LonLattoEN(Double_t lon, Double_t lat, int& e_coord, int& n_
  */
 void RampdemReader::EastingNorthingToEN(Double_t easting,Double_t northing,Int_t &e_coord,Int_t &n_coord, RampdemReader::dataSet dataSet){
 
+  getDataIfNeeded(dataSet);
+
   Int_t x_min = minXs[dataSet];
   Int_t y_min = minYs[dataSet];
   Int_t cell_size = cellSizes[dataSet];
 
   e_coord = (int)((easting - x_min) / cell_size);
   n_coord = (int)((-1*northing - y_min) / cell_size);
+
+  // std::cout << easting << "\t" << northing << "\t" << e_coord << "\t" << n_coord << std::endl;
 }
 
 
@@ -629,7 +633,6 @@ static const char* dataSetToString(RampdemReader::dataSet dataSet){
   default:
     std::cerr << "Error in " << __FILE__ << ", unknown RampdemReader::dataSet requested" << std::endl;
     return NULL;
-
   }
 }
 
@@ -651,7 +654,7 @@ static const char* dataSetToAxisTitle(RampdemReader::dataSet dataSet){
   case RampdemReader::icemask_grounded_and_shelves:
     return "Grounding line and floating ice shelves";
   case RampdemReader::lakemask_vostok:
-    return "";
+    return "lakemask_vostok";
   case RampdemReader::rockmask:
     return "Rock Outcrops (m)";
   case RampdemReader::surface:
@@ -678,6 +681,7 @@ static const VecVec& getDataIfNeeded(RampdemReader::dataSet dataSet){
     bedMap2Data[RampdemReader::bed] = VecVec();
     bedMap2Data[RampdemReader::coverage] = VecVec();
     bedMap2Data[RampdemReader::grounded_bed_uncertainty] = VecVec();
+    bedMap2Data[RampdemReader::lakemask_vostok] = VecVec();
     bedMap2Data[RampdemReader::icemask_grounded_and_shelves] = VecVec();
     bedMap2Data[RampdemReader::rockmask] = VecVec();
     bedMap2Data[RampdemReader::surface] = VecVec();
@@ -753,7 +757,7 @@ static const VecVec& getDataIfNeeded(RampdemReader::dataSet dataSet){
 	else if(key=="cellsize"){
 	  cellSizes[dataSet] = atoi(value.c_str());
 	}
-	std::cout << key << "\t" << value << "\t" << header.eof() << std::endl;
+	// std::cout << key << "\t" << value << "\t" << header.eof() << std::endl;
       } while(!header.eof());
 
 
@@ -781,7 +785,6 @@ static const VecVec& getDataIfNeeded(RampdemReader::dataSet dataSet){
 	  data.push_back(std::vector<short>(numX, 0));
 
 	  for(int x = 0; x < numX; x++){
-	    // std::cout << y << "\t" << x << "\t" << data.size() << "\t" << data.at(y).size() << "\t" << std::endl;
 	    data.at(y).at(x) = short(tempData.at(x));
 	  }
 	}
@@ -920,4 +923,21 @@ TProfile2D* RampdemReader::getMapPartial(RampdemReader::dataSet dataSet, int coa
 
   return theHist;
 
+}
+
+
+Bool_t RampdemReader::isOnContinent(Double_t lon, Double_t lat){
+  const VecVec& data = getDataIfNeeded(RampdemReader::surface);
+  int e_coord, n_coord;
+  LonLattoEN(lon, lat, e_coord, n_coord, RampdemReader::surface);
+  // std::cout << lon << "\t" << lat << e_coord << "\t" << n_coord << std::endl;
+
+  Bool_t isOnContinent = false;
+  if(n_coord >= 0 && n_coord < numYs[RampdemReader::surface] &&
+     e_coord >= 0 && e_coord < numXs[RampdemReader::surface]){
+    if(data.at(n_coord).at(e_coord)!=noDatas[RampdemReader::surface]){
+      isOnContinent = true;
+    }
+  }
+  return isOnContinent;
 }
