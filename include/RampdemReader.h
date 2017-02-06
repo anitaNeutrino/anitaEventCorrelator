@@ -1,12 +1,10 @@
-//////////////////////////////////////////////////////////////////////////////
-/////  RampdemReader.h       Rampdem Data Reader                         /////
-/////                                                                    /////
-/////  Description:                                                      /////
-/////     Some functions to get surface elevation required for event     /////
-/////     Almost all the code stolen from Stephen ...                    /////
-/////                                                                    /////
-/////  Author: Matt Mottram (mottram@hep.ucl.ac.uk)                      /////
-//////////////////////////////////////////////////////////////////////////////
+/* -*- C++ -*-.*********************************************************************************************
+ Author: Ben Strutt, Matt Mottram, Stephen Hoover, probably others.
+ Email: strutt@physics.ucla.edu
+
+ Description:
+ Class to read in the RAMPDEM data and now all the BEDMAP2 data sets in one lovely class.
+***********************************************************************************************************/
 
 #ifndef RAMPDEMREADER_H
 #define RAMPDEMREADER_H
@@ -21,11 +19,7 @@
 #include <map>
 
 
-
-
-
-class RampdemReader// : public TObject
-{
+class RampdemReader{
 
  public:
 
@@ -50,28 +44,27 @@ class RampdemReader// : public TObject
 
   static RampdemReader*  Instance(); ///<Instance generator
 
-
   static Double_t Geoid(Double_t latitude);
 
-  //BEDMAP data input methods
   static int readRAMPDEM();
 
-
-  //BEDMAP utility methods
-  static Double_t Area(Double_t latitude);
+  static Double_t Area(Double_t latitude, RampdemReader::dataSet=rampdem);
 
   static void ENtoLonLat(Int_t e_coord,
 			 Int_t n_coord,
 			 Double_t& lon,
-			 Double_t& lat);
+			 Double_t& lat,
+			 RampdemReader::dataSet=rampdem);
   static void LonLattoEN(Double_t lon,
 			 Double_t lat,
 			 int& e_coord,
-			 int& n_coord);
+			 int& n_coord,
+			 RampdemReader::dataSet=rampdem);
   static void EastingNorthingToEN(Double_t easting,
 				  Double_t northing,
 				  Int_t &e_coord,
-				  Int_t &n_coord);
+				  Int_t &n_coord,
+				  RampdemReader::dataSet=rampdem);
   static void LonLatToEastingNorthing(Double_t lon,
 				      Double_t lat,
 				      Double_t &easting,
@@ -84,7 +77,7 @@ class RampdemReader// : public TObject
   //Data Output methods
 
   static Double_t Surface(Double_t longitude, Double_t latitude);
-  static Double_t SurfaceAboveGeoid(Double_t longitude, Double_t latitude);
+  static Double_t SurfaceAboveGeoid(Double_t longitude, Double_t latitude, RampdemReader::dataSet=rampdem);
   static Double_t SurfaceAboveGeoidRampDem(Double_t longitude, Double_t latitude);
 
   static TProfile2D *rampMap(int coarseness_factor, int set_log_scale,UInt_t &xBins,UInt_t &yBins);
@@ -94,26 +87,25 @@ class RampdemReader// : public TObject
   //Generic method to flip Endianness.
   //WARNING: Flips byte order of anything put in - do not use on things like stuctures or classes!
   template <class thing>
-  inline static void flipEndian(thing &in)
-    {
-      int size = sizeof(thing);
+  inline static void flipEndian(thing &in){
+    int size = sizeof(thing);
 
-      thing out;
+    thing out;
 
-      char* p_in = (char *) &in;
-      char* p_out = (char *) &out;
+    char* p_in = (char *) &in;
+    char* p_out = (char *) &out;
 
-      for(int i=0;i<size;i++)
-	p_out[i] = p_in[size-1-i];
+    for(int i=0;i<size;i++)
+      p_out[i] = p_in[size-1-i];
 
-      in = out;
+    in = out;
 
-      return;
-    } //template <class thing> inline void AnalysisTools::flipEndian(thing &in)
+    return;
+  } //template <class thing> inline void AnalysisTools::flipEndian(thing &in)
 
-
-  static void getMapCoordinates(double &xMin,double &yMin,double &xMax,double &yMax);
-  static TH2D* getHist(RampdemReader::dataSet dataSet, int coarseness_factor);
+  static void getMapCoordinates(double &xMin,double &yMin,double &xMax,double &yMax, RampdemReader::dataSet);
+  static TProfile2D* getMap(RampdemReader::dataSet dataSet, int coarseness_factor);
+  static TProfile2D* getMapPartial(RampdemReader::dataSet dataSet, int coarseness, double centralLon, double centralLat, double rangeMetres);
 
  protected:
   static RampdemReader *fgInstance;
