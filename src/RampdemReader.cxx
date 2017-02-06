@@ -57,23 +57,29 @@ static double R_factor = scale_factor*c_0 * pow(( (1 + eccentricity*sin(71*TMath
 static double nu_factor = R_factor / cos(71*TMath::RadToDeg());
 
 
-RampdemReader*  RampdemReader::fgInstance = 0;
 
 
+RampdemReader*  RampdemReader::fgInstance = 0; //!< Pointer to instance.
 
-RampdemReader::RampdemReader()
-{
-  //Default constructor
-  // std::cout << "reading the rampdem data" << std::endl;
-  readRAMPDEM();
+
+/**
+ * Default constructor.
+ * This class has been converted so that it works entirely statically
+ * You don't need to call this or create an instance...
+ * Preserved for backward compatibility.
+ *
+ */
+RampdemReader::RampdemReader(){
   fgInstance=this;
 }
 
 
-RampdemReader::~RampdemReader()
-{
-  //Default destructor
-}
+/**
+ * Default destructor, not used.
+ */
+
+RampdemReader::~RampdemReader(){}
+
 
 RampdemReader*  RampdemReader::Instance()
 {
@@ -83,10 +89,25 @@ RampdemReader*  RampdemReader::Instance()
 
 
 
-//_______________________________________________________________________________
+
+
+
+
+/**
+ * Returns the height of the Antarctic surface above the centre of the Earth.
+ *
+ * @param lon is the longitude (degrees)
+ * @param lat is the latitude (degrees)
+ *
+ * @return
+ */
 Double_t RampdemReader::Surface(Double_t lon,Double_t lat) {
   return (SurfaceAboveGeoid(lon,lat) + Geoid(lat));
-} //Surface
+}
+
+
+
+
 
 
 
@@ -129,17 +150,31 @@ Double_t RampdemReader::SurfaceAboveGeoid(Double_t lon, Double_t lat, RampdemRea
 
 
 
-//_______________________________________________________________________________
+
+
+
+/**
+ * Returns the height of the Earth surface geoid in metres... maybe
+ *
+ * @param latitude in degrees
+ *
+ * @return the height of the geoid in metres
+ */
 Double_t RampdemReader::Geoid(Double_t latitude) {
   return (GEOID_MIN*GEOID_MAX/sqrt(pow(GEOID_MIN,2)-(pow(GEOID_MIN,2)-pow(GEOID_MAX,2))*pow(cos(latitude*TMath::DegToRad()),2)));
-} //Geoid(lat)
+}
 
 
 
 
 
 
-//_______________________________________________________________________________
+/**
+ * Function to read in the original RAMPDEM data.
+ * This function is called by getDataIfNeeded, as the old data files have a different format.
+ *
+ * @return greater than zero if reading/parsing files fails for some reason.
+ */
 int RampdemReader::readRAMPDEM(){
   bool debug=false;
 
@@ -229,12 +264,6 @@ int RampdemReader::readRAMPDEM(){
   noDatas[RampdemReader::rampdem] = -9999; // by hand
   bedMap2Data[RampdemReader::rampdem] = VecVec();
   VecVec& surface_elevation = bedMap2Data[RampdemReader::rampdem];
-  // if (debug){
-  //   std::cout << "cell size = " << cell_size
-  // 	      << ", x_min = " << x_min << ", x_max = " << x_max
-  // 	      << ", y_min = " << y_min << ", y_max = " << y_max
-  // 	      << ", mean = " << mean << std::endl;
-  // }
 
   /* Now that we know the size of the grid, allocate the memory to store it. */
   surface_elevation = std::vector< std::vector<short> >(nCols_surface, std::vector<short>(nRows_surface, 0 ) );
@@ -247,39 +276,16 @@ int RampdemReader::readRAMPDEM(){
 	std::cerr << "[RampdemReader::readRAMPDEM] Error! Read from data file failed! Row " << row_index
 		  << ", column " << column_index << ".\n";
 	return 2;
-      } //end if
-	// RampdemReader::flipEndian( temp_data );
+      }
       flipEndian(temp_data);
       surface_elevation[column_index][row_index] = temp_data;
-    } //end for
+    }
   }
   if(dem_data.read((char*)&temp_data, sizeof(short))){
     std::cerr << "[RampdemReader::readRAMPDEM] Error! I could read a value (" << temp_data
 	      << ") from the data file after I thought that it was empty!.\n";
     return 2;
   }
-
-  // // For debugging purposes, look through the data we read in.
-  // if (debug){
-  //   double my_mean = 0;
-  //   int entries = 0;
-  //   short my_min=1;
-  //   short my_max=1;
-  //   for (unsigned int row_index=0; row_index < surface_elevation[0].size(); ++row_index){
-  //     for (unsigned int column_index=0; column_index < surface_elevation.size(); ++column_index){
-  // 	int test_int = surface_elevation[column_index][row_index];
-  // 	//if (test_int != 0)
-  // 	{
-  // 	  my_mean += double(test_int);
-  // 	  ++entries;
-  // 	} //end if
-  // 	if (test_int < my_min) my_min = test_int;
-  // 	if (test_int > my_max) my_max = test_int;
-  //     } //end while
-  //     std::cout << entries << " entries, mean is " << my_mean/double(entries) << std::endl;
-  //     std::cout << "I found minimum value " << my_min << " and maximum value " << my_max << std::endl;
-  //   } //end if (debug)
-  // }
 
   dem_header.close();
   dem_data.close();
@@ -550,6 +556,8 @@ TProfile2D *RampdemReader::rampMapPartial(int coarseness,
 
 
 
+
+
 TGaxis *RampdemReader::distanceScale(Double_t xMin,Double_t xMax,Double_t yMin,Double_t yMax){
   //here xmin, xmax etc are the positions in easting/northing of the distance scale
   if(xMax<=xMin && yMax<=yMin) {
@@ -606,7 +614,13 @@ void RampdemReader::getMapCoordinates(double &xMin, double &yMin,
 
 
 
-
+/**
+ * Convert dataSet enum to string for reading in files.
+ *
+ * @param dataSet is the data set
+ *
+ * @return a c string containing the dataSet enum name.
+ */
 static const char* dataSetToString(RampdemReader::dataSet dataSet){
 
   switch(dataSet){
@@ -638,7 +652,13 @@ static const char* dataSetToString(RampdemReader::dataSet dataSet){
 
 
 
-
+/**
+ * Get z-axis title for any data set
+ *
+ * @param dataSet is the data set
+ *
+ * @return the z-axis title
+ */
 static const char* dataSetToAxisTitle(RampdemReader::dataSet dataSet){
   // from the bedmap2 readme
 
@@ -672,6 +692,16 @@ static const char* dataSetToAxisTitle(RampdemReader::dataSet dataSet){
 
 
 
+
+
+/**
+ * Handles reading in any data set.
+ * The BEDMAP2 data sets are handles in the function, the RAMPDEM data is read in by the old function
+ *
+ * @param dataSet is the selected data set
+ *
+ * @return a reference to the raw bedmap/rampdem data
+ */
 
 static const VecVec& getDataIfNeeded(RampdemReader::dataSet dataSet){
 
@@ -798,6 +828,17 @@ static const VecVec& getDataIfNeeded(RampdemReader::dataSet dataSet){
 
 
 
+
+
+
+/**
+ * Internal function to loop over a any created histogram and fill it with a given data set
+ *
+ * @param theHist is the TProfile2D to be filled
+ * @param dataSet is the selected data set
+ *
+ * @return the same histogram (theHist)
+ */
 static TProfile2D* fillThisHist(TProfile2D* theHist, RampdemReader::dataSet dataSet){
 
   const VecVec& data = getDataIfNeeded(dataSet);
@@ -874,7 +915,17 @@ TProfile2D* RampdemReader::getMap(RampdemReader::dataSet dataSet, int coarseness
 
 
 
-
+/**
+ * Create a TProfile2D of the continent with the specified data set, centred on the given coordinates.
+ *
+ * @param dataSet is the selected data set
+ * @param coarseness downsamples the easting/northing bins
+ * @param centralLon is the longitude (degrees) on which to centre the histogram
+ * @param centralLat is the latitude (degrees) on which to centre the histogram
+ * @param rangeMetres is the distance from the centre to any edge of the histogram
+ *
+ * @return the created histogram
+ */
 TProfile2D* RampdemReader::getMapPartial(RampdemReader::dataSet dataSet, int coarseness,
 					 double centralLon, double centralLat, double rangeMetres){
 
@@ -926,6 +977,17 @@ TProfile2D* RampdemReader::getMapPartial(RampdemReader::dataSet dataSet, int coa
 }
 
 
+
+/**
+ * Returns true if a specified latitude or longitude is on the continent...
+ * ...according to the RampdemReader::surface model
+ *
+ *
+ * @param lon is the longitude (degrees)
+ * @param lat is the latitude (degrees)
+ *
+ * @return true if on the continent, false otherwise
+ */
 Bool_t RampdemReader::isOnContinent(Double_t lon, Double_t lat){
   const VecVec& data = getDataIfNeeded(RampdemReader::surface);
   int e_coord, n_coord;
@@ -935,9 +997,11 @@ Bool_t RampdemReader::isOnContinent(Double_t lon, Double_t lat){
   Bool_t isOnContinent = false;
   if(n_coord >= 0 && n_coord < numYs[RampdemReader::surface] &&
      e_coord >= 0 && e_coord < numXs[RampdemReader::surface]){
+
     if(data.at(n_coord).at(e_coord)!=noDatas[RampdemReader::surface]){
       isOnContinent = true;
     }
+
   }
   return isOnContinent;
 }
