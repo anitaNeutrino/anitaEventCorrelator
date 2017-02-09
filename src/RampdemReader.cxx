@@ -39,8 +39,12 @@ static HeaderMap maxXs;
 static HeaderMap maxYs;
 static HeaderMap cellSizes;
 
+
+// static functions to read in the data / generic fill histogram function.
 static const VecVec& getDataIfNeeded(RampdemReader::dataSet dataSet);
 static TProfile2D* fillThisHist(TProfile2D* theHist, RampdemReader::dataSet dataSet);
+
+
 
 
 //Variables for conversion between polar stereographic coordinates and lat/lon.  Conversion equations from ftp://164.214.2.65/pub/gig/tm8358.2/TM8358_2.pdf
@@ -60,6 +64,22 @@ static double nu_factor = R_factor / cos(71*TMath::RadToDeg());
 
 
 RampdemReader*  RampdemReader::fgInstance = 0; //!< Pointer to instance.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /**
@@ -86,6 +106,11 @@ RampdemReader*  RampdemReader::Instance()
   //static function
   return (fgInstance) ? (RampdemReader*) fgInstance : new RampdemReader();
 }
+
+
+
+
+
 
 
 
@@ -131,7 +156,7 @@ Double_t RampdemReader::SurfaceAboveGeoid(Double_t lon, Double_t lat, RampdemRea
 
   Int_t e_coord_surface=0;
   Int_t n_coord_surface=0;
-  LonLattoEN(lon,lat,e_coord_surface,n_coord_surface);
+  LonLattoEN(lon,lat,e_coord_surface,n_coord_surface, dataSet);
 
   if(e_coord_surface >= nCols_surface || e_coord_surface <0){
 //     std::cerr<<"[RampdemReader::surfaceAboveGeoid]  Error!  Trying to access x-element "<<e_coord_surface<<" of the RAMP DEM data! (Longitude, latitude = "<<lon<<", "<<lat<<")\n";
@@ -154,7 +179,7 @@ Double_t RampdemReader::SurfaceAboveGeoid(Double_t lon, Double_t lat, RampdemRea
 
 
 /**
- * Returns the height of the Earth surface geoid in metres... maybe
+ * Returns the height of the Earth surface geoid in metres.
  *
  * @param latitude in degrees
  *
@@ -176,7 +201,8 @@ Double_t RampdemReader::Geoid(Double_t latitude) {
  * @return greater than zero if reading/parsing files fails for some reason.
  */
 int RampdemReader::readRAMPDEM(){
-  bool debug=false;
+
+  std::cerr << __PRETTY_FUNCTION__ <<  std::endl;
 
   char calibDir[FILENAME_MAX];
   char *calibEnv=getenv("ANITA_CALIB_DIR");
@@ -262,7 +288,10 @@ int RampdemReader::readRAMPDEM(){
   maxYs[RampdemReader::rampdem] = y_max;
   cellSizes[RampdemReader::rampdem] = cell_size;
   noDatas[RampdemReader::rampdem] = -9999; // by hand
-  bedMap2Data[RampdemReader::rampdem] = VecVec();
+
+  // emptry VecVec is now initially put in by the getDataIfNeeded function
+  // bedMap2Data[RampdemReader::rampdem] = VecVec();
+
   VecVec& surface_elevation = bedMap2Data[RampdemReader::rampdem];
 
   /* Now that we know the size of the grid, allocate the memory to store it. */
@@ -628,22 +657,22 @@ static const char* dataSetToString(RampdemReader::dataSet dataSet){
     return "rampdem";
   case RampdemReader::bed:
     return "bed";
-  case RampdemReader::coverage:
-    return "coverage";
-  case RampdemReader::grounded_bed_uncertainty:
-    return "grounded_bed_uncertainty";
+  // case RampdemReader::coverage:
+  //   return "coverage";
+  // case RampdemReader::grounded_bed_uncertainty:
+  //   return "grounded_bed_uncertainty";
   case RampdemReader::icemask_grounded_and_shelves:
     return "icemask_grounded_and_shelves";
-  case RampdemReader::lakemask_vostok:
-    return "lakemask_vostok";
-  case RampdemReader::rockmask:
-    return "rockmask";
+  // case RampdemReader::lakemask_vostok:
+  //   return "lakemask_vostok";
+  // case RampdemReader::rockmask:
+  //   return "rockmask";
   case RampdemReader::surface:
     return "surface";
   case RampdemReader::thickness:
     return "thickness";
-  case RampdemReader::bedmap2_thickness_uncertainty_5km:
-    return "bedmap2_thickness_uncertainty_5km";
+  // case RampdemReader::bedmap2_thickness_uncertainty_5km:
+  //   return "bedmap2_thickness_uncertainty_5km";
   default:
     std::cerr << "Error in " << __FILE__ << ", unknown RampdemReader::dataSet requested" << std::endl;
     return NULL;
@@ -667,22 +696,22 @@ static const char* dataSetToAxisTitle(RampdemReader::dataSet dataSet){
     return "Surface height (m)";
   case RampdemReader::bed:
     return "Bed height (m)";
-  case RampdemReader::coverage:
-    return "Ice coverage data";
-  case RampdemReader::grounded_bed_uncertainty:
-    return "Bed Uncertainty Grid (m)";
+  // case RampdemReader::coverage:
+  //   return "Ice coverage data";
+  // case RampdemReader::grounded_bed_uncertainty:
+  //   return "Bed Uncertainty Grid (m)";
   case RampdemReader::icemask_grounded_and_shelves:
     return "Grounding line and floating ice shelves";
-  case RampdemReader::lakemask_vostok:
-    return "lakemask_vostok";
-  case RampdemReader::rockmask:
-    return "Rock Outcrops (m)";
+  // case RampdemReader::lakemask_vostok:
+  //   return "lakemask_vostok";
+  // case RampdemReader::rockmask:
+  //   return "Rock Outcrops (m)";
   case RampdemReader::surface:
     return "Surface height (m)";
   case RampdemReader::thickness:
     return "Ice thickness (m)";
-  case RampdemReader::bedmap2_thickness_uncertainty_5km:
-    return "Ice thickness uncertainty";
+  // case RampdemReader::bedmap2_thickness_uncertainty_5km:
+  //   return "Ice thickness uncertainty";
   default:
     std::cerr << "Error in " << __FILE__ << ", unknown RampdemReader::dataSet requested" << std::endl;
     return NULL;
@@ -696,7 +725,7 @@ static const char* dataSetToAxisTitle(RampdemReader::dataSet dataSet){
 
 /**
  * Handles reading in any data set.
- * The BEDMAP2 data sets are handles in the function, the RAMPDEM data is read in by the old function
+ * The BEDMAP2 data are handled in this function, RAMPDEM data read in by the old ReadRAMPDEM function
  *
  * @param dataSet is the selected data set
  *
@@ -708,22 +737,16 @@ static const VecVec& getDataIfNeeded(RampdemReader::dataSet dataSet){
 
   // If we haven't initialized the map with empty vectors, do it here
   if(bedMap2Data.size()==0){
+    bedMap2Data[RampdemReader::rampdem] = VecVec();
     bedMap2Data[RampdemReader::bed] = VecVec();
-    bedMap2Data[RampdemReader::coverage] = VecVec();
-    bedMap2Data[RampdemReader::grounded_bed_uncertainty] = VecVec();
-    bedMap2Data[RampdemReader::lakemask_vostok] = VecVec();
+    // bedMap2Data[RampdemReader::coverage] = VecVec();
+    // bedMap2Data[RampdemReader::grounded_bed_uncertainty] = VecVec();
     bedMap2Data[RampdemReader::icemask_grounded_and_shelves] = VecVec();
-    bedMap2Data[RampdemReader::rockmask] = VecVec();
+    // bedMap2Data[RampdemReader::lakemask_vostok] = VecVec();
+    // bedMap2Data[RampdemReader::rockmask] = VecVec();
     bedMap2Data[RampdemReader::surface] = VecVec();
     bedMap2Data[RampdemReader::thickness] = VecVec();
   }
-
-  // special case for old rampdem data...
-  if(dataSet==RampdemReader::rampdem){
-    RampdemReader::readRAMPDEM();
-    return bedMap2Data[RampdemReader::rampdem];
-  }
-
 
 
   DataMap::iterator it = bedMap2Data.find(dataSet);
@@ -733,6 +756,15 @@ static const VecVec& getDataIfNeeded(RampdemReader::dataSet dataSet){
   }
 
   VecVec& data = it->second;
+
+  // special case for old rampdem data...
+  if(dataSet==RampdemReader::rampdem){
+    if(data.size()==0){
+      RampdemReader::readRAMPDEM();
+    }
+    return data;
+  }
+
 
   if(data.size() == 0){
     const char* anitaEnv = "ANITA_UTIL_INSTALL_DIR";

@@ -31,17 +31,19 @@ public:
 
 
   // Enumerates the sets of rampdem/bedmap2 data
+  // OK, these files are enormous! There's no way I'm committing them all to github
+  // Originals are from here: Feel free to download the rest if you want all the other fancy ones
   typedef enum{
     rampdem,
     bed,
-    coverage,
-    grounded_bed_uncertainty,
+    // coverage,
+    // grounded_bed_uncertainty,
     icemask_grounded_and_shelves,
-    lakemask_vostok,
-    rockmask,
+    // lakemask_vostok,
+    // rockmask,
     surface,
     thickness,
-    bedmap2_thickness_uncertainty_5km
+    // bedmap2_thickness_uncertainty_5km
   } dataSet;
 
 
