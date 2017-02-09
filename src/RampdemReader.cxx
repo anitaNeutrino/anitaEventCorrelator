@@ -202,7 +202,7 @@ Double_t RampdemReader::Geoid(Double_t latitude) {
  */
 int RampdemReader::readRAMPDEM(){
 
-  std::cerr << __PRETTY_FUNCTION__ <<  std::endl;
+  // std::cerr << __PRETTY_FUNCTION__ <<  std::endl;
 
   char calibDir[FILENAME_MAX];
   char *calibEnv=getenv("ANITA_CALIB_DIR");
