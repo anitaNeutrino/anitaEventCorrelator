@@ -6,6 +6,7 @@
 /////  Author: Ryan Nichol (rjn@hep.ucl.ac.uk)                           /////
 //////////////////////////////////////////////////////////////////////////////
 
+#include "AnitaVersion.h"
 #include "UsefulAdu5Pat.h"
 #include "AnitaGeomTool.h"
 #include "AnitaConventions.h"
@@ -825,9 +826,9 @@ UInt_t UsefulAdu5Pat::getTaylorDomeTriggerTimeNs()
 
 UInt_t UsefulAdu5Pat::getWaisDivideTriggerTimeNs()
 {
-  return getTriggerTimeNsFromSource(AnitaLocations::LATITUDE_WAIS,
-				    AnitaLocations::LONGITUDE_WAIS,
-				    AnitaLocations::ALTITUDE_WAIS);
+  return getTriggerTimeNsFromSource(AnitaLocations::getWaisLatitude(),
+				    AnitaLocations::getWaisLongitude(),
+				    AnitaLocations::getWaisAltitude());
 }
 
 UInt_t UsefulAdu5Pat::getLDBTriggerTimeNs()
