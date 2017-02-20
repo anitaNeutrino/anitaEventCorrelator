@@ -1271,6 +1271,28 @@ int UsefulAdu5Pat::traceBackToContinent(Double_t phiWave, Double_t thetaWave,
 
 }
 
+Double_t UsefulAdu5Pat::getReflectionAngle(Double_t plAlt, Double_t el, Double_t imAlt) {
+//float reflectionAngle(float h, float el) {
+  Double_t result = -9999;
+  const Double_t EARTH_POLAR_RADIUS = 6378000;
+  if (el < -5.0) {
+    Double_t theta = M_PI / 2.0 - (el * M_PI / 180.0);
+    Double_t er = EARTH_POLAR_RADIUS;
+    Double_t plH = er + plAlt;
+    Double_t costr = cos(theta);
+    Double_t d = -plH*costr - sqrt(plH*plH*costr*costr - 2*er*(plAlt-imAlt) - plAlt*plAlt + imAlt*imAlt);
+    // alpha = angle over earth curvature from payload to image; < 3deg so don't bother w/asin
+    Double_t alpha = d * sin(theta) / (er+imAlt);  
+    //Double_t alpha = asin(d * sin(theta) / (er+imAlt));
+    Double_t td = M_PI + 2*alpha - theta;
+    result = (90.0 - 180.0*td/M_PI);
+  }
+  return result;
+}
+
+Double_t UsefulAdu5Pat::getReflectionAngle(Double_t el, Double_t imAlt) {
+  return getReflectionAngle(this->altitude, el, imAlt);
+}
 
 
 int UsefulAdu5Pat::astronomicalCoordinates(Double_t phiWave, Double_t thetaWave, Double_t * RA_ptr, Double_t * dec_ptr, Double_t * l_ptr, Double_t * b_ptr) 
