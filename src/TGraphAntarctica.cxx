@@ -1,7 +1,35 @@
 #include "TGraphAntarctica.h"
-// #include "TROOT.h"
 #include "TVirtualPad.h"
 
+
+void TGraphAntarctica::SetPoint(Int_t i, Double_t lon, Double_t lat){
+  Double_t easting, northing;
+  RampdemReader::LonLatToEastingNorthing(lon, lat, easting, northing);
+  TGraph::SetPoint(i, easting, northing);
+}
+
+
+Int_t TGraphAntarctica::GetCoarseness(){
+  return cf;
+}
+
+void TGraphAntarctica::SetCoarseness(Int_t newCf){
+  if(newCf < 1){
+    std::cerr << "Warning in " << __PRETTY_FUNCTION__ << ", coarsenesss must be >= 1." << std::endl;
+    newCf = 1;
+  }
+  cf = newCf;
+}
+
+
+RampdemReader::dataSet TGraphAntarctica::GetDataSet(){
+  return dataSet;
+}
+
+
+void TGraphAntarctica::SetDataSet(RampdemReader::dataSet newDataSet){
+  dataSet = newDataSet;
+}
 
 
 void TGraphAntarctica::Draw(Option_t* option){
@@ -47,7 +75,7 @@ void TGraphAntarctica::Draw(Option_t* option){
 
 void TGraphAntarctica::init(){
 
-  const int defaultCoarsenessFactor = 50;
+  const int defaultCoarsenessFactor = 10;
 
   cf = defaultCoarsenessFactor;
   lastCf = cf;
