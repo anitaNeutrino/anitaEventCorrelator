@@ -108,16 +108,14 @@ private:
   Int_t lastLonLatGridPoints; ///< Remember last drawn points for lat/lon grid.
 
 
-  // annoying, but for the context menus
-  std::map<RampdemReader::dataSet, Bool_t> dataSetBools;
+  void makePrettyPalette();
+  void setPadMargins();
+  void setColAxisTitle();
 
-
+public:
 
 
   // GUI Stuff... For the context menus
-
-
-public:
 
 
   // Here I implement the context menu functions...
@@ -147,6 +145,7 @@ public:
   Int_t GetCoarseness();
   void SetCoarseness(Int_t coarseness); // *MENU* *ARGS={coarseness=>fCoarseness}
 
+  virtual void SetTitle(const char* title); //*MENU*
 
 
 

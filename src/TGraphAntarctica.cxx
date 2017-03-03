@@ -1,7 +1,13 @@
 #include "TGraphAntarctica.h"
 #include "TVirtualPad.h"
+#include "TPaletteAxis.h"
+#include "TROOT.h"
+#include "TObjArray.h"
+#include "TObjString.h"
 
 ClassImp(TGraphAntarctica)
+
+
 
 
 TGraphAntarctica::~TGraphAntarctica(){
@@ -9,6 +15,27 @@ TGraphAntarctica::~TGraphAntarctica(){
     delete fAntarctica;
   }
   deleteLonLatGrids();
+}
+
+
+void TGraphAntarctica::SetTitle(const char* title){
+  TGraph::SetTitle(title);
+}
+
+
+void TGraphAntarctica::setColAxisTitle(){
+
+  TObjArray* tokens = fTitle.Tokenize(";");
+
+  TString newTitle = tokens->GetEntries() > 0 ? ((TObjString*) tokens->At(0))->GetString() : "";
+
+  // pad for x and y axes (not drawn)
+  newTitle += "; ; ;";
+
+  newTitle += TString::Format("%s", RampdemReader::dataSetToAxisTitle(fDataSet));
+
+  TGraph::SetTitle(newTitle.Data());
+
 }
 
 
@@ -55,6 +82,8 @@ void TGraphAntarctica::SetDataSet(RampdemReader::dataSet dataSet){
   // this is all that's really needed...
   fDataSet = dataSet;
   fAntarctica = getAntarctica();
+  setColAxisTitle();
+
 }
 
 
@@ -81,8 +110,15 @@ void TGraphAntarctica::Draw(Option_t* option){
   }
 
   if(drawAntarctica){
+
+    if(!gPad){
+      gROOT->MakeDefCanvas();
+    }
+    setPadMargins();
     fAntarctica = getAntarctica();
-    fAntarctica->Draw("colz");
+    fAntarctica->Draw("col2azbbfb");
+
+    makePrettyPalette();
 
     // now draw on top of Antarctica
     opt += "same";
@@ -126,21 +162,8 @@ void TGraphAntarctica::init(){
   convertArrays();
 
 
-  // default data set is set in this map...
-  // make sure only one of these is true!
-  dataSetBools[RampdemReader::rampdem] = false;
-  dataSetBools[RampdemReader::bed] = false;
-  dataSetBools[RampdemReader::icemask_grounded_and_shelves] = false;
-  dataSetBools[RampdemReader::surface] = true;
-  dataSetBools[RampdemReader::thickness] = false;
-
-  for(std::map<RampdemReader::dataSet, Bool_t>::iterator it=dataSetBools.begin(); it!=dataSetBools.end(); ++it){
-    if(it->second == true){
-      fDataSet = it->first;
-      lastDataSet = fDataSet;
-      break;
-    }
-  }
+  fDataSet = RampdemReader::bed;
+  lastDataSet = fDataSet;
 
 
 }
@@ -150,6 +173,12 @@ void TGraphAntarctica::init(){
 
 TProfile2D* TGraphAntarctica::getAntarctica(){
 
+  // Double_t tempMaxX = fAntarctica ? fAntarctica->GetXaxis()->GetXmax() : 0;
+  // Double_t tempMinX = fAntarctica ? fAntarctica->GetXaxis()->GetXmin() : 0;
+
+  // Double_t tempMaxY = fAntarctica ? fAntarctica->GetYaxis()->GetXmax() : 0;
+  // Double_t tempMinY = fAntarctica ? fAntarctica->GetYaxis()->GetXmin() : 0;
+
   if(!fAntarctica){
     fAntarctica = RampdemReader::getMap(fDataSet, fCoarseness);
   }
@@ -158,14 +187,24 @@ TProfile2D* TGraphAntarctica::getAntarctica(){
     fAntarctica = RampdemReader::getMap(fDataSet, fCoarseness);
   }
 
+  // book keeping and prettification
+  fAntarctica->SetName("fAntarctica");
+  fAntarctica->GetXaxis()->SetNdivisions(0, kFALSE);
+  fAntarctica->GetYaxis()->SetNdivisions(0, kFALSE);
+
   lastDataSet = fDataSet;
   lastCoarseness = fCoarseness;
 
   fAntarctica->SetDirectory(0);
 
+
   if(alreadyDrawn){
+
+    setPadMargins();
+
     TList* prims = gPad->GetListOfPrimitives();
-    fAntarctica->SetOption("colz");
+    fAntarctica->SetOption("col2azfbbb");
+
     prims->AddBefore(this, fAntarctica);
     fHistogram = (TH1F*) fAntarctica;
 
@@ -183,6 +222,7 @@ TProfile2D* TGraphAntarctica::getAntarctica(){
 	prims->RecursiveRemove(gr);
       }
     }
+    makePrettyPalette();
   }
   fHistogram = (TH1F*) fAntarctica;
 
@@ -259,6 +299,31 @@ void TGraphAntarctica::deleteLonLatGrids(){
 }
 
 
+void TGraphAntarctica::makePrettyPalette(){
+  gPad->Modified();
+  gPad->Update();
+  TPaletteAxis *palette = (TPaletteAxis*) fAntarctica->GetListOfFunctions()->FindObject("palette");
+  palette->SetX1NDC(0.03);
+  palette->SetX2NDC(0.06);
+  palette->SetY1NDC(0.03);
+  palette->SetY2NDC(0.16);
+  palette->SetTitleSize(0.001);
+  palette->SetTitleOffset(0.1);
+  gPad->Modified();
+  gPad->Update();
+
+}
+
+
+void TGraphAntarctica::setPadMargins(){
+  gPad->SetTopMargin(0.05);
+  gPad->SetBottomMargin(0.05);
+  gPad->SetLeftMargin(0.05);
+  gPad->SetRightMargin(0.05);
+  gPad->SetFrameLineColor(0);
+  gPad->SetFrameLineWidth(0);
+  gPad->SetFrameBorderSize(0);
+}
 
 
 
