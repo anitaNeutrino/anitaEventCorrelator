@@ -86,7 +86,8 @@ private:
 
   Bool_t fUseToolTip;
   TGToolTip* fToolTip;
-
+  TString fToolTipUnits;
+  void setToolTipUnits();
 };
 
 

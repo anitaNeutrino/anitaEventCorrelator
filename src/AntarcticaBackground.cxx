@@ -100,6 +100,7 @@ void AntarcticaBackground::updateHist(){
       prettifyPalette();
     }
 
+    setToolTipUnits();
   }
 
   // prettification
@@ -346,7 +347,7 @@ void AntarcticaBackground::prettifyPalette(){
     TAxis* zAxis = GetZaxis();
     zAxis->SetTitle(RampdemReader::dataSetToAxisTitle(fDataSet));
     zAxis->SetTitleSize(0.001);
-    std::cout << zAxis->GetTitleOffset() << std::endl;
+    // std::cout << zAxis->GetTitleOffset() << std::endl;
     zAxis->SetTitleOffset(25);
     gPad->Modified();
     gPad->Update();
@@ -400,46 +401,16 @@ Bool_t AntarcticaBackground::GetThickness(){
 
 
 
-void AntarcticaBackground::ExecuteEvent(Int_t event, Int_t x, Int_t y)
-{
-//   static int keyWasPressed=0;
-//    switch (event) {
-//    case kKeyPress:
-//      //     std::cout << "kKeyPress" << std::endl;
-//      keyWasPressed=1;
-//      break;
-//    case kButtonPress:
-//      //     cout << "kButtonPress" << endl;
-//      break;
 
-//    case kButton1Double:
-//      //     std::cout << "kButtonDoubleClick" << std::endl;
-//      //     new TCanvas();
-//      break;
 
-//    case kButton1Down:
-//      //     std::cout << "kButton1Down" << std::endl;
-//      if(!keyWasPressed) {
-//        if(!fNewCanvas) drawInNewCanvas();
-//        else this->TGraph::ExecuteEvent(event,px,py);
-//      }
-//      else {
-//        //       std::cout << "ctrl + click\n";
-//        CorrelationFactory::Instance()->addWaveformToCorrelation(this);
-//        keyWasPressed=0;
-//      }
-
-//      break;
-
-//    default:
-//        this->TGraph::ExecuteEvent(event,px,py);
-//        break;
-//    }
-// }
-
-// void AntarcticaBackground::Interactive(Int_t event, Int_t x, Int_t y, TObject* selected){
-
-  // std::cout << event << "\t" << x << "\t" << y << std::endl;
+/**
+ * Interactive magic.
+ *
+ * @param event is the user interaction
+ * @param x is the x-coordinate of the pixel under the mouse
+ * @param y is the y-coordinate of the pixel under the mouse
+ */
+void AntarcticaBackground::ExecuteEvent(Int_t event, Int_t x, Int_t y){
 
   if(fUseToolTip){
     Double_t easting = gPad->AbsPixeltoX(x);
@@ -448,10 +419,43 @@ void AntarcticaBackground::ExecuteEvent(Int_t event, Int_t x, Int_t y)
     // gPad->AbsPixeltoX(y);
     Double_t lon, lat;
     RampdemReader::EastingNorthingToLonLat(easting, northing, lon, lat);
-    fToolTip->SetText(Form("Lon %4.2lf \nLat %4.2lf\n%4.2f", lon, lat, val));
+    fToolTip->SetText(Form("Lon %4.2lf \nLat %4.2lf\n%4.2f%s", lon, lat, val, fToolTipUnits.Data()));
     fToolTip->Show(x, y);
   }
 
 
   TProfile2D::ExecuteEvent(event, x, y);
+}
+
+
+
+
+/**
+ * Parses the z-axis title and extracts the units so they can be put in the tool tip.
+ */
+void AntarcticaBackground::setToolTipUnits(){
+  TString tempAxisTitle(RampdemReader::dataSetToAxisTitle(fDataSet));
+  TObjArray* tokens = tempAxisTitle.Tokenize("(");
+
+  Bool_t gotUnits = false;
+  int nTokens = tokens->GetEntries();
+  // std::cout << tempAxisTitle << "\t" << nTokens << std::endl;
+  if(nTokens > 1){
+    TString afterOpenParen = ((TObjString*) tokens->At(1))->GetString();
+    TObjArray* tokens2 = afterOpenParen.Tokenize(")");
+    int nTokens2 = tokens2->GetEntries();
+    // std::cout << afterOpenParen << "\t" << nTokens2 << std::endl;
+    if(nTokens2 > 0){
+      fToolTipUnits = " (" + TString(((TObjString*) tokens2->At(0))->GetString()) + ")";
+      gotUnits = true;
+    }
+    // std::cout << "I set it to be " << fToolTipUnits.Data() << std::endl;
+    delete tokens2;
+  }
+  delete tokens;
+
+  if(!gotUnits){
+    fToolTipUnits = "";
+  }
+
 }
