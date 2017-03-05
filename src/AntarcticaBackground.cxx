@@ -21,6 +21,11 @@ AntarcticaBackground::AntarcticaBackground(RampdemReader::dataSet dataSet, Int_t
 }
 
 
+AntarcticaBackground::~AntarcticaBackground(){
+  deleteGrid();
+}
+
+
 void AntarcticaBackground::init(RampdemReader::dataSet dataSet, Int_t coarseness){
   SetDirectory(0);
   fName = Form("%s%d", getDefaultName(), numAntarcticaBackgrounds);
@@ -34,7 +39,7 @@ void AntarcticaBackground::init(RampdemReader::dataSet dataSet, Int_t coarseness
   fGridPoints = 1000;
   fDeltaLon = 45; // degrees
   fDeltaLat = 5; // degrees
-  fGrid = false;
+  fGrid = true;
   needRemakeGrid = true; // force updateGrid() to make grid TGraphs on first call
   updateGrid();
 
@@ -178,11 +183,8 @@ void AntarcticaBackground::updateGrid(){
 
     deleteGrid();
 
-    std::cout << "here" << std::endl;
-
     // make circles of constant latitude
     for(Int_t lat = minLat; lat<= maxLat; lat += fDeltaLat){
-      std::cout << "lat\t" << lat << "\t" << fDeltaLat << std::endl;
       TGraphAntarctica* gr = new TGraphAntarctica();
       gr->SetLineColor(kGray);
       const Double_t deltaLon = 360./fGridPoints;
@@ -193,13 +195,12 @@ void AntarcticaBackground::updateGrid(){
 	// std::cout << gr << "\t" << gr->GetN() << "\t" << easting << "\t" << northing << std::endl;
       }
       gr->SetEditable(false);
-      gr->SetName(Form("latitude=%d", lat)); // descriptive name
+      gr->SetTitle(Form("grid: lat %d", lat)); // descriptive title
       grGrids.push_back(gr);
     }
 
     // make lines of constant longitude
     for(Int_t lon = 0; lon < 360; lon+= fDeltaLon){
-      std::cout << "lon\t" << lon << "\t" << fDeltaLat << std::endl;
       TGraphAntarctica* gr = new TGraphAntarctica();
       gr->SetLineColor(kGray);
       const Double_t deltaLat = double(maxLat - -90)/fGridPoints;
@@ -209,50 +210,34 @@ void AntarcticaBackground::updateGrid(){
 	gr->SetPoint(gr->GetN(), theLon, theLat);
       }
       gr->SetEditable(false);
-      gr->SetName(Form("longitude=%d", lon)); // descriptive name
+      gr->SetTitle(Form("grid: lon=%d", lon)); // descriptive title
       grGrids.push_back(gr);
     }
 
-
-    // // make circles of constant latitude
-    // for(Int_t lat = minLat; lat<= maxLat; lat += fDeltaLat){
-    //   std::cout << "lat\t" << lat << "\t" << fDeltaLat << std::endl;
-    //   TGraph* gr = new TGraph();
-    //   gr->SetLineColor(kGray);
-    //   const Double_t deltaLon = 360./fGridPoints;
-    //   for(int i=0; i < fGridPoints; i++){
-    // 	Double_t theLat = lat;
-    // 	Double_t theLon = i*deltaLon;
-    // 	Double_t easting, northing;
-    // 	RampdemReader::LonLatToEastingNorthing(theLon, theLat, easting, northing);
-    // 	gr->SetPoint(gr->GetN(), easting, northing);
-    // 	// std::cout << gr << "\t" << gr->GetN() << "\t" << easting << "\t" << northing << std::endl;
-    //   }
-    //   gr->SetEditable(false);
-    //   gr->SetName(Form("latitude=%d", lat)); // descriptive name
-    //   grGrids.push_back(gr);
-    // }
-
-    // // make lines of constant longitude
-    // for(Int_t lon = 0; lon < 360; lon+= fDeltaLon){
-    //   std::cout << "lon\t" << lon << "\t" << fDeltaLat << std::endl;
-    //   TGraph* gr = new TGraph();
-    //   gr->SetLineColor(kGray);
-    //   const Double_t deltaLat = double(maxLat - -90)/fGridPoints;
-    //   for(int i=0; i < fGridPoints; i++){
-    // 	Double_t theLat = -90 + deltaLat*i;
-    // 	Double_t theLon = lon;
-    // 	Double_t easting, northing;
-    // 	RampdemReader::LonLatToEastingNorthing(theLon, theLat, easting, northing);
-    // 	gr->SetPoint(gr->GetN(), easting, northing);
-    //   }
-    //   gr->SetEditable(false);
-    //   gr->SetName(Form("longitude=%d", lon)); // descriptive name
-    //   grGrids.push_back(gr);
-    // }
-
     needRemakeGrid = false;
   }
+
+  if(gPad){
+    TList* prims = gPad->GetListOfPrimitives();
+
+    if(fGrid && fAlreadyDrawn){
+      // Manually add the grid TGraphs into the list of pad primitives...
+      for(UInt_t grInd=0; grInd < grGrids.size(); grInd++){
+	TGraph* gr = grGrids.at(grInd);
+	prims->AddAfter(this, gr);
+      }
+    }
+    else{
+      // ...or manually add the grid TGraphs into the list of pad primitives
+      for(UInt_t grInd=0; grInd < grGrids.size(); grInd++){
+	TGraph* gr = grGrids.at(grInd);
+	prims->RecursiveRemove(gr);
+      }
+    }
+    gPad->Modified();
+    gPad->Update();
+  }
+
 
 }
 
@@ -263,7 +248,14 @@ void AntarcticaBackground::deleteGrid(){
 
   // Grid(false); // avoid segfault?
   while(grGrids.size() > 0){
+
     TGraph* gr = grGrids.back();
+    if(gPad){
+      TList* prims = gPad->GetListOfPrimitives();
+      // prims->Remove(gr);
+      prims->RecursiveRemove(gr);
+    }
+
     delete gr;
     grGrids.pop_back();
   }
@@ -297,12 +289,12 @@ void AntarcticaBackground::Draw(Option_t* opt){
   fXaxis.SetAxisColor(kWhite);
   fYaxis.SetAxisColor(kWhite);
 
-  // gPad->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", 0, 0,
-  // 		"AntarcticaBackground::Interactive(Int_t,Int_t,Int_t,TObject*)");
   gPad->Update();
 
 
   fAlreadyDrawn = true;
+  updateGrid();
+
   fToolTip = new TGToolTip();
 
 }
@@ -351,6 +343,7 @@ void AntarcticaBackground::prettifyPalette(){
     TAxis* zAxis = GetZaxis();
     zAxis->SetTitle(RampdemReader::dataSetToAxisTitle(fDataSet));
     zAxis->SetTitleSize(0.001);
+    zAxis->SetLabelSize(0.001);
     // std::cout << zAxis->GetTitleOffset() << std::endl;
     zAxis->SetTitleOffset(25);
     gPad->Modified();
@@ -407,26 +400,6 @@ void AntarcticaBackground::Grid(Bool_t grid){
   fGrid = grid;
 
   updateGrid();
-
-  if(gPad){
-    TList* prims = gPad->GetListOfPrimitives();
-
-    if(fGrid){
-      // Manually add the grid TGraphs into the list of pad primitives...
-      for(UInt_t grInd=0; grInd < grGrids.size(); grInd++){
-	TGraph* gr = grGrids.at(grInd);
-	prims->AddAfter(this, gr);
-      }
-    }
-    else{
-      // ...or manually add the grid TGraphs into the list of pad primitives
-      for(UInt_t grInd=0; grInd < grGrids.size(); grInd++){
-	TGraph* gr = grGrids.at(grInd);
-	prims->RecursiveRemove(gr);
-      }
-    }
-  }
-
 }
 
 Bool_t AntarcticaBackground::GetGrid(){

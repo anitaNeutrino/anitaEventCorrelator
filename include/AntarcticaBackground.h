@@ -23,6 +23,8 @@ public:
 
   AntarcticaBackground(RampdemReader::dataSet dataSet = RampdemReader::thickness,
 		       Int_t coarseness = defaultCoarseness);
+  ~AntarcticaBackground();
+
   void Draw(Option_t* opt = "colz");
 
 
