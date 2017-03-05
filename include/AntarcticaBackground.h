@@ -12,9 +12,9 @@
 
 #include "TProfile2D.h"
 #include "RampdemReader.h"
-#include "TGraph.h"
 #include "TGToolTip.h"
 
+class TGraphAntarctica;
 const int defaultCoarseness = 10; // 1 is v slow on my laptop but you might want to do that when you zoom in.
 
 class AntarcticaBackground : public TProfile2D {
@@ -53,12 +53,16 @@ public:
 
   void ToolTip(Bool_t toolTip); // *TOGGLE* *GETTER=GetToolTip
   Bool_t GetToolTip();
-
+  const char* getToolTipUnits(){return fToolTipUnits.Data();}
 
   RampdemReader::dataSet GetDataSet();
   void SetDataSet(RampdemReader::dataSet dataSet);
   // void Interactive(Int_t event, Int_t x, Int_t y, TObject* selected);
   void ExecuteEvent(Int_t event, Int_t x, Int_t y); //, TObject* selected);
+  void updateToolTip(Int_t event, Int_t x, Int_t y, const char* extraInfo = NULL);
+
+  // needs to be public and accessible for other classes that want to find one of these on their canvases
+  static const char* getDefaultName(){return "fAntarctica";}
 
 private:
 
@@ -71,7 +75,7 @@ private:
   Int_t fDeltaLat;
   void updateGrid();
   void deleteGrid();
-  std::vector<TGraph*> grGrids; ///< The internally stored lat/lon grids.
+  std::vector<TGraphAntarctica*> grGrids; ///< The internally stored lat/lon grids.
 
   Int_t fGridPoints; ///< Number of points on the lat/lon grid.
   Bool_t needRemakeGrid; // if changed grid settings
@@ -81,13 +85,14 @@ private:
   void setPadMargins(); // prettification
   void prettifyPalette(); // prettification
 
-  Bool_t fAlreadyDrawn; // Set by Draw(), help the updateHist() function to do sensible things
-  ClassDef(AntarcticaBackground, 0)
-
   Bool_t fUseToolTip;
   TGToolTip* fToolTip;
   TString fToolTipUnits;
   void setToolTipUnits();
+
+  Bool_t fAlreadyDrawn; // Set by Draw(), help the updateHist() function to do sensible things
+  ClassDef(AntarcticaBackground, 0)
+
 };
 
 

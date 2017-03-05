@@ -5,10 +5,8 @@
 ClassImp(TGraphAntarctica)
 
 
-
-
-
-
+// Don't want this to be part of the class when we start writing things to files.
+static AntarcticaBackground* fBackground = NULL;
 
 
 void TGraphAntarctica::SetPoint(Int_t i, Double_t lon, Double_t lat){
@@ -62,8 +60,17 @@ void TGraphAntarctica::Draw(Option_t* option){
   }
 
   if(drawAntarctica){
-    AntarcticaBackground* ab = new AntarcticaBackground();
-    ab->Draw();
+    fBackground = new AntarcticaBackground();
+    fBackground->Draw();
+  }
+  else{
+    for(int i=0; i < prims->GetEntries(); i++){
+      TString primName = prims->At(i)->GetName();
+      if(primName.Contains(AntarcticaBackground::getDefaultName())){
+	fBackground = (AntarcticaBackground*) prims->At(i);
+	break;
+      }
+    }
   }
 
   TGraph::Draw(opt);
@@ -93,4 +100,23 @@ void TGraphAntarctica::convertArrays(){
   }
 
   doneConversion = true;
+}
+
+
+
+
+/**
+ * Interactive magic.
+ *
+ * @param event is the user interaction
+ * @param x is the x-coordinate of the pixel under the mouse
+ * @param y is the y-coordinate of the pixel under the mouse
+ */
+void TGraphAntarctica::ExecuteEvent(Int_t event, Int_t x, Int_t y){
+
+  if(fBackground){
+    fBackground->updateToolTip(event, x, y, "I'm a point!");
+  }
+
+  TGraph::ExecuteEvent(event, x, y);
 }

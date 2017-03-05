@@ -23,7 +23,7 @@ AntarcticaBackground::AntarcticaBackground(RampdemReader::dataSet dataSet, Int_t
 
 void AntarcticaBackground::init(RampdemReader::dataSet dataSet, Int_t coarseness){
   SetDirectory(0);
-  fName = TString::Format("fAntarctica%d", numAntarcticaBackgrounds);
+  fName = Form("%s%d", getDefaultName(), numAntarcticaBackgrounds);
   numAntarcticaBackgrounds++;
   fDataSet = dataSet;
   fCoarseness = coarseness;
@@ -167,36 +167,6 @@ void AntarcticaBackground::SetDataSet(RampdemReader::dataSet dataSet){
 
 
 
-void AntarcticaBackground::Grid(Bool_t grid){
-  fGrid = grid;
-
-  updateGrid();
-
-  if(gPad){
-    TList* prims = gPad->GetListOfPrimitives();
-
-    if(fGrid){
-      // Manually add the grid TGraphs into the list of pad primitives...
-      for(UInt_t grInd=0; grInd < grGrids.size(); grInd++){
-	TGraph* gr = grGrids.at(grInd);
-	prims->AddAfter(this, gr);
-      }
-    }
-    else{
-      // ...or manually add the grid TGraphs into the list of pad primitives
-      for(UInt_t grInd=0; grInd < grGrids.size(); grInd++){
-	TGraph* gr = grGrids.at(grInd);
-	prims->RecursiveRemove(gr);
-      }
-    }
-  }
-
-}
-
-Bool_t AntarcticaBackground::GetGrid(){
-  return fGrid;
-}
-
 
 
 void AntarcticaBackground::updateGrid(){
@@ -213,15 +183,13 @@ void AntarcticaBackground::updateGrid(){
     // make circles of constant latitude
     for(Int_t lat = minLat; lat<= maxLat; lat += fDeltaLat){
       std::cout << "lat\t" << lat << "\t" << fDeltaLat << std::endl;
-      TGraph* gr = new TGraph();
+      TGraphAntarctica* gr = new TGraphAntarctica();
       gr->SetLineColor(kGray);
       const Double_t deltaLon = 360./fGridPoints;
       for(int i=0; i < fGridPoints; i++){
 	Double_t theLat = lat;
 	Double_t theLon = i*deltaLon;
-	Double_t easting, northing;
-	RampdemReader::LonLatToEastingNorthing(theLon, theLat, easting, northing);
-	gr->SetPoint(gr->GetN(), easting, northing);
+	gr->SetPoint(gr->GetN(), theLon, theLat);
 	// std::cout << gr << "\t" << gr->GetN() << "\t" << easting << "\t" << northing << std::endl;
       }
       gr->SetEditable(false);
@@ -232,20 +200,56 @@ void AntarcticaBackground::updateGrid(){
     // make lines of constant longitude
     for(Int_t lon = 0; lon < 360; lon+= fDeltaLon){
       std::cout << "lon\t" << lon << "\t" << fDeltaLat << std::endl;
-      TGraph* gr = new TGraph();
+      TGraphAntarctica* gr = new TGraphAntarctica();
       gr->SetLineColor(kGray);
       const Double_t deltaLat = double(maxLat - -90)/fGridPoints;
       for(int i=0; i < fGridPoints; i++){
 	Double_t theLat = -90 + deltaLat*i;
 	Double_t theLon = lon;
-	Double_t easting, northing;
-	RampdemReader::LonLatToEastingNorthing(theLon, theLat, easting, northing);
-	gr->SetPoint(gr->GetN(), easting, northing);
+	gr->SetPoint(gr->GetN(), theLon, theLat);
       }
       gr->SetEditable(false);
       gr->SetName(Form("longitude=%d", lon)); // descriptive name
       grGrids.push_back(gr);
     }
+
+
+    // // make circles of constant latitude
+    // for(Int_t lat = minLat; lat<= maxLat; lat += fDeltaLat){
+    //   std::cout << "lat\t" << lat << "\t" << fDeltaLat << std::endl;
+    //   TGraph* gr = new TGraph();
+    //   gr->SetLineColor(kGray);
+    //   const Double_t deltaLon = 360./fGridPoints;
+    //   for(int i=0; i < fGridPoints; i++){
+    // 	Double_t theLat = lat;
+    // 	Double_t theLon = i*deltaLon;
+    // 	Double_t easting, northing;
+    // 	RampdemReader::LonLatToEastingNorthing(theLon, theLat, easting, northing);
+    // 	gr->SetPoint(gr->GetN(), easting, northing);
+    // 	// std::cout << gr << "\t" << gr->GetN() << "\t" << easting << "\t" << northing << std::endl;
+    //   }
+    //   gr->SetEditable(false);
+    //   gr->SetName(Form("latitude=%d", lat)); // descriptive name
+    //   grGrids.push_back(gr);
+    // }
+
+    // // make lines of constant longitude
+    // for(Int_t lon = 0; lon < 360; lon+= fDeltaLon){
+    //   std::cout << "lon\t" << lon << "\t" << fDeltaLat << std::endl;
+    //   TGraph* gr = new TGraph();
+    //   gr->SetLineColor(kGray);
+    //   const Double_t deltaLat = double(maxLat - -90)/fGridPoints;
+    //   for(int i=0; i < fGridPoints; i++){
+    // 	Double_t theLat = -90 + deltaLat*i;
+    // 	Double_t theLon = lon;
+    // 	Double_t easting, northing;
+    // 	RampdemReader::LonLatToEastingNorthing(theLon, theLat, easting, northing);
+    // 	gr->SetPoint(gr->GetN(), easting, northing);
+    //   }
+    //   gr->SetEditable(false);
+    //   gr->SetName(Form("longitude=%d", lon)); // descriptive name
+    //   grGrids.push_back(gr);
+    // }
 
     needRemakeGrid = false;
   }
@@ -399,6 +403,37 @@ Bool_t AntarcticaBackground::GetThickness(){
   return fDataSet == RampdemReader::thickness;
 }
 
+void AntarcticaBackground::Grid(Bool_t grid){
+  fGrid = grid;
+
+  updateGrid();
+
+  if(gPad){
+    TList* prims = gPad->GetListOfPrimitives();
+
+    if(fGrid){
+      // Manually add the grid TGraphs into the list of pad primitives...
+      for(UInt_t grInd=0; grInd < grGrids.size(); grInd++){
+	TGraph* gr = grGrids.at(grInd);
+	prims->AddAfter(this, gr);
+      }
+    }
+    else{
+      // ...or manually add the grid TGraphs into the list of pad primitives
+      for(UInt_t grInd=0; grInd < grGrids.size(); grInd++){
+	TGraph* gr = grGrids.at(grInd);
+	prims->RecursiveRemove(gr);
+      }
+    }
+  }
+
+}
+
+Bool_t AntarcticaBackground::GetGrid(){
+  return fGrid;
+}
+
+
 
 
 
@@ -412,19 +447,34 @@ Bool_t AntarcticaBackground::GetThickness(){
  */
 void AntarcticaBackground::ExecuteEvent(Int_t event, Int_t x, Int_t y){
 
+  updateToolTip(event, x, y);
+  TProfile2D::ExecuteEvent(event, x, y);
+}
+
+
+
+
+
+
+
+void AntarcticaBackground::updateToolTip(Int_t event, Int_t x, Int_t y, const char* extraInfo){
   if(fUseToolTip){
     Double_t easting = gPad->AbsPixeltoX(x);
     Double_t northing = gPad->AbsPixeltoY(y);
     Double_t val = GetBinContent(FindBin(easting, northing));
     // gPad->AbsPixeltoX(y);
     Double_t lon, lat;
-    RampdemReader::EastingNorthingToLonLat(easting, northing, lon, lat);
-    fToolTip->SetText(Form("Lon %4.2lf \nLat %4.2lf\n%4.2f%s", lon, lat, val, fToolTipUnits.Data()));
+    RampdemReader::EastingNorthingToLonLat(easting, northing, lon, lat, fDataSet);
+
+    TString theToolTipText = Form("Lon %4.2lf \nLat %4.2lf\n%4.2f%s", lon, lat, val, fToolTipUnits.Data());
+
+    if(extraInfo!=NULL){
+      theToolTipText += TString::Format("\n%s", extraInfo);
+    }
+
+    fToolTip->SetText(theToolTipText.Data());
     fToolTip->Show(x, y);
   }
-
-
-  TProfile2D::ExecuteEvent(event, x, y);
 }
 
 

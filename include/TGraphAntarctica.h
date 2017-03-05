@@ -73,7 +73,7 @@ public:
   Double_t* GetEasting(){return GetX();}
   Double_t* GetNorthing(){return GetY();}
   void Draw(Option_t* opt = "");
-
+  void ExecuteEvent(Int_t event, Int_t x, Int_t y);
 
   ClassDef(TGraphAntarctica,1)
 
@@ -82,6 +82,8 @@ private:
   void init();
   Bool_t doneConversion; // convert initial array from lat/lon to easting northing
   void convertArrays();
+
+  TString fToolTipExtraTextFormat;
 
 };
 
