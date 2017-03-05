@@ -14,24 +14,44 @@
 #include "RampdemReader.h"
 #include "TGraph.h"
 
-// I want a thing in the background I can click on and send commands to -> must be a TH2D
-// Easy to pick biggest thing and read in data as changed...
-// What's hard is to rebin the internals dynamically
 
+const int defaultCoarseness = 10; // 1 is v slow on my laptop but you might want to do that when you zoom in.
 
 class AntarcticaBackground : public TProfile2D {
 
 public:
 
+  AntarcticaBackground(RampdemReader::dataSet dataSet = RampdemReader::rampdem,
+		       Int_t coarseness = defaultCoarseness);
+  void Draw(Option_t* opt = "colz");
 
-  AntarcticaBackground();  ///< Default constructor... don't use this
 
-  // sensible constructor, but still don't use this
-  AntarcticaBackground(RampdemReader::dataSet dataSet, Int_t coarseness,
-		       const char *name,const char *title,
-		       Int_t nx, Double_t xlow, Double_t xup,
-		       Int_t ny, Double_t ylow, Double_t yup,
-		       Option_t *option = "");
+  // Interactive plotting fun
+  // Click on the map to choose which RAMPDEM/BEDMAP2 data set to plot.
+
+  void Rampdem(bool useRampdem); //*TOGGLE* *GETTER=GetRampdem
+  Bool_t GetRampdem();
+
+  void Bed(bool useBed); //*TOGGLE* *GETTER=GetBed
+  Bool_t GetBed();
+
+  void Icemask(bool useIcemask); //*TOGGLE* *GETTER=GetIcemask
+  Bool_t GetIcemask();
+
+  void Surface(bool useSurface); //*TOGGLE* *GETTER=GetSurface
+  Bool_t GetSurface();
+
+  void Thickness(bool useThickness); //*TOGGLE* *GETTER=GetThickness
+  Bool_t GetThickness();
+
+  void DrawLonLatGrids(Bool_t drawLonLatGrids); //*TOGGLE* *GETTER=GetDrawLonLatGrids
+  Bool_t GetDrawLonLatGrids();
+
+  Int_t GetCoarseness();
+  void SetCoarseness(Int_t coarseness); // *MENU* *ARGS={coarseness=>fCoarseness}
+
+  RampdemReader::dataSet GetDataSet();
+  void SetDataSet(RampdemReader::dataSet dataSet);
 
 private:
 
@@ -47,49 +67,14 @@ private:
   // std::vector<TGraph*> grLonLatGrids; ///< The internally stored lat/lon grids.
   // Int_t fLonLatGridPoints; ///< Number of points on the lat/lon grid.
   // Int_t lastLonLatGridPoints; ///< Remember last drawn points for lat/lon grid.
-
-  // void makePrettyPalette();
-  // void setPadMargins();
   // void setColAxisTitle();
 
   void update();
+  void init(RampdemReader::dataSet dataSet, Int_t coarseness); // in case I ever want another constructor
 
-public:
+  void setPadMargins(); // prettification
+  void prettifyPalette(); // prettification
 
-  // GUI Stuff... For the context menus
-
-
-  // Here I implement the context menu functions...
-  // there should be one getter/setter boolian (*TOGGLE*) function
-
-  // I'm giving the option of the enabled data sets in RampdemReader.
-  // rampdem, bed, icemask_grounded_and_shelves, surface, thickness,
-
-  void SetRampdemDataSet(bool useRampdemDataSet); //*TOGGLE* *GETTER=GetRampdemDataSet
-  Bool_t GetRampdemDataSet();
-
-  void SetBedDataSet(bool useBedDataSet); //*TOGGLE* *GETTER=GetBedDataSet
-  Bool_t GetBedDataSet();
-
-  void SetIcemaskDataSet(bool useIcemaskDataSet); //*TOGGLE* *GETTER=GetIcemaskDataSet
-  Bool_t GetIcemaskDataSet();
-
-  void SetSurfaceDataSet(bool useSurfaceDataSet); //*TOGGLE* *GETTER=GetSurfaceDataSet
-  Bool_t GetSurfaceDataSet();
-
-  void SetThicknessDataSet(bool useThicknessDataSet); //*TOGGLE* *GETTER=GetThicknessDataSet
-  Bool_t GetThicknessDataSet();
-
-  void SetDrawLonLatGrids(Bool_t drawLonLatGrids); //*TOGGLE* *GETTER=GetDrawLonLatGrids
-  Bool_t GetDrawLonLatGrids();
-
-  Int_t GetCoarseness();
-  void SetCoarseness(Int_t coarseness); // *MENU* *ARGS={coarseness=>fCoarseness}
-
-  RampdemReader::dataSet GetDataSet();
-  void SetDataSet(RampdemReader::dataSet dataSet);
-
-  static AntarcticaBackground* generate(RampdemReader::dataSet dataSet, Int_t coarseness); // use this instead of constructor
 
   ClassDef(AntarcticaBackground, 1)
 
