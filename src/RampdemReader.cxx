@@ -24,7 +24,7 @@
 
 
 
-// our map type
+// Typedefs for parsing the surface data
 typedef std::vector<std::vector<short> > VecVec;
 typedef std::map<RampdemReader::dataSet, VecVec > DataMap;
 static DataMap bedMap2Data;
@@ -47,17 +47,31 @@ static TProfile2D* fillThisHist(TProfile2D* theHist, RampdemReader::dataSet data
 
 
 
-//Variables for conversion between polar stereographic coordinates and lat/lon.  Conversion equations from ftp://164.214.2.65/pub/gig/tm8358.2/TM8358_2.pdf
-static double scale_factor=0.97276901289;  //scale factor at pole corresponding to 71 deg S latitude of true scale (used in both BEDMAP and RAMP DEM)
+//Variables for conversion between polar stereographic coordinates and lat/lon.
+// Conversion equations from ftp://164.214.2.65/pub/gig/tm8358.2/TM8358_2.pdf
+
+// scale factor at pole corresponding to 71 deg S latitude of true scale (used in both BEDMAP and RAMP DEM)
+static double scale_factor=0.97276901289;
+
 static double ellipsoid_inv_f = 298.257223563; //of Earth
-static double ellipsoid_b = R_EARTH*(1-(1/ellipsoid_inv_f));
+
+// static double ellipsoid_b = R_EARTH*(1-(1/ellipsoid_inv_f)); // Unused.
+
 static double eccentricity = sqrt((1/ellipsoid_inv_f)*(2-(1/ellipsoid_inv_f)));
+
 static double a_bar = pow(eccentricity,2)/2 + 5*pow(eccentricity,4)/24 + pow(eccentricity,6)/12 + 13*pow(eccentricity,8)/360;
+
 static double b_bar = 7*pow(eccentricity,4)/48 + 29*pow(eccentricity,6)/240 + 811*pow(eccentricity,8)/11520;
+
 static double c_bar = 7*pow(eccentricity,6)/120 + 81*pow(eccentricity,8)/1120;
+
 static double d_bar = 4279*pow(eccentricity,8)/161280;
+
 static double c_0 = (2*R_EARTH / sqrt(1-pow(eccentricity,2))) * pow(( (1-eccentricity) / (1+eccentricity) ),eccentricity/2);
-static double R_factor = scale_factor*c_0 * pow(( (1 + eccentricity*sin(71*TMath::RadToDeg())) / (1 - eccentricity*sin(71*TMath::RadToDeg())) ),eccentricity/2) * tan((TMath::Pi()/4) - (71*TMath::RadToDeg())/2); //varies with latitude, defined here for 71 deg S latitude
+
+// Varies with latitude, defined here for 71 deg S...
+static double R_factor = scale_factor*c_0 * pow(( (1 + eccentricity*sin(71*TMath::RadToDeg())) / (1 - eccentricity*sin(71*TMath::RadToDeg())) ),eccentricity/2) * tan((TMath::Pi()/4) - (71*TMath::RadToDeg())/2);
+
 static double nu_factor = R_factor / cos(71*TMath::RadToDeg());
 
 
@@ -101,8 +115,14 @@ RampdemReader::RampdemReader(){
 RampdemReader::~RampdemReader(){}
 
 
-RampdemReader*  RampdemReader::Instance()
-{
+
+/**
+ * Instance generated. Deprecated.
+ *
+ *
+ * @return pointer to RampdemReader singleton
+ */
+RampdemReader*  RampdemReader::Instance(){
   //static function
   return (fgInstance) ? (RampdemReader*) fgInstance : new RampdemReader();
 }
@@ -124,7 +144,7 @@ RampdemReader*  RampdemReader::Instance()
  * @param lon is the longitude (degrees)
  * @param lat is the latitude (degrees)
  *
- * @return
+ * @return height of the Antarctic surface above the geoid.
  */
 Double_t RampdemReader::Surface(Double_t lon,Double_t lat) {
   return (SurfaceAboveGeoid(lon,lat) + Geoid(lat));
@@ -196,7 +216,7 @@ Double_t RampdemReader::Geoid(Double_t latitude) {
 
 /**
  * Function to read in the original RAMPDEM data.
- * This function is called by getDataIfNeeded, as the old data files have a different format.
+ * This function is called by getDataIfNeeded, as the RAMPDEM elevation data files have a different format from the BEDMAP2 data
  *
  * @return greater than zero if reading/parsing files fails for some reason.
  */
@@ -371,6 +391,8 @@ void RampdemReader::LonLattoEN(Double_t lon, Double_t lat, int& e_coord, int& n_
 
 
 
+
+
 /**
  * Converts Easting/northing to RAMPDEM data indices
  *
@@ -393,6 +415,9 @@ void RampdemReader::EastingNorthingToEN(Double_t easting,Double_t northing,Int_t
 
   // std::cout << easting << "\t" << northing << "\t" << e_coord << "\t" << n_coord << std::endl;
 }
+
+
+
 
 
 
@@ -491,13 +516,13 @@ void RampdemReader::ENtoLonLat(Int_t e_coord, Int_t n_coord, Double_t& lon, Doub
  * @param lon is the longitude
  * @param lat is the latitude
  */
-void RampdemReader::EastingNorthingToLonLat(Double_t easting,Double_t northing,Double_t &lon,Double_t &lat){
+void RampdemReader::EastingNorthingToLonLat(Double_t easting,Double_t northing,Double_t &lon,Double_t &lat, RampdemReader::dataSet dataSet){
 
   Int_t e_coord;
   Int_t n_coord;
 
-  EastingNorthingToEN(easting,northing,e_coord,n_coord);
-  ENtoLonLat(e_coord,n_coord,lon,lat);
+  EastingNorthingToEN(easting,northing,e_coord,n_coord, dataSet);
+  ENtoLonLat(e_coord,n_coord,lon,lat, dataSet);
 
   return;
 
@@ -628,6 +653,25 @@ void RampdemReader::getMapCoordinates(double &xMin, double &yMin,
 
 
 
+/**
+ * Get number of bins in X and Y for any data set
+ *
+ * @param numX
+ * @param numY
+ * @param dataSet
+ */
+void RampdemReader::getNumXY(Int_t& numX, Int_t&numY,
+			     RampdemReader::dataSet dataSet){
+
+  getDataIfNeeded(dataSet);
+  numX = numXs[dataSet];
+  numY = numYs[dataSet];
+
+}
+
+
+
+
 
 
 
@@ -688,7 +732,7 @@ static const char* dataSetToString(RampdemReader::dataSet dataSet){
  *
  * @return the z-axis title
  */
-static const char* dataSetToAxisTitle(RampdemReader::dataSet dataSet){
+const char* RampdemReader::dataSetToAxisTitle(RampdemReader::dataSet dataSet){
   // from the bedmap2 readme
 
   switch(dataSet){
@@ -864,14 +908,15 @@ static const VecVec& getDataIfNeeded(RampdemReader::dataSet dataSet){
 
 
 /**
- * Internal function to loop over a any created histogram and fill it with a given data set
+ * Function to loop over a any created histogram and fill it with a given data set
+ * This won't work unless you created it with the correct limits. (See
  *
  * @param theHist is the TProfile2D to be filled
  * @param dataSet is the selected data set
  *
  * @return the same histogram (theHist)
  */
-static TProfile2D* fillThisHist(TProfile2D* theHist, RampdemReader::dataSet dataSet){
+TProfile2D* RampdemReader::fillThisHist(TProfile2D* theHist, RampdemReader::dataSet dataSet){
 
   const VecVec& data = getDataIfNeeded(dataSet);
   Double_t cellSize = cellSizes[dataSet];
@@ -889,6 +934,7 @@ static TProfile2D* fillThisHist(TProfile2D* theHist, RampdemReader::dataSet data
   if(dataSet==RampdemReader::rampdem){
     for(UInt_t yBin=0; yBin < data.at(0).size(); yBin++){
       for(UInt_t xBin=0; xBin < data.size(); xBin++){
+
 	theHist->Fill(xMin + double(xBin)*cellSize,
 		      -(yMin + double(yBin)*cellSize),
 		      data.at(xBin).at(yBin));
@@ -915,6 +961,15 @@ static TProfile2D* fillThisHist(TProfile2D* theHist, RampdemReader::dataSet data
 
 
 
+
+/**
+ * Creates a lovely new map of Antarctica from the requested data set with the requested coarseness.
+ *
+ * @param dataSet is the dataSet
+ * @param coarseness is a rebinning factor for X and Y
+ *
+ * @return the new TProfile2D
+ */
 TProfile2D* RampdemReader::getMap(RampdemReader::dataSet dataSet, int coarseness){
 
   getDataIfNeeded(dataSet);
