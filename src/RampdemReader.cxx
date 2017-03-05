@@ -42,7 +42,6 @@ static HeaderMap cellSizes;
 
 // static functions to read in the data / generic fill histogram function.
 static const VecVec& getDataIfNeeded(RampdemReader::dataSet dataSet);
-static TProfile2D* fillThisHist(TProfile2D* theHist, RampdemReader::dataSet dataSet);
 
 
 
