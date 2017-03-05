@@ -29,6 +29,11 @@ public:
 
 
   // Interactive plotting fun
+  // Enable for extra info on mouse over...
+
+  void ToolTip(Bool_t toolTip); // *TOGGLE* *GETTER=GetToolTip
+  Bool_t GetToolTip();
+
   // Click on the map to choose which RAMPDEM/BEDMAP2 data and set resolution.
   Int_t GetCoarseness();
   void SetCoarseness(Int_t coarseness); // *MENU* *ARGS={coarseness=>fCoarseness}
@@ -53,14 +58,11 @@ public:
 
   void SetGridDivisions(Int_t deltaLon, Int_t deltaLat); // *MENU* *ARGS={deltaLat=>fDeltaLon, deltaLon=>fDeltaLat}
 
-  void ToolTip(Bool_t toolTip); // *TOGGLE* *GETTER=GetToolTip
-  Bool_t GetToolTip();
   const char* getToolTipUnits(){return fToolTipUnits.Data();}
 
   RampdemReader::dataSet GetDataSet();
   void SetDataSet(RampdemReader::dataSet dataSet);
-  // void Interactive(Int_t event, Int_t x, Int_t y, TObject* selected);
-  void ExecuteEvent(Int_t event, Int_t x, Int_t y); //, TObject* selected);
+  void ExecuteEvent(Int_t event, Int_t x, Int_t y);
   void updateToolTip(Int_t event, Int_t x, Int_t y, const char* extraInfo = NULL);
 
   // needs to be public and accessible for other classes that want to find one of these on their canvases

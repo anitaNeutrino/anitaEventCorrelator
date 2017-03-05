@@ -5,7 +5,7 @@
 #include "TROOT.h"
 #include "TObjArray.h"
 #include "TObjString.h"
-
+#include "TCanvas.h"
 
 ClassImp(AntarcticaBackground)
 
@@ -131,7 +131,14 @@ Int_t AntarcticaBackground::GetCoarseness(){
 void AntarcticaBackground::ToolTip(Bool_t toolTip){
   fUseToolTip = toolTip;
   if(!fUseToolTip){
-    fToolTip->Hide();
+    delete fToolTip;
+    fToolTip = NULL;
+  }
+  else{
+    if(!fToolTip){
+      fToolTip = new TGToolTip();
+      fToolTip->SetBackgroundColor(kWhite);
+    }
   }
 }
 
@@ -195,12 +202,12 @@ void AntarcticaBackground::updateGrid(){
 	// std::cout << gr << "\t" << gr->GetN() << "\t" << easting << "\t" << northing << std::endl;
       }
       gr->SetEditable(false);
-      gr->SetTitle(Form("grid: lat %d", lat)); // descriptive title
+      gr->SetTitle(Form("Grid: Lat %d", lat)); // descriptive title
       grGrids.push_back(gr);
     }
 
     // make lines of constant longitude
-    for(Int_t lon = 0; lon < 360; lon+= fDeltaLon){
+    for(Int_t lon = -180; lon < 180; lon+= fDeltaLon){
       TGraphAntarctica* gr = new TGraphAntarctica();
       gr->SetLineColor(kGray);
       const Double_t deltaLat = double(maxLat - -90)/fGridPoints;
@@ -210,7 +217,7 @@ void AntarcticaBackground::updateGrid(){
 	gr->SetPoint(gr->GetN(), theLon, theLat);
       }
       gr->SetEditable(false);
-      gr->SetTitle(Form("grid: lon=%d", lon)); // descriptive title
+      gr->SetTitle(Form("Grid: Lon %d", lon)); // descriptive title
       grGrids.push_back(gr);
     }
 
@@ -294,8 +301,7 @@ void AntarcticaBackground::Draw(Option_t* opt){
 
   fAlreadyDrawn = true;
   updateGrid();
-
-  fToolTip = new TGToolTip();
+  ToolTip(fToolTip);
 
 }
 
@@ -431,6 +437,7 @@ void AntarcticaBackground::ExecuteEvent(Int_t event, Int_t x, Int_t y){
 
 
 void AntarcticaBackground::updateToolTip(Int_t event, Int_t x, Int_t y, const char* extraInfo){
+
   if(fUseToolTip){
     Double_t easting = gPad->AbsPixeltoX(x);
     Double_t northing = gPad->AbsPixeltoY(y);
@@ -439,14 +446,23 @@ void AntarcticaBackground::updateToolTip(Int_t event, Int_t x, Int_t y, const ch
     Double_t lon, lat;
     RampdemReader::EastingNorthingToLonLat(easting, northing, lon, lat, fDataSet);
 
-    TString theToolTipText = Form("Lon %4.2lf \nLat %4.2lf\n%4.2f%s", lon, lat, val, fToolTipUnits.Data());
+    TString theToolTipText = Form("Lon %4.2lf\nLat %4.2lf\n%4.2f%s", lon, lat, val, fToolTipUnits.Data());
 
     if(extraInfo!=NULL){
       theToolTipText += TString::Format("\n%s", extraInfo);
     }
 
     fToolTip->SetText(theToolTipText.Data());
-    fToolTip->Show(x, y);
+    TCanvas* theCan = gPad->GetCanvas();
+    Int_t topX = theCan->GetWindowTopX();
+    Int_t topY = theCan->GetWindowTopY();
+
+    const int xOffset = 10;
+    const int yOffset = 10 + fToolTip->GetHeight()/2;
+
+
+    fToolTip->Show(topX + x + xOffset, topY + y + yOffset);
+
   }
 }
 

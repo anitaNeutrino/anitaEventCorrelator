@@ -53,7 +53,7 @@ void TGraphAntarctica::Draw(Option_t* option){
   }
 
   else{
-    std::cout << "prims " << prims->GetEntries() << std::endl;
+    // std::cout << "prims " << prims->GetEntries() << std::endl;
     if(prims->GetEntries() <= 1){
       drawAntarctica = true;
     }
