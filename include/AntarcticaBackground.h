@@ -34,6 +34,9 @@ public:
   void ToolTip(Bool_t toolTip); // *TOGGLE* *GETTER=GetToolTip
   Bool_t GetToolTip();
 
+  void ShowBases(Bool_t showBases); // *TOGGLE* *GETTER=GetShowBases
+  Bool_t GetShowBases();
+
   // Click on the map to choose which RAMPDEM/BEDMAP2 data and set resolution.
   Int_t GetCoarseness();
   void SetCoarseness(Int_t coarseness); // *MENU* *ARGS={coarseness=>fCoarseness}
@@ -94,7 +97,12 @@ private:
   TString fToolTipUnits;
   void setToolTipUnits();
 
-  Bool_t fAlreadyDrawn; // Set by Draw(), help the updateHist() function to do sensible things
+  Bool_t fBases;
+  std::vector<TGraphAntarctica*> grBases;
+  void updateBases();
+
+  Bool_t fDrawnSelf; // Set by Draw(), help the updateHist() function to do sensible things
+  void updateGPadPrims(std::vector<TGraphAntarctica*>& grs, Bool_t drawThem, Option_t* opt);
   ClassDef(AntarcticaBackground, 0)
 
 };

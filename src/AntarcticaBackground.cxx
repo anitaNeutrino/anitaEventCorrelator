@@ -6,6 +6,7 @@
 #include "TObjArray.h"
 #include "TObjString.h"
 #include "TCanvas.h"
+#include "BaseList.h"
 
 ClassImp(AntarcticaBackground)
 
@@ -33,11 +34,11 @@ void AntarcticaBackground::init(RampdemReader::dataSet dataSet, Int_t coarseness
   fDataSet = dataSet;
   fCoarseness = coarseness;
   needRemakeHist = true;  // force updateHist() to read in data by setting impossible coarseness
-  fAlreadyDrawn = false; // set by Draw(), needed by updateHist()
+  fDrawnSelf = false; // set by Draw(), needed by updateHist()
   updateHist();
 
   fGridPoints = 1000;
-  fDeltaLon = 45; // degrees
+  fDeltaLon = 30; // degrees
   fDeltaLat = 5; // degrees
   fGrid = true;
   needRemakeGrid = true; // force updateGrid() to make grid TGraphs on first call
@@ -95,7 +96,7 @@ void AntarcticaBackground::updateHist(){
     // insert new data
     RampdemReader::fillThisHist(this, fDataSet);
 
-    if(fAlreadyDrawn){
+    if(fDrawnSelf){
 
       // now set the viewing range to the same as before if we have a gPad instance
       fXaxis.SetRangeUser(lowX, highX);
@@ -130,7 +131,8 @@ Int_t AntarcticaBackground::GetCoarseness(){
 
 void AntarcticaBackground::ToolTip(Bool_t toolTip){
   fUseToolTip = toolTip;
-  if(!fUseToolTip){
+
+  if(fToolTip && !fUseToolTip){
     delete fToolTip;
     fToolTip = NULL;
   }
@@ -181,6 +183,35 @@ void AntarcticaBackground::SetDataSet(RampdemReader::dataSet dataSet){
 
 
 
+void AntarcticaBackground::updateBases(){
+
+  if(grBases.size()==0){
+    for(UInt_t b=0; b < BaseList::getNumBases(); b++){
+      TGraphAntarctica* gr = new TGraphAntarctica();
+      BaseList::base theBase = BaseList::getBase(b);
+      gr->SetPoint(gr->GetN(), theBase.longitude, theBase.latitude);
+      gr->SetTitle(theBase.name);
+
+      // gr->SetDrawOption("*");
+      gr->SetMarkerStyle(8);
+      gr->SetMarkerColor(kMagenta);
+
+      gr->SetDrawOption("p");
+      // if(fBases){
+      // 	gr->Draw("psame");
+      // }
+
+      grBases.push_back(gr);
+    }
+  }
+
+  updateGPadPrims(grBases, fBases, "p");
+}
+
+
+
+
+
 void AntarcticaBackground::updateGrid(){
 
   if(needRemakeGrid){
@@ -224,29 +255,78 @@ void AntarcticaBackground::updateGrid(){
     needRemakeGrid = false;
   }
 
+  updateGPadPrims(grGrids, fGrid, "l");
+}
+
+
+
+
+
+
+
+
+void AntarcticaBackground::updateGPadPrims(std::vector<TGraphAntarctica*>& grs, Bool_t drawThem, Option_t* opt){
+
   if(gPad){
     TList* prims = gPad->GetListOfPrimitives();
 
-    if(fGrid && fAlreadyDrawn){
+    if(drawThem && fDrawnSelf){
       // Manually add the grid TGraphs into the list of pad primitives...
-      for(UInt_t grInd=0; grInd < grGrids.size(); grInd++){
-	TGraph* gr = grGrids.at(grInd);
-	prims->AddAfter(this, gr);
+      // turns out that to do this with options is slightly more complicated than I thought.
+      // You need to iterate over the links (that wrap the objects) because the links hold the options.
+      TObjLink *thisLink = prims->FirstLink();
+
+      while(thisLink->GetObject() != this){
+	thisLink = thisLink->Next();
+      }
+
+      // so thisLink points to this.
+      // using that info with add After.
+      TObjLink* antarcticaStuff = thisLink->Next();
+
+      // It turns out that for such a fundamental ROOT container, TList is pretty dumb.
+      // I think I'm going to have to take all the objects out, save their associated options,
+      // and redraw them. That's becasuse there's no way to add a link with options at an arbitrary
+      // position in the list, only at the end of the list.
+
+      // first copy the pointers...
+      std::vector<TObject*> tempObjs;
+      std::vector<TString> tempOpts;
+      while(antarcticaStuff){
+	tempObjs.push_back(antarcticaStuff->GetObject());
+	tempOpts.push_back(antarcticaStuff->GetOption());
+	antarcticaStuff = antarcticaStuff->Next();
+      }
+
+      // now take the objects out
+      for(UInt_t i=0; i < tempObjs.size(); i++){
+	prims->RecursiveRemove(tempObjs.at(i));
+      }
+
+      // now add the TGraphs with the proper options
+      for(UInt_t grInd=0; grInd < grs.size(); grInd++){
+	TGraphAntarctica* gr = grs.at(grInd);
+	prims->AddLast(gr, opt);
+      }
+
+      // and re-add the things we removed
+      for(UInt_t i=0; i < tempObjs.size(); i++){
+	std::cout << i << "\t" << tempObjs.at(i) << "\t" << tempOpts.at(i) << std::endl;
+	prims->AddLast(tempObjs.at(i), tempOpts.at(i));
       }
     }
     else{
-      // ...or manually add the grid TGraphs into the list of pad primitives
-      for(UInt_t grInd=0; grInd < grGrids.size(); grInd++){
-	TGraph* gr = grGrids.at(grInd);
+      // Remove the TGraphsAntarcticas from the list of pad primitives
+      for(UInt_t grInd=0; grInd < grs.size(); grInd++){
+	TGraph* gr = grs.at(grInd);
 	prims->RecursiveRemove(gr);
       }
     }
     gPad->Modified();
     gPad->Update();
   }
-
-
 }
+
 
 
 
@@ -299,7 +379,7 @@ void AntarcticaBackground::Draw(Option_t* opt){
   gPad->Update();
 
 
-  fAlreadyDrawn = true;
+  fDrawnSelf = true;
   updateGrid();
   ToolTip(fToolTip);
 
@@ -413,8 +493,14 @@ Bool_t AntarcticaBackground::GetGrid(){
 }
 
 
+void AntarcticaBackground::ShowBases(Bool_t showBases){
+  fBases = showBases;
+  updateBases();
+}
 
-
+Bool_t AntarcticaBackground::GetShowBases(){
+  return fBases;
+}
 
 
 /**
