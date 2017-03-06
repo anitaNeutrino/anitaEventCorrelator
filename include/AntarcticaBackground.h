@@ -13,6 +13,8 @@
 #include "TProfile2D.h"
 #include "RampdemReader.h"
 #include "TGToolTip.h"
+#include "TExec.h"
+#include "TColor.h"
 
 class TGraphAntarctica;
 const int defaultCoarseness = 10; // 1 is v slow on my laptop but you might want to do that when you zoom in.
@@ -71,6 +73,9 @@ public:
   // needs to be public and accessible for other classes that want to find one of these on their canvases
   static const char* getDefaultName(){return "fAntarctica";}
 
+  void setPalette();
+  std::map<RampdemReader::dataSet, EColorPalette> palettes;
+
 private:
 
   Int_t fCoarseness; // map coarseness factor
@@ -104,6 +109,9 @@ private:
   Bool_t fDrawnSelf; // Set by Draw(), help the updateHist() function to do sensible things
   void updateGPadPrims(std::vector<TGraphAntarctica*>& grs, Bool_t drawThem, Option_t* opt);
   ClassDef(AntarcticaBackground, 0)
+
+  TExec* fExec;
+
 
 };
 

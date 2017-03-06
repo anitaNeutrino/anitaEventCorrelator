@@ -7,6 +7,7 @@
 #include "TObjString.h"
 #include "TCanvas.h"
 #include "BaseList.h"
+#include "TStyle.h"
 
 ClassImp(AntarcticaBackground)
 
@@ -46,9 +47,31 @@ void AntarcticaBackground::init(RampdemReader::dataSet dataSet, Int_t coarseness
 
   fUseToolTip = true;
   fToolTip = NULL;
+
+
+  fExec = new TExec("fAntarcticaBackgroundExec",Form("%s->setPalette()", fName.Data()));
+
+  palettes[RampdemReader::rampdem] = kLightTerrain;
+  palettes[RampdemReader::bed] = kLake; // maybe a bit intense...
+  palettes[RampdemReader::icemask_grounded_and_shelves] = kLightTerrain;
+  palettes[RampdemReader::surface] = kLightTemperature;
+  palettes[RampdemReader::thickness] = kLightTemperature;
+
 }
 
 
+
+void AntarcticaBackground::setPalette(){
+
+  // here I define the color palettes tbat I want the different data sets to use when they're drawn on the background.
+  std::map<RampdemReader::dataSet, EColorPalette>::iterator it = palettes.find(fDataSet);
+  if(it != palettes.end()){
+    gStyle->SetPalette(it->second);
+    gStyle->SetNdivisions(255);
+  }
+
+
+}
 
 /**
  * Update the map of Antarctica as different options are selected
@@ -276,8 +299,16 @@ void AntarcticaBackground::updateGPadPrims(std::vector<TGraphAntarctica*>& grs, 
       // You need to iterate over the links (that wrap the objects) because the links hold the options.
       TObjLink *thisLink = prims->FirstLink();
 
-      while(thisLink->GetObject() != this){
+      Int_t numThis = 0;
+      // while(thisLink->GetObject() != this){
+      while(numThis < 2){
 	thisLink = thisLink->Next();
+
+	// Complication, now we're drawing two copies of the histogram with an exec to set the palette
+	// I need to find the second instance on the canvas
+	if(thisLink->GetObject()==this){
+	  numThis++;
+	}
       }
 
       // so thisLink points to this.
@@ -311,7 +342,6 @@ void AntarcticaBackground::updateGPadPrims(std::vector<TGraphAntarctica*>& grs, 
 
       // and re-add the things we removed
       for(UInt_t i=0; i < tempObjs.size(); i++){
-	std::cout << i << "\t" << tempObjs.at(i) << "\t" << tempOpts.at(i) << std::endl;
 	prims->AddLast(tempObjs.at(i), tempOpts.at(i));
       }
     }
@@ -370,7 +400,10 @@ void AntarcticaBackground::SetGridDivisions(Int_t deltaLon, Int_t deltaLat){
  * @param opt is the draw option (default is colz)
  */
 void AntarcticaBackground::Draw(Option_t* opt){
+
   TProfile2D::Draw(opt);
+  fExec->Draw();
+  TProfile2D::Draw(Form("%s same", opt));
   setPadMargins();
   prettifyPalette();
   fXaxis.SetAxisColor(kWhite);
