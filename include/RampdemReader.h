@@ -36,7 +36,7 @@ public:
   // Originals are from here: https://secure.antarctica.ac.uk/data/bedmap2/
   // Feel free to download the rest if you want all the other fancy ones
   typedef enum{
-    rampdem,
+    rampdem, // this is the old data in surfaceElevation.asc (a 6MB file), this is included by default.
     bed,
     // coverage,
     // grounded_bed_uncertainty,

@@ -835,6 +835,10 @@ static const VecVec& getDataIfNeeded(RampdemReader::dataSet dataSet){
     std::ifstream header(headName);
     if(!header.is_open()){
       std::cerr << "Error! Unable to open file " << headName << std::endl;
+      std::cerr << "The BEDMAP2 data set is large and not bundled with anitaEventCorrelator by default." << std::endl;
+      std::cerr << "To download the BEDMAP2 data set and have it installed in the proper place, run the script anitaEventCorrelator/downloadBEDMAP2subset.sh" << std::endl;
+      std::cerr << "If you have a slow internet connection, beware, the total size of the files is ~50MB." << std::endl;
+      std::cerr << "See https://github.com/anitaNeutrino/subsetOfBedmap2Data for more information." << std::endl;
     }
     else{
 
@@ -918,40 +922,41 @@ static const VecVec& getDataIfNeeded(RampdemReader::dataSet dataSet){
 TProfile2D* RampdemReader::fillThisHist(TProfile2D* theHist, RampdemReader::dataSet dataSet){
 
   const VecVec& data = getDataIfNeeded(dataSet);
-  Double_t cellSize = cellSizes[dataSet];
+  if(data.size() > 0){
+    Double_t cellSize = cellSizes[dataSet];
 
-  Int_t xBins = numXs[dataSet];
-  Int_t yBins = numYs[dataSet];
+    Int_t xBins = numXs[dataSet];
+    Int_t yBins = numYs[dataSet];
 
-  Double_t xMin = minXs[dataSet];
-  Double_t yMin = minYs[dataSet];
+    Double_t xMin = minXs[dataSet];
+    Double_t yMin = minYs[dataSet];
 
-  // Double_t xMax = maxXs[dataSet];
-  // Double_t yMax = maxYs[dataSet];
-  Double_t noData = noDatas[dataSet];
+    // Double_t xMax = maxXs[dataSet];
+    // Double_t yMax = maxYs[dataSet];
+    Double_t noData = noDatas[dataSet];
 
-  if(dataSet==RampdemReader::rampdem){
-    for(UInt_t yBin=0; yBin < data.at(0).size(); yBin++){
-      for(UInt_t xBin=0; xBin < data.size(); xBin++){
+    if(dataSet==RampdemReader::rampdem){
+      for(UInt_t yBin=0; yBin < data.at(0).size(); yBin++){
+	for(UInt_t xBin=0; xBin < data.size(); xBin++){
 
-	theHist->Fill(xMin + double(xBin)*cellSize,
-		      -(yMin + double(yBin)*cellSize),
-		      data.at(xBin).at(yBin));
-      }
-    }
-  }
-  else{
-    for(Int_t yBin=0; yBin < yBins; yBin++){
-      for(Int_t xBin=0; xBin < xBins; xBin++){
-	if(data[yBin][xBin] != noData){
 	  theHist->Fill(xMin + double(xBin)*cellSize,
 			-(yMin + double(yBin)*cellSize),
-			data[yBin][xBin]);
+			data.at(xBin).at(yBin));
+	}
+      }
+    }
+    else{
+      for(Int_t yBin=0; yBin < yBins; yBin++){
+	for(Int_t xBin=0; xBin < xBins; xBin++){
+	  if(data[yBin][xBin] != noData){
+	    theHist->Fill(xMin + double(xBin)*cellSize,
+			  -(yMin + double(yBin)*cellSize),
+			  data[yBin][xBin]);
+	  }
 	}
       }
     }
   }
-
   theHist->SetStats(0);
 
   return theHist;
@@ -987,7 +992,6 @@ TProfile2D* RampdemReader::getMap(RampdemReader::dataSet dataSet, int coarseness
   TProfile2D * theHist = new TProfile2D(hName, "",
 					xBins/coarseness, xMin, xMax,
 					yBins/coarseness, yMin, yMax+cellSize);
-
 
   fillThisHist(theHist, dataSet);
   return theHist;
