@@ -1,12 +1,10 @@
-//////////////////////////////////////////////////////////////////////////////
-/////  RampdemReader.h       Rampdem Data Reader                         /////
-/////                                                                    /////
-/////  Description:                                                      /////
-/////     Some functions to get surface elevation required for event     /////
-/////     Almost all the code stolen from Stephen ...                    /////
-/////                                                                    /////
-/////  Author: Matt Mottram (mottram@hep.ucl.ac.uk)                      /////
-//////////////////////////////////////////////////////////////////////////////
+/* -*- C++ -*-.*********************************************************************************************
+ Author: Ben Strutt, Matt Mottram, Stephen Hoover, probably others.
+ Email: strutt@physics.ucla.edu was the most recent contributor
+
+ Description:
+ Class to read in the RAMPDEM data... and now all the BEDMAP2 data sets.
+***********************************************************************************************************/
 
 #ifndef RAMPDEMREADER_H
 #define RAMPDEMREADER_H
@@ -18,115 +16,115 @@
 #include "TProfile2D.h"
 #include "TGaxis.h"
 #include <vector>
+#include <map>
 
 
-class RampdemReader// : public TObject
-{
+/**
+ * @class Class to read in the RAMPDEM data and now all the BEDMAP2 data sets in one place.
+ *
+ * Re-implemented from singleton members -> to static, file-only variables in the RampdemReader.cxx file.
+ * Instance function can still create a single instance, but it's now pointless.
+ * At some future point this class can be reimplemented as a namespace a la FFTtools.
+ */
+class RampdemReader{
 
- public:
+public:
+
+
+  // Enumerates the sets of rampdem/bedmap2 data
+  // OK, these files are enormous! There's no way I'm committing them all to github
+  // Originals are from here: https://secure.antarctica.ac.uk/data/bedmap2/
+  // Feel free to download the rest if you want all the other fancy ones
+  typedef enum{
+    rampdem, // this is the old data in surfaceElevation.asc (a 6MB file), this is included by default.
+    bed,
+    // coverage,
+    // grounded_bed_uncertainty,
+    icemask_grounded_and_shelves,
+    // lakemask_vostok,
+    // rockmask,
+    surface,
+    thickness,
+    // bedmap2_thickness_uncertainty_5km
+  } dataSet;
+
 
   RampdemReader();
   ~RampdemReader();
 
-  static RampdemReader*  Instance(); ///<Instance generator
+  // Class could (should) now be implemented as a namespace with loads any data behind the scenes...
+  // All the cool kids are marking things as deprecated these days
+  static RampdemReader*  Instance() __attribute__((deprecated("All methods are now static, e.g. call with RampdemReader::someMethod()"))); ///<Instance generator
+
+  static Double_t Geoid(Double_t latitude);
+  static Double_t Area(Double_t latitude, RampdemReader::dataSet=rampdem);
+
+  static void ENtoLonLat(Int_t e_coord, Int_t n_coord,Double_t& lon, Double_t& lat,
+			 RampdemReader::dataSet=rampdem);
+
+  static void LonLattoEN(Double_t lon, Double_t lat, int& e_coord, int& n_coord,
+			 RampdemReader::dataSet=rampdem);
+
+  static void EastingNorthingToEN(Double_t easting, Double_t northing, Int_t &e_coord, Int_t &n_coord,
+				  RampdemReader::dataSet=rampdem);
+
+  static void LonLatToEastingNorthing(Double_t lon, Double_t lat, Double_t &easting, Double_t &northing);
 
 
-  Double_t Geoid(Double_t latitude);
+  // This one should be just a geometrical calculation... however, it uses goes via the EN bins of a dataset
+  // and the internal representation changes between RampDem and BEDMAP2... so beware...
+  // (Can't be bothered to change this at the present time)
+  static void EastingNorthingToLonLat(Double_t easting, Double_t northing, Double_t &lon, Double_t &lat, RampdemReader::dataSet=rampdem);
 
-  //BEDMAP data input methods
-  int readRAMPDEM();
+  static Bool_t isOnContinent(Double_t lon, Double_t lat);
 
-
-  //BEDMAP utility methods
-  Double_t Area(Double_t latitude);
-
-  void ENtoLonLat(Int_t e_coord, 
-		  Int_t n_coord,
-		  Double_t& lon, 
-		  Double_t& lat);
-  void LonLattoEN(Double_t lon, 
-		  Double_t lat,
-		  int& e_coord, 
-		  int& n_coord);
-  void EastingNorthingToEN(Double_t easting,
-			   Double_t northing,
-			   Int_t &e_coord,
-			   Int_t &n_coord);
-  void LonLatToEastingNorthing(Double_t lon,
-			       Double_t lat,
-			       Double_t &easting,
-			       Double_t &northing);
-  void EastingNorthingToLonLat(Double_t easting,
-			       Double_t northing,
-			       Double_t &lon,
-			       Double_t &lat);
-  
   //Data Output methods
-  
-  Double_t Surface(Double_t longitude, Double_t latitude);
-  Double_t SurfaceAboveGeoid(Double_t longitude, Double_t latitude);
-  Double_t SurfaceAboveGeoidRampDem(Double_t longitude, Double_t latitude);
 
-  TProfile2D *rampMap(int coarseness_factor, int set_log_scale,UInt_t &xBins,UInt_t &yBins);
-  TProfile2D *rampMapPartial(int coarseness_factor,double centralLon,double centralLat,double rangeMetres,Int_t &xBins,Int_t &yBins,Double_t &xMin,Double_t &xMax,Double_t &yMin,Double_t &yMax);
-  TGaxis *distanceScale(Double_t xMin,Double_t xMax,Double_t yMin,Double_t yMax);
+  static Double_t Surface(Double_t longitude, Double_t latitude);
+  static Double_t SurfaceAboveGeoid(Double_t longitude, Double_t latitude, RampdemReader::dataSet=rampdem);
+  static Double_t SurfaceAboveGeoidRampDem(Double_t longitude, Double_t latitude);
+
+  static TProfile2D *rampMap(int coarseness_factor, int set_log_scale,UInt_t &xBins,UInt_t &yBins) __attribute__((deprecated("Prefer RampdemReader::getMap() with RampdemReader::rampdem data set")));
+
+  static TProfile2D *rampMapPartial(int coarseness_factor, double centralLon, double centralLat, double rangeMetres, Int_t &xBins, Int_t &yBins, Double_t &xMin, Double_t &xMax, Double_t &yMin, Double_t &yMax)__attribute__((deprecated("Prefer RampdemReader::getMapPartial() with RampdemReader::rampdem data set")));
+
+
+  static TGaxis *distanceScale(Double_t xMin,Double_t xMax,Double_t yMin,Double_t yMax);
 
   //Generic method to flip Endianness.
   //WARNING: Flips byte order of anything put in - do not use on things like stuctures or classes!
   template <class thing>
-    inline void flipEndian(thing &in) 
-    {
-      int size = sizeof(thing);
+  inline static void flipEndian(thing &in){
+    int size = sizeof(thing);
 
-      thing out;
+    thing out;
 
-      char* p_in = (char *) &in;
-      char* p_out = (char *) &out;
+    char* p_in = (char *) &in;
+    char* p_out = (char *) &out;
 
-      for(int i=0;i<size;i++) 
-	p_out[i] = p_in[size-1-i];
+    for(int i=0;i<size;i++)
+      p_out[i] = p_in[size-1-i];
 
-      in = out;
+    in = out;
 
-      return;
-    } //template <class thing> inline void AnalysisTools::flipEndian(thing &in) 
+    return;
+  }
 
+  static void getMapCoordinates(double &xMin,double &yMin,double &xMax,double &yMax, RampdemReader::dataSet=rampdem);
+  static TProfile2D* getMap(RampdemReader::dataSet dataSet, int coarseness_factor);
+  static TProfile2D* getMapPartial(RampdemReader::dataSet dataSet, int coarseness, double centralLon, double centralLat, double rangeMetres);
 
-  void getMapCoordinates(double &xMin,double &yMin,double &xMax,double &yMax);
+  static int readRAMPDEM(); // no need to call this explicitly, is called once only when rampdem data is requested
 
- protected:
-  static RampdemReader *fgInstance;  
-   // protect against multiple instances
+  static const char* dataSetToAxisTitle(RampdemReader::dataSet dataSet);
+  static void getNumXY(Int_t& numX, Int_t&numY, RampdemReader::dataSet dataSet=rampdem);
 
- private:
+  static TProfile2D* fillThisHist(TProfile2D* theHist, RampdemReader::dataSet dataSet);
+protected:
+  static RampdemReader *fgInstance; // deprecated, see RampdemReader::Instance() function.
+  // protect against multiple instances
 
-  /** RAMP DEM data.  Note: x increases to the right, y increases downward.  **/
-  std::vector< std::vector<short> > surface_elevation;
-  double cell_size;
-  double x_min;
-  double x_max;
-  double y_min;
-  double y_max;
-  int nRows_surface;
-  int  nCols_surface;
-  int  nBytes_surface;
-
-
-
-
-  static double scale_factor;  //scale factor at pole corresponding to 71 deg S latitude of true scale (used in both BEDMAP and the RAMP DEM)
-  static double ellipsoid_inv_f; //of Earth
-  static double ellipsoid_b;
-  static double eccentricity;
-  static double a_bar;
-  static double b_bar;
-  static double c_bar;
-  static double d_bar;
-  static double c_0;
-  static double R_factor;
-  static double nu_factor;
 
 };
 
 #endif //RAMPDEMREADER_H
-
