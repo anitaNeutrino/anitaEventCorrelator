@@ -832,7 +832,7 @@ static const VecVec& getDataIfNeeded(RampdemReader::dataSet dataSet){
 
 
     // Open header file
-    std::ifstream header(headName);
+    std::ifstream header(headName.c_str());
     if(!header.is_open()){
       std::cerr << "Error! Unable to open file " << headName << std::endl;
       std::cerr << "The BEDMAP2 data set is large and not bundled with anitaEventCorrelator by default." << std::endl;

@@ -54,7 +54,7 @@ public:
 
   // Class could (should) now be implemented as a namespace with loads any data behind the scenes...
   // All the cool kids are marking things as deprecated these days
-  static RampdemReader*  Instance() __attribute__((deprecated("All methods are now static, e.g. call with RampdemReader::someMethod()"))); ///<Instance generator
+  static RampdemReader*  Instance() __attribute__((deprecated)); ///<Instance generator
 
   static Double_t Geoid(Double_t latitude);
   static Double_t Area(Double_t latitude, RampdemReader::dataSet=rampdem);
@@ -84,9 +84,9 @@ public:
   static Double_t SurfaceAboveGeoid(Double_t longitude, Double_t latitude, RampdemReader::dataSet=rampdem);
   static Double_t SurfaceAboveGeoidRampDem(Double_t longitude, Double_t latitude);
 
-  static TProfile2D *rampMap(int coarseness_factor, int set_log_scale,UInt_t &xBins,UInt_t &yBins) __attribute__((deprecated("Prefer RampdemReader::getMap() with RampdemReader::rampdem data set")));
+  static TProfile2D *rampMap(int coarseness_factor, int set_log_scale,UInt_t &xBins,UInt_t &yBins) __attribute__((deprecated));
 
-  static TProfile2D *rampMapPartial(int coarseness_factor, double centralLon, double centralLat, double rangeMetres, Int_t &xBins, Int_t &yBins, Double_t &xMin, Double_t &xMax, Double_t &yMin, Double_t &yMax)__attribute__((deprecated("Prefer RampdemReader::getMapPartial() with RampdemReader::rampdem data set")));
+  static TProfile2D *rampMapPartial(int coarseness_factor, double centralLon, double centralLat, double rangeMetres, Int_t &xBins, Int_t &yBins, Double_t &xMin, Double_t &xMax, Double_t &yMin, Double_t &yMax)__attribute__((deprecated));
 
 
   static TGaxis *distanceScale(Double_t xMin,Double_t xMax,Double_t yMin,Double_t yMax);
