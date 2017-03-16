@@ -1,6 +1,7 @@
 #include "TGraphAntarctica.h"
 #include "TROOT.h"
 #include "TVirtualPad.h"
+#include "Adu5Pat.h"
 
 ClassImp(TGraphAntarctica)
 
@@ -15,6 +16,46 @@ void TGraphAntarctica::SetPoint(Int_t i, Double_t lon, Double_t lat){
   TGraph::SetPoint(i, easting, northing);
 }
 
+
+
+
+
+
+
+
+TGraphAntarctica::TGraphAntarctica(TChain* chain, TString lonSelector, TString latSelector, TCut cut) : TGraph(){
+
+  TString command = lonSelector + ":" + latSelector;
+
+  const int n = chain->Draw(command, cut, "goff"); // "goff" means graphics off
+  Set(n);
+  Double_t* lons = chain->GetV1();
+  Double_t* lats = chain->GetV2();
+
+  for(int i=0; i < n; i++){
+    fX[i] = lons[i];
+    fY[i] = lats[i];
+    // std::cout << i << "\t" << fX[i] << "\t" << fY[i] << std::endl;
+  }
+  init();
+}
+
+TGraphAntarctica::TGraphAntarctica(TTree* tree, TString lonSelector, TString latSelector, TCut cut) : TGraph(){
+
+  TString command = lonSelector + ":" + latSelector;
+
+  const int n = tree->Draw(command, cut, "goff"); // "goff" means graphics off
+  Set(n);
+  Double_t* lons = tree->GetV1();
+  Double_t* lats = tree->GetV2();
+
+  for(int i=0; i < n; i++){
+    fX[i] = lons[i];
+    fY[i] = lats[i];
+    // std::cout << i << "\t" << fX[i] << "\t" << fY[i] << std::endl;
+  }
+  init();
+}
 
 
 

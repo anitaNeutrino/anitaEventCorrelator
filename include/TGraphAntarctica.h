@@ -15,8 +15,8 @@
 #include "RampdemReader.h"
 #include "TGraphEditor.h"
 #include "AntarcticaBackground.h"
-
-
+#include "TChain.h"
+#include "TCut.h"
 
 
 
@@ -39,15 +39,17 @@ class TGraphAntarctica : public TGraph {
 
 public:
 
+  // "boring" constructors
   TGraphAntarctica() : TGraph() {init();}
-
   explicit TGraphAntarctica(Int_t n) : TGraph(n) {init();}
-
   TGraphAntarctica(Int_t n, const Int_t *x, const Int_t *y) : TGraph(n, x, y) {init();}
   TGraphAntarctica(Int_t n, const Float_t *x, const Float_t *y) : TGraph(n, x, y) {init();}
   TGraphAntarctica(Int_t n, const Double_t *x, const Double_t *y) : TGraph(n, x, y) {init();}
-
   explicit TGraphAntarctica(const TGraph &gr) : TGraph(gr) {init();}
+
+  // interesting constructors
+  TGraphAntarctica(TChain* chain, TString lonSelector, TString latSelector, TCut cut = "");
+  TGraphAntarctica(TTree* tree, TString lonSelector, TString latSelector, TCut cut = "");
 
   // TGraphAntarctica& operator=(const TGraph& gr){
   //   TGraph::operator=(gr);

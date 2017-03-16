@@ -9,6 +9,7 @@
 #include "BaseList.h"
 #include "TStyle.h"
 
+
 ClassImp(AntarcticaBackground)
 
 
@@ -54,8 +55,8 @@ void AntarcticaBackground::init(RampdemReader::dataSet dataSet, Int_t coarseness
   palettes[RampdemReader::rampdem] = kLightTerrain;
   palettes[RampdemReader::bed] = kLake; // maybe a bit intense...
   palettes[RampdemReader::icemask_grounded_and_shelves] = kLightTerrain;
-  palettes[RampdemReader::surface] = kLightTemperature;
-  palettes[RampdemReader::thickness] = kLightTemperature;
+  palettes[RampdemReader::surface] = kLightTerrain;
+  palettes[RampdemReader::thickness] = kRedBlue;
 
 }
 
@@ -67,7 +68,7 @@ void AntarcticaBackground::setPalette(){
   std::map<RampdemReader::dataSet, EColorPalette>::iterator it = palettes.find(fDataSet);
   if(it != palettes.end()){
     gStyle->SetPalette(it->second);
-    gStyle->SetNdivisions(255);
+    gStyle->SetNdivisions(254);
   }
 
 
@@ -413,6 +414,9 @@ void AntarcticaBackground::Draw(Option_t* opt){
 
 
   fDrawnSelf = true;
+
+  SetBit(kMustCleanup);
+  SetBit(kCanDelete); // This means the TPad that we've drawn on owns this, and should delete it when the TPad is destroyed.
   updateGrid();
   ToolTip(fToolTip);
 
