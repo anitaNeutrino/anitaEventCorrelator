@@ -9,6 +9,9 @@
 #pragma link C++ class CorrelationSummaryAnita3+;
 #pragma link C++ class UsefulAdu5Pat+;
 #pragma link C++ namespace AnitaStaticAdu5Offsets;
+#pragma link C++ namespace BaseList+;
+#pragma link C++ class BaseList::base+;
+#pragma link C++ class TGraphAntarctica+;
+#pragma link C++ class AntarcticaBackground+;
 
 #endif
-
