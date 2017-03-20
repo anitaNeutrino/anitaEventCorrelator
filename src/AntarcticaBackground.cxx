@@ -52,17 +52,23 @@ void AntarcticaBackground::init(RampdemReader::dataSet dataSet, Int_t coarseness
 
   fExec = new TExec("fAntarcticaBackgroundExec",Form("%s->setPalette()", fName.Data()));
 
+
+  // at some point, supporting ROOT versions < 6 is gonna be impossible...
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
   palettes[RampdemReader::rampdem] = kLightTerrain;
   palettes[RampdemReader::bed] = kLake; // maybe a bit intense...
   palettes[RampdemReader::icemask_grounded_and_shelves] = kLightTerrain;
   palettes[RampdemReader::surface] = kLightTerrain;
   palettes[RampdemReader::thickness] = kRedBlue;
-
+#endif
 }
 
 
 
 void AntarcticaBackground::setPalette(){
+
+  // at some point, supporting ROOT versions < 6 is gonna be impossible...
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
 
   // here I define the color palettes tbat I want the different data sets to use when they're drawn on the background.
   std::map<RampdemReader::dataSet, EColorPalette>::iterator it = palettes.find(fDataSet);
@@ -70,7 +76,9 @@ void AntarcticaBackground::setPalette(){
     gStyle->SetPalette(it->second);
     gStyle->SetNdivisions(254);
   }
-
+#else
+  std::cerr << __PRETTY_FUNCTION__ << " requires ROOT version at least 6" << std::endl;
+#endif
 
 }
 

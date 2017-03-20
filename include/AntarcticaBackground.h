@@ -15,6 +15,7 @@
 #include "TGToolTip.h"
 #include "TExec.h"
 #include "TColor.h"
+#include "RVersion.h"
 
 class TGraphAntarctica;
 const int defaultCoarseness = 10; // 1 is v slow on my laptop but you might want to do that when you zoom in.
@@ -74,7 +75,12 @@ public:
   static const char* getDefaultName(){return "fAntarctica";}
 
   void setPalette();
+
+  // at some point, supporting ROOT versions < 6 is gonna be impossible...
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
   std::map<RampdemReader::dataSet, EColorPalette> palettes;
+#endif
+
 
 private:
 
