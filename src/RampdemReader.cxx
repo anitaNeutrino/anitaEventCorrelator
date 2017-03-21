@@ -1,8 +1,8 @@
 ////////////////////////////////////////
-//  RampdemReader.cxx : 
+//  RampdemReader.cxx :
 //
 //  More code stolen from Stephen's Antarctica.cxx
-//  that will read in Rampdem data to use with 
+//  that will read in Rampdem data to use with
 //  UsefulAdu5Pat.cxx to locate sources on the continent
 //
 //
@@ -23,63 +23,159 @@
 #include "TColor.h"
 
 
-//Variables for conversion between polar stereographic coordinates and lat/lon.  Conversion equations from ftp://164.214.2.65/pub/gig/tm8358.2/TM8358_2.pdf
-double RampdemReader::scale_factor=0.97276901289;  //scale factor at pole corresponding to 71 deg S latitude of true scale (used in both BEDMAP and RAMP DEM)
-double RampdemReader::ellipsoid_inv_f = 298.257223563; //of Earth
-double RampdemReader::ellipsoid_b = R_EARTH*(1-(1/ellipsoid_inv_f));
-double RampdemReader::eccentricity = sqrt((1/ellipsoid_inv_f)*(2-(1/ellipsoid_inv_f)));
-double RampdemReader::a_bar = pow(eccentricity,2)/2 + 5*pow(eccentricity,4)/24 + pow(eccentricity,6)/12 + 13*pow(eccentricity,8)/360;
-double RampdemReader::b_bar = 7*pow(eccentricity,4)/48 + 29*pow(eccentricity,6)/240 + 811*pow(eccentricity,8)/11520;
-double RampdemReader::c_bar = 7*pow(eccentricity,6)/120 + 81*pow(eccentricity,8)/1120;
-double RampdemReader::d_bar = 4279*pow(eccentricity,8)/161280;
-double RampdemReader::c_0 = (2*R_EARTH / sqrt(1-pow(eccentricity,2))) * pow(( (1-eccentricity) / (1+eccentricity) ),eccentricity/2);
-double RampdemReader::R_factor = scale_factor*c_0 * pow(( (1 + eccentricity*sin(71*TMath::RadToDeg())) / (1 - eccentricity*sin(71*TMath::RadToDeg())) ),eccentricity/2) * tan((TMath::Pi()/4) - (71*TMath::RadToDeg())/2); //varies with latitude, defined here for 71 deg S latitude
-double RampdemReader::nu_factor = R_factor / cos(71*TMath::RadToDeg());
+
+// Typedefs for parsing the surface data
+typedef std::vector<std::vector<short> > VecVec;
+typedef std::map<RampdemReader::dataSet, VecVec > DataMap;
+static DataMap bedMap2Data;
+typedef std::map<RampdemReader::dataSet, Double_t> HeaderMap;
+
+static HeaderMap numXs;
+static HeaderMap numYs;
+static HeaderMap noDatas;
+static HeaderMap minXs;
+static HeaderMap minYs;
+static HeaderMap maxXs;
+static HeaderMap maxYs;
+static HeaderMap cellSizes;
+
+
+// static functions to read in the data / generic fill histogram function.
+static const VecVec& getDataIfNeeded(RampdemReader::dataSet dataSet);
 
 
 
-RampdemReader*  RampdemReader::fgInstance = 0;
+
+//Variables for conversion between polar stereographic coordinates and lat/lon.
+// Conversion equations from ftp://164.214.2.65/pub/gig/tm8358.2/TM8358_2.pdf
+
+// scale factor at pole corresponding to 71 deg S latitude of true scale (used in both BEDMAP and RAMP DEM)
+static double scale_factor=0.97276901289;
+
+static double ellipsoid_inv_f = 298.257223563; //of Earth
+
+// static double ellipsoid_b = R_EARTH*(1-(1/ellipsoid_inv_f)); // Unused.
+
+static double eccentricity = sqrt((1/ellipsoid_inv_f)*(2-(1/ellipsoid_inv_f)));
+
+static double a_bar = pow(eccentricity,2)/2 + 5*pow(eccentricity,4)/24 + pow(eccentricity,6)/12 + 13*pow(eccentricity,8)/360;
+
+static double b_bar = 7*pow(eccentricity,4)/48 + 29*pow(eccentricity,6)/240 + 811*pow(eccentricity,8)/11520;
+
+static double c_bar = 7*pow(eccentricity,6)/120 + 81*pow(eccentricity,8)/1120;
+
+static double d_bar = 4279*pow(eccentricity,8)/161280;
+
+static double c_0 = (2*R_EARTH / sqrt(1-pow(eccentricity,2))) * pow(( (1-eccentricity) / (1+eccentricity) ),eccentricity/2);
+
+// Varies with latitude, defined here for 71 deg S...
+static double R_factor = scale_factor*c_0 * pow(( (1 + eccentricity*sin(71*TMath::RadToDeg())) / (1 - eccentricity*sin(71*TMath::RadToDeg())) ),eccentricity/2) * tan((TMath::Pi()/4) - (71*TMath::RadToDeg())/2);
+
+static double nu_factor = R_factor / cos(71*TMath::RadToDeg());
 
 
 
-RampdemReader::RampdemReader() 
-{
-  //Default constructor
-  // std::cout << "reading the rampdem data" << std::endl;
-  readRAMPDEM();
+
+RampdemReader*  RampdemReader::fgInstance = 0; //!< Pointer to instance.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Default constructor.
+ * This class has been converted so that it works entirely statically
+ * You don't need to call this or create an instance...
+ * Preserved for backward compatibility.
+ *
+ */
+RampdemReader::RampdemReader(){
   fgInstance=this;
 }
 
 
-RampdemReader::~RampdemReader() 
-{
-  //Default destructor
-}
+/**
+ * Default destructor, not used.
+ */
 
-RampdemReader*  RampdemReader::Instance()
-{
+RampdemReader::~RampdemReader(){}
+
+
+
+/**
+ * Instance generated. Deprecated.
+ *
+ *
+ * @return pointer to RampdemReader singleton
+ */
+RampdemReader*  RampdemReader::Instance(){
   //static function
   return (fgInstance) ? (RampdemReader*) fgInstance : new RampdemReader();
 }
 
 
 
-//_______________________________________________________________________________
+
+
+
+
+
+
+
+
+
+/**
+ * Returns the height of the Antarctic surface above the centre of the Earth.
+ *
+ * @param lon is the longitude (degrees)
+ * @param lat is the latitude (degrees)
+ *
+ * @return height of the Antarctic surface above the geoid.
+ */
 Double_t RampdemReader::Surface(Double_t lon,Double_t lat) {
   return (SurfaceAboveGeoid(lon,lat) + Geoid(lat));
-} //Surface
+}
 
 
 
 
-//_______________________________________________________________________________
-Double_t RampdemReader::SurfaceAboveGeoid(Double_t lon, Double_t lat) {
-  //This method returns the elevation above the geoid of the surface of the top of the ice ice (or bare ground, if no ice is present) in meters, at a location specified by a latitude and longitude (in degrees). 
+
+
+
+/**
+ * Returns the elevation above the geoid of the surface of the top of the ice (or bare ground if no ice)
+ * in meters, at a location specified by a latitude and longitude (in degrees).
+ * @param lon is the longiutde (degrees)
+ * @param lat is the latitude (degrees)
+ *
+ * @return elevation above geoid in metres
+ */
+Double_t RampdemReader::SurfaceAboveGeoid(Double_t lon, Double_t lat, RampdemReader::dataSet dataSet) {
+
+  getDataIfNeeded(dataSet);
+  VecVec& surface_elevation = bedMap2Data[dataSet];
+
+  Int_t nCols_surface = numXs[dataSet];
+  Int_t nRows_surface = numYs[dataSet];
+
   Double_t surface=0;
-  //std::cout << "lat " << lat << " lon " << lon << std::endl;
+
   Int_t e_coord_surface=0;
   Int_t n_coord_surface=0;
-  LonLattoEN(lon,lat,e_coord_surface,n_coord_surface);
+  LonLattoEN(lon,lat,e_coord_surface,n_coord_surface, dataSet);
 
   if(e_coord_surface >= nCols_surface || e_coord_surface <0){
 //     std::cerr<<"[RampdemReader::surfaceAboveGeoid]  Error!  Trying to access x-element "<<e_coord_surface<<" of the RAMP DEM data! (Longitude, latitude = "<<lon<<", "<<lat<<")\n";
@@ -93,40 +189,55 @@ Double_t RampdemReader::SurfaceAboveGeoid(Double_t lon, Double_t lat) {
     surface = double(surface_elevation[e_coord_surface][n_coord_surface]);
   }
 
-  //std::cout << "surface height " << surface << " e_co " << e_coord_surface << " n_co " << n_coord_surface << " lon " << lon << " lat " << lat << std::endl;
   return surface;
-} //method SurfaceAboveGeoid
+}
 
 
 
-//_______________________________________________________________________________
+
+
+
+/**
+ * Returns the height of the Earth surface geoid in metres.
+ *
+ * @param latitude in degrees
+ *
+ * @return the height of the geoid in metres
+ */
 Double_t RampdemReader::Geoid(Double_t latitude) {
   return (GEOID_MIN*GEOID_MAX/sqrt(pow(GEOID_MIN,2)-(pow(GEOID_MIN,2)-pow(GEOID_MAX,2))*pow(cos(latitude*TMath::DegToRad()),2)));
-} //Geoid(lat)
+}
 
 
 
 
 
-//_______________________________________________________________________________
-int RampdemReader::readRAMPDEM()
-{
-  bool debug=false;
+
+/**
+ * Function to read in the original RAMPDEM data.
+ * This function is called by getDataIfNeeded, as the RAMPDEM elevation data files have a different format from the BEDMAP2 data
+ *
+ * @return greater than zero if reading/parsing files fails for some reason.
+ */
+int RampdemReader::readRAMPDEM(){
+
+  // std::cerr << __PRETTY_FUNCTION__ <<  std::endl;
 
   char calibDir[FILENAME_MAX];
   char *calibEnv=getenv("ANITA_CALIB_DIR");
   if(!calibEnv) {
-     char *utilEnv=getenv("ANITA_UTIL_INSTALL_DIR");
-     if(!utilEnv)
-	sprintf(calibDir,"calib");
-     else
-	sprintf(calibDir,"%s/share/anitaCalib",utilEnv);
+    char *utilEnv=getenv("ANITA_UTIL_INSTALL_DIR");
+    if(!utilEnv){
+      sprintf(calibDir,"calib");
+    }
+    else{
+      sprintf(calibDir,"%s/share/anitaCalib",utilEnv);
+    }
   }
   else {
     strncpy(calibDir,calibEnv,FILENAME_MAX);
   }
 
-  /** Pick the filenames according to the resolution option I was given. **/
   char dem_filename[FILENAME_MAX];
   char header_filename[FILENAME_MAX];
 
@@ -135,25 +246,33 @@ int RampdemReader::readRAMPDEM()
 
   sprintf(dem_filename,"%s/ramp1kmdem_wgs_v2.bin",calibDir);
   sprintf(header_filename,"%s/ramp1kmdem_wgs_v2.hdr",calibDir);
-  
-  /** Open header and binary files.  Check to make sure the opening was successful, and return 
-      error code 1 if it wasn't. **/
-  dem_header.open(header_filename);
-  if (dem_header.fail())
-    {
-      std::cerr<<"[RampdemReader::readRAMPDEM]  Error!  Could not open header file "<<header_filename<<"!  Exiting method.\n";
-      return 1;
-    } //end if
-  dem_data.open(dem_filename, std::ios::in | std::ios::binary );
-  if (dem_data.fail())
-    {
-      std::cerr<<"[RampdemReader::readRAMPDEM]  Error!  Could not open binary data file "<<dem_filename<<"!  Exiting method.\n";
-      return 1;
-    } //end if
 
-  /** Read the header.  An equals sign preceeds each interesting number, so we can ignore everything up to that. **/
-  //int nRows_surface, nCols_surface, nBytes_surface;
-  double min_value, max_value, mean, std_deviation;
+  /*
+    Open header and binary files.
+    Check to make sure the opening was successful, and return
+    error code 1 if it wasn't.
+  */
+
+  dem_header.open(header_filename);
+  if (!dem_header.is_open()){
+    std::cerr << "[RampdemReader::readRAMPDEM] Error! Could not open header file " << header_filename
+	      << "! Exiting method.\n";
+    return 1;
+  }
+
+  dem_data.open(dem_filename, std::ios::in | std::ios::binary );
+  if (!dem_data.is_open()){
+    std::cerr << "[RampdemReader::readRAMPDEM] Error! Could not open binary data file " << dem_filename
+	      << "! Exiting method.\n";
+    return 1;
+  }
+
+
+  // Read the header.
+  // An equals sign preceeds each interesting number, so we can ignore everything up to that.
+
+  double cell_size, x_min, x_max, y_min, y_max, min_value, max_value, mean, std_deviation;
+  int nRows_surface, nCols_surface, nBytes_surface;
   dem_header.ignore( 5000, '=');
   dem_header >> cell_size;
   dem_header.ignore( 5000, '=');
@@ -180,127 +299,135 @@ int RampdemReader::readRAMPDEM()
   dem_header.ignore( 5000, '=');
   dem_header >> std_deviation;
 
-  if (debug) std::cout<<"cell size = "<<cell_size<<", x_min = "<<x_min<<", x_max = "<<x_max<<", y_min = "<<y_min<<", y_max = "<<y_max<<", mean = "<<mean<<std::endl;
+  numXs[RampdemReader::rampdem] = nRows_surface;
+  numYs[RampdemReader::rampdem] = nCols_surface;
+  minXs[RampdemReader::rampdem] = x_min;
+  minYs[RampdemReader::rampdem] = y_min;
+  maxXs[RampdemReader::rampdem] = x_max;
+  maxYs[RampdemReader::rampdem] = y_max;
+  cellSizes[RampdemReader::rampdem] = cell_size;
+  noDatas[RampdemReader::rampdem] = -9999; // by hand
 
-  /** Now that we know the size of the grid, allocate the memory to store it. **/
-  surface_elevation = std::vector< std::vector<short> >( nCols_surface, std::vector<short>( nRows_surface, 0 ) );
+  // emptry VecVec is now initially put in by the getDataIfNeeded function
+  // bedMap2Data[RampdemReader::rampdem] = VecVec();
 
-  /** Read in the data and store it to the vector. **/
+  VecVec& surface_elevation = bedMap2Data[RampdemReader::rampdem];
+
+  /* Now that we know the size of the grid, allocate the memory to store it. */
+  surface_elevation = std::vector< std::vector<short> >(nCols_surface, std::vector<short>(nRows_surface, 0 ) );
+
+  /* Read in the data and store it to the vector. */
   short temp_data=0;
-  for (unsigned int row_index=0; row_index < surface_elevation[0].size(); ++row_index)
-    for (unsigned int column_index=0; column_index < surface_elevation.size(); ++column_index)
-      {
-	if (!dem_data.read( (char *)&temp_data, sizeof(short) ))
-	  {
-	    std::cerr<<"[RampdemReader::readRAMPDEM]  Error!  Read from data file failed! Row "<<row_index<<", column "<<column_index<<".\n";
-	    return 2;
-	  } //end if
-	RampdemReader::flipEndian( temp_data );
-	surface_elevation[column_index][row_index] = temp_data;
-      } //end for
-
-  if (dem_data.read( (char *)&temp_data, sizeof(short) ))
-    {
-      std::cerr<<"[RampdemReader::readRAMPDEM]  Error!  I could read a value ("<<temp_data<<") from the data file after I thought that it was empty!.\n";
-      return 2;
-    } //end if
-
-  // std::cout<<"[RampdemReader::readRAMPDEM]  Finished reading in RAMP DEM data.\n";
-
-  /** For debugging purposes, look through the data we read in. **/
-  if (debug)
-    {
-      double my_mean = 0;
-      int entries = 0;
-      short my_min=1;
-      short my_max=1;
-      for (unsigned int row_index=0; row_index < surface_elevation[0].size(); ++row_index)
-	for (unsigned int column_index=0; column_index < surface_elevation.size(); ++column_index)
-	  {
-	    int test_int = surface_elevation[column_index][row_index];
-	    //if (test_int != 0)
-	    {
-	      my_mean += double(test_int);
-	      ++entries;
-	    } //end if
-	    if (test_int < my_min) my_min = test_int;
-	    if (test_int > my_max) my_max = test_int;
-	  } //end while
-      std::cout<<entries<<" entries, mean is "<<my_mean/double(entries)<<std::endl;
-      std::cout<<"I found minimum value "<<my_min<<" and maximum value "<<my_max<<std::endl;
-    } //end if (debug)
+  for (unsigned int row_index=0; row_index < surface_elevation[0].size(); ++row_index){
+    for (unsigned int column_index=0; column_index < surface_elevation.size(); ++column_index){
+      if (!dem_data.read( (char *)&temp_data, sizeof(short) )){
+	std::cerr << "[RampdemReader::readRAMPDEM] Error! Read from data file failed! Row " << row_index
+		  << ", column " << column_index << ".\n";
+	return 2;
+      }
+      flipEndian(temp_data);
+      surface_elevation[column_index][row_index] = temp_data;
+    }
+  }
+  if(dem_data.read((char*)&temp_data, sizeof(short))){
+    std::cerr << "[RampdemReader::readRAMPDEM] Error! I could read a value (" << temp_data
+	      << ") from the data file after I thought that it was empty!.\n";
+    return 2;
+  }
 
   dem_header.close();
   dem_data.close();
 
   return 0;
-} //int RampdemReader::readRAMPDEM(int resolution)
-
-
-
-
-//_______________________________________________________________________________
-Double_t RampdemReader::Area(Double_t latitude) {
-  //Returns the area of one square of the BEDMAP data at a given latitude. 
-  Double_t lat_rad = -latitude * TMath::DegToRad();
-  //Double_t lat_rad = (90 - latitude) * TMath::DegToRad();
-
-  return (pow(cell_size* ((1 + sin(71*TMath::DegToRad())) / (1 + sin(lat_rad))),2));
-} //method Area
-
-
-
-
-//_______________________________________________________________________________
-void RampdemReader::LonLattoEN(Double_t lon, Double_t lat, int& e_coord, int& n_coord) {
-  //takes as input a latitude and longitude (in degrees) and converts to indicies for BEDMAP matricies. Needs a location for the corner of the matrix, as not all the BEDMAP files cover the same area.  Code by Stephen Hoover.
-  bool debug=false;
-
-  Double_t easting=0;
-  Double_t northing=0;
-
-//   Double_t lon_rad = lon * TMath::DegToRad(); //convert to radians
-//   Double_t lat_rad = -lat * TMath::DegToRad();
-
-//   R_factor = scale_factor*c_0 * pow(( (1 + eccentricity*sin(lat_rad)) / (1 - eccentricity*sin(lat_rad)) ),eccentricity/2) * tan((TMath::Pi()/4) - lat_rad/2);
-
-//   easting = R_factor * sin(lon_rad);
-//   northing = R_factor * cos(lon_rad);
-
-  LonLatToEastingNorthing(lon,lat,easting,northing);
-  EastingNorthingToEN(easting,northing,e_coord,n_coord);
-
-  if(debug){
-    std::cout << "lon " << lon << " lat " << lat << " easting " << easting << " northing " << northing << " e_coord " << e_coord << " n_coord " << n_coord << std::endl;
-  }
-
-//   e_coord = (int)((easting - x_min) / cell_size);
-//   n_coord = (int)((-1*northing - y_min) / cell_size);
-
-  return;
-} //method LonLattoEN
-
-
-
-
-//_______________________________________________________________________________
-void RampdemReader::EastingNorthingToEN(Double_t easting,Double_t northing,Int_t &e_coord,Int_t &n_coord){
-  bool debug=false;
-  if(debug){
-    std::cout << "easting " << easting << " northing " << northing << " e_coord " << e_coord << " n_coord " << n_coord << " x_min " << x_min << " y_min " << y_min << " cell size " << cell_size << std::endl;
-  }
-  e_coord = (int)((easting - x_min) / cell_size);
-  n_coord = (int)((-1*northing - y_min) / cell_size);
-
-  if(debug){
-    std::cout << "easting " << easting << " northing " << northing << " e_coord " << e_coord << " n_coord " << n_coord << " x_min " << x_min << " y_min " << y_min << " cell size " << cell_size << std::endl;
-  }
 }
 
 
 
-//_______________________________________________________________________________
 
+/**
+ * Returns the area of one square of the BEDMAP data at a given latitude.
+ *
+ * @param latitude is in degrees
+ *
+ * @return the area of in metres
+ */
+Double_t RampdemReader::Area(Double_t latitude, RampdemReader::dataSet dataSet) {
+
+  getDataIfNeeded(dataSet);
+  Double_t cell_size = cellSizes[dataSet];
+
+  Double_t lat_rad = -latitude * TMath::DegToRad();
+
+  return (pow(cell_size* ((1 + sin(71*TMath::DegToRad())) / (1 + sin(lat_rad))),2));
+}
+
+
+
+/**
+ * Takes latitude and longitude (in degrees) and converts to indicies for BEDMAP matricies.
+ * Needs a location for the corner of the matrix, as not all the BEDMAP files cover the same area.
+ * Code by Stephen Hoover.
+ *
+ * @param lon is the longitude in degrees
+ * @param lat is the latitude in degrees
+ * @param e_coord is the bedmap east coordinate index
+ * @param n_coord is the bedmap north coordinate index
+ * @param dataSet is which data set to get the coordinate of
+ */
+// void RampdemReader::LonLattoEN(Double_t lon, Double_t lat, int& e_coord, int& n_coord) {
+void RampdemReader::LonLattoEN(Double_t lon, Double_t lat, int& e_coord, int& n_coord, RampdemReader::dataSet dataSet) {
+
+  getDataIfNeeded(dataSet);
+
+  Double_t easting=0;
+  Double_t northing=0;
+
+  LonLatToEastingNorthing(lon,lat,easting,northing);
+  EastingNorthingToEN(easting,northing,e_coord,n_coord, dataSet);
+
+}
+
+
+
+
+
+
+/**
+ * Converts Easting/northing to RAMPDEM data indices
+ *
+ * @param easting
+ * @param northing
+ * @param e_coord is the easting coordinate index
+ * @param n_coord is the the northing coordinate index
+ * @param dataSet is the data set to get the e/n coordinate of
+ */
+void RampdemReader::EastingNorthingToEN(Double_t easting,Double_t northing,Int_t &e_coord,Int_t &n_coord, RampdemReader::dataSet dataSet){
+
+  getDataIfNeeded(dataSet);
+
+  Int_t x_min = minXs[dataSet];
+  Int_t y_min = minYs[dataSet];
+  Int_t cell_size = cellSizes[dataSet];
+
+  e_coord = (int)((easting - x_min) / cell_size);
+  n_coord = (int)((-1*northing - y_min) / cell_size);
+
+  // std::cout << easting << "\t" << northing << "\t" << e_coord << "\t" << n_coord << std::endl;
+}
+
+
+
+
+
+
+/**
+ * Convert longitude and latitude to easting and northing using the geoid model
+ *
+ * @param lon is the longitude in degrees
+ * @param lat is the latitude in degrees
+ * @param easting in meters
+ * @param northing in meters
+ */
 void RampdemReader::LonLatToEastingNorthing(Double_t lon,Double_t lat,Double_t &easting,Double_t &northing){
 
   Double_t lon_rad = lon * TMath::DegToRad(); //convert to radians
@@ -315,9 +442,25 @@ void RampdemReader::LonLatToEastingNorthing(Double_t lon,Double_t lat,Double_t &
 
 
 
-//_______________________________________________________________________________
-void RampdemReader::ENtoLonLat(Int_t e_coord, Int_t n_coord, Double_t& lon, Double_t& lat) {
-  //Takes as input the indicies from a BEDMAP data set, and turns them into latitude and longitude coordinates.  Information on which data set (surface data, ice depth, water depth) is necessary, in the form of coordinates of a corner of the map.  Code by Stephen Hoover.
+
+
+/**
+ * Takes as input the indicies from a BEDMAP data set, and turns them into latitude and longitude coordinates.
+ * Original code by Stephen Hoover.
+ *
+ * @param e_coord is the easting coordinate
+ * @param n_coord is the northing coordinate
+ * @param lon is the longiude in degrees
+ * @param lat is the latitude in degrees
+ * @param dataSet picks the data set to get the coordinates at the specified lat/lon for.
+ */
+void RampdemReader::ENtoLonLat(Int_t e_coord, Int_t n_coord, Double_t& lon, Double_t& lat, RampdemReader::dataSet dataSet) {
+  //
+
+  getDataIfNeeded(dataSet);
+  Double_t x_min = minXs[dataSet];
+  Double_t y_min = minYs[dataSet];
+  Double_t cell_size = cellSizes[dataSet];
 
   Double_t isometric_lat=0;
   Double_t easting = x_min+(cell_size*(e_coord+0.5)); //Add offset of 0.5 to get coordinates of middle of cell instead of edges.
@@ -361,14 +504,24 @@ void RampdemReader::ENtoLonLat(Int_t e_coord, Int_t n_coord, Double_t& lon, Doub
 
 
 
-//_______________________________________________________________________________
-void RampdemReader::EastingNorthingToLonLat(Double_t easting,Double_t northing,Double_t &lon,Double_t &lat){
+
+
+
+/**
+ * Convert from easting/northing to longitude and latitude
+ *
+ * @param easting in meters
+ * @param northing in meters
+ * @param lon is the longitude
+ * @param lat is the latitude
+ */
+void RampdemReader::EastingNorthingToLonLat(Double_t easting,Double_t northing,Double_t &lon,Double_t &lat, RampdemReader::dataSet dataSet){
 
   Int_t e_coord;
   Int_t n_coord;
 
-  EastingNorthingToEN(easting,northing,e_coord,n_coord);
-  ENtoLonLat(e_coord,n_coord,lon,lat);
+  EastingNorthingToEN(easting,northing,e_coord,n_coord, dataSet);
+  ENtoLonLat(e_coord,n_coord,lon,lat, dataSet);
 
   return;
 
@@ -380,149 +533,80 @@ void RampdemReader::EastingNorthingToLonLat(Double_t easting,Double_t northing,D
 
 
 
-//_______________________________________________________________________________
+/**
+ * DEPRECATED.
+ * Left for backward compatibility, prefer getMap(RampdemReader::rampdem...)
+ *
+ * @param coarseness downsamples the easting/northing bins
+ * @param set_log_scale converts heights to log units
+ * @param xBins is the number of bins on the x-axis
+ * @param yBins is the number of bins on the y-axis
+ *
+ * @return a histogram of the surface elevation from the RAMPDEM data set.
+ */
+TProfile2D *RampdemReader::rampMap(int coarseness, int set_log_scale, UInt_t &xBins, UInt_t &yBins){
 
-TProfile2D *RampdemReader::rampMap(int coarseness_factor, int set_log_scale,UInt_t &xBins,UInt_t &yBins){
+  TProfile2D* theHist = getMap(RampdemReader::rampdem, coarseness);
 
-  //TColor mapColors[20];//={10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29};
-//   TColor mapColors;
-//   Int_t mapColorInts[20];
-//   char colorName[FILENAME_MAX];
-//   for(int i=0;i<20;i++){
-//     sprintf(colorName,"mapColor_%d",i);
-//     if(i==0){
-//       //mapColors.SetRGB(0,0,255);
-//       mapColorInts[i] = mapColors.GetColor(51,51,255);
-//     }
-//     else{
-//       //mapColors.SetRGB(204-60+i*3,255,255);
-//       mapColorInts[i] = mapColors.GetColor(255-133+i*7,255,255);
-//     }
-//     //mapColorInts[i] = 10+i;
-//   }
+  xBins = theHist->GetNbinsX();
+  yBins = theHist->GetNbinsY();
 
-//   //Int_t colz[21]={596,425,425,425,425,425,423,423,423,423,423,422,422,422,422,422,0,0,0,0,0};
-//   gStyle->SetPalette(20,mapColorInts);
-
-  Bool_t debug=false;
-
-  UInt_t num_columns = surface_elevation.size()/coarseness_factor;
-  UInt_t num_rows = surface_elevation[0].size()/coarseness_factor;
-  xBins = num_columns;
-  yBins = num_rows;
-
-  std::cout << "xBins " << xBins << " yBins " << yBins << std::endl;
-
-  //TProfile2D * theHist = new TProfile2D( "antarctica_surface_elevation_hist", "Elevation above geoid (m);Grid E/W axis (m);Grid N/S axis (m)", num_columns, x_min, x_max, num_rows, y_min, y_max+cell_size );
-  TProfile2D * theHist = new TProfile2D( "antarctica_surface_elevation_hist", "", num_columns, x_min, x_max, num_rows, y_min, y_max+cell_size );
-
-  for (unsigned int row_index=0; row_index < surface_elevation[0].size(); ++row_index){
-    if(debug){
-      if(row_index%(surface_elevation[0].size()/100)==0) std::cerr << "*";
+  if(set_log_scale){
+    for(UInt_t bx = 1; bx <= xBins; bx++){
+      for(UInt_t by = 1; by <= yBins; by++){
+	double val = theHist->GetBinContent(bx, by);
+	val += 1000; // avoid negative numbers
+	theHist->SetBinContent(bx, by, TMath::Log10(val));
+      }
     }
-	
-    for (unsigned int column_index=0; column_index < surface_elevation.size(); ++column_index)
-      {
-	if (set_log_scale == 1)
-	  theHist->Fill( x_min + double(column_index)*cell_size, -(y_min + double(row_index)*cell_size), log10(surface_elevation[column_index][row_index]+1000) ); //The "+1000" makes sure everything is positive.
-	else
-	  theHist->Fill( x_min + double(column_index)*cell_size, -(y_min + double(row_index)*cell_size), surface_elevation[column_index][row_index] );
-      } //end for (loop over surface elevation vector)
   }
-  if(debug)
-    std::cout << std::endl;
 
   theHist->SetStats(0);
 
   return theHist;
-
 
 }
 
 
 
 
-TProfile2D *RampdemReader::rampMapPartial(int coarseness_factor,double centralLon,double centralLat,double rangeMetres,Int_t &xBins,Int_t &yBins,Double_t &xMin,Double_t &xMax,Double_t &yMin,Double_t &yMax){
-
-  Bool_t debug=false;
-
-//   TColor mapColors;
-//   Int_t mapColorInts[20];
-//   char colorName[FILENAME_MAX];
-//   for(int i=0;i<20;i++){
-//     sprintf(colorName,"mapColor_%d",i);
-//     if(i==0){
-//       //mapColors.SetRGB(0,0,255);
-//       mapColorInts[i] = mapColors.GetColor(51,51,255);
-//     }
-//     else{
-//       //mapColors.SetRGB(204-60+i*3,255,255);
-//       mapColorInts[i] = mapColors.GetColor(255-133+i*7,255,255);
-//     }
-//     //mapColorInts[i] = 10+i;
-//   }
-
-//   gStyle->SetPalette(20,mapColorInts);
-
-  Int_t central_e_coord,central_n_coord;
-  Int_t max_e_coord,min_e_coord;
-  Int_t max_n_coord,min_n_coord;
-  Double_t central_easting,central_northing;
-  LonLattoEN(centralLon,centralLat,central_e_coord,central_n_coord);
-  LonLatToEastingNorthing(centralLon,centralLat,central_easting,central_northing);
-  EastingNorthingToEN(central_easting+rangeMetres,central_northing+rangeMetres,max_e_coord,max_n_coord);
-  EastingNorthingToEN(central_easting-rangeMetres,central_northing-rangeMetres,min_e_coord,min_n_coord);
+/**
+ * DEPRECATED.
+ * Left for backward compatibility, prefer getMapPartial(RampdemReader::rampdem...)
+ *
+ * @param coarseness downsamples the easting/northing bins
+ * @param centralLon is the latitude (degrees) on which to centre the histogram
+ * @param centralLat is the longitude (degrees) on which to centre the historam
+ * @param rangeMetres is the extent of the histogram edges from the centre point (metres)
+ * @param xBins is the number of bins on the x-axis
+ * @param yBins is the number of bins on the y-axis
+ * @param xMin is the lower limit of the x-axis
+ * @param xMax is the upper limit of the x-axis
+ * @param yMin is the lower limit of the y-axis
+ * @param yMax is the upper limit of the y-axis
+ *
+ * @return a histogram of the surface elevation from the RAMPDEM data set in the specified region.
+ */
+TProfile2D *RampdemReader::rampMapPartial(int coarseness,
+					  double centralLon, double centralLat, double rangeMetres,
+					  Int_t &xBins, Int_t &yBins,
+					  Double_t &xMin, Double_t &xMax,
+					  Double_t &yMin,Double_t &yMax){
 
 
-  if(debug){
-    std::cout << "e_coord: min " << min_e_coord << " central " << central_e_coord << " max " << max_e_coord << std::endl;
-    std::cout << "n_coord: min " << min_n_coord << " central " << central_n_coord << " max " << max_n_coord << std::endl;
-  }
+  TProfile2D* theHist = getMapPartial(RampdemReader::rampdem, coarseness, centralLon, centralLat, rangeMetres);
+  xBins = theHist->GetNbinsX();
+  yBins = theHist->GetNbinsY();
+  xMin = theHist->GetXaxis()->GetBinLowEdge(1);
+  xMax = theHist->GetXaxis()->GetBinLowEdge(xBins+1);
+  yMin = theHist->GetYaxis()->GetBinLowEdge(1);
+  yMax = theHist->GetYaxis()->GetBinLowEdge(yBins+1);
 
-  if(max_e_coord<min_e_coord){
-    Int_t swap_e = max_e_coord;
-    max_e_coord = min_e_coord;
-    min_e_coord = swap_e;
-  }
-  if(max_n_coord<min_n_coord){
-    Int_t swap_n = max_n_coord;
-    max_n_coord = min_n_coord;
-    min_n_coord = swap_n;
-  }
-  xBins = max_e_coord-min_e_coord;
-  yBins = max_n_coord-min_n_coord;
-  xMin = central_easting-rangeMetres;
-  xMax = central_easting+rangeMetres;
-  yMin = central_northing-rangeMetres;
-  yMax = central_northing+rangeMetres;
-
-  char histName[FILENAME_MAX];
-  sprintf(histName,"antarctica_surface_elevation_partial");
-  TProfile2D *theHist = new TProfile2D(histName,"",(max_e_coord-min_e_coord)/coarseness_factor,central_easting-rangeMetres,central_easting+rangeMetres,(max_n_coord-min_n_coord)/coarseness_factor,central_northing-rangeMetres,central_northing+rangeMetres);
-
-  if(debug){
-    std::cout << "e_coord: min " << min_e_coord << " central " << central_e_coord << " max " << max_e_coord << std::endl;
-    std::cout << "n_coord: min " << min_n_coord << " central " << central_n_coord << " max " << max_n_coord << std::endl;
-  }
-
-  for(Int_t row_index=min_n_coord;row_index<=max_n_coord;++row_index){
-    if(row_index>=(int)(surface_elevation[0].size())) continue;
-    for(Int_t column_index=min_e_coord;column_index<=max_e_coord;++column_index){
-
-//       if(debug){
-// 	std::cout << "row " << row_index << " up to " << max_n_coord << std::endl;
-// 	std::cout << "col " << column_index << " up to " << max_e_coord << std::endl;
-//       }
-
-      if(column_index>=(int)(surface_elevation.size())) continue;
-
-      theHist->Fill( x_min + double(column_index)*cell_size, -(y_min + double(row_index)*cell_size), surface_elevation[column_index][row_index]);
-    }
-  }
-
-  theHist->SetStats(0);
   return theHist;
+
 }
+
+
 
 
 
@@ -542,13 +626,472 @@ TGaxis *RampdemReader::distanceScale(Double_t xMin,Double_t xMax,Double_t yMin,D
 
 
 
+/**
+ * Get the corners of the map (for a given data set)
+ *
+ * @param xMin is the minimum easting (metres)
+ * @param yMin is the minimum northing (metres)
+ * @param xMax is the maximum easting (metres)
+ * @param yMax is the maximum northing (metres)
+ * @param dataSet is the data set from which to select the coordinates
+ */
+void RampdemReader::getMapCoordinates(double &xMin, double &yMin,
+				      double &xMax, double &yMax,
+				      RampdemReader::dataSet dataSet){
 
-void RampdemReader::getMapCoordinates(double &xMin,double &yMin,double &xMax,double &yMax){
 
-  xMin = x_min;
-  yMin = y_min;
-  xMax = x_max;
-  yMax = y_max+cell_size;
+
+  getDataIfNeeded(dataSet);
+  xMin = minXs[dataSet];
+  yMin = minYs[dataSet];
+  xMax = maxXs[dataSet];
+  yMax = maxYs[dataSet]+cellSizes[dataSet];
 
 }
 
+
+
+
+/**
+ * Get number of bins in X and Y for any data set
+ *
+ * @param numX
+ * @param numY
+ * @param dataSet
+ */
+void RampdemReader::getNumXY(Int_t& numX, Int_t&numY,
+			     RampdemReader::dataSet dataSet){
+
+  getDataIfNeeded(dataSet);
+  numX = numXs[dataSet];
+  numY = numYs[dataSet];
+
+}
+
+
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////
+//
+//                                   BEDMAP 2 STUFF
+//
+////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+/**
+ * Convert dataSet enum to string for reading in files.
+ *
+ * @param dataSet is the data set
+ *
+ * @return a c string containing the dataSet enum name.
+ */
+static const char* dataSetToString(RampdemReader::dataSet dataSet){
+
+  switch(dataSet){
+  case RampdemReader::rampdem:
+    return "rampdem";
+  case RampdemReader::bed:
+    return "bed";
+  // case RampdemReader::coverage:
+  //   return "coverage";
+  // case RampdemReader::grounded_bed_uncertainty:
+  //   return "grounded_bed_uncertainty";
+  case RampdemReader::icemask_grounded_and_shelves:
+    return "icemask_grounded_and_shelves";
+  // case RampdemReader::lakemask_vostok:
+  //   return "lakemask_vostok";
+  // case RampdemReader::rockmask:
+  //   return "rockmask";
+  case RampdemReader::surface:
+    return "surface";
+  case RampdemReader::thickness:
+    return "thickness";
+  // case RampdemReader::bedmap2_thickness_uncertainty_5km:
+  //   return "bedmap2_thickness_uncertainty_5km";
+  default:
+    std::cerr << "Error in " << __FILE__ << ", unknown RampdemReader::dataSet requested" << std::endl;
+    return NULL;
+  }
+}
+
+
+
+/**
+ * Get z-axis title for any data set
+ *
+ * @param dataSet is the data set
+ *
+ * @return the z-axis title
+ */
+const char* RampdemReader::dataSetToAxisTitle(RampdemReader::dataSet dataSet){
+  // from the bedmap2 readme
+
+  switch(dataSet){
+  case RampdemReader::rampdem:
+    return "Surface height (m)";
+  case RampdemReader::bed:
+    return "Bed height (m)";
+  // case RampdemReader::coverage:
+  //   return "Ice coverage data";
+  // case RampdemReader::grounded_bed_uncertainty:
+  //   return "Bed Uncertainty Grid (m)";
+  case RampdemReader::icemask_grounded_and_shelves:
+    return "Grounding line and floating ice shelves";
+  // case RampdemReader::lakemask_vostok:
+  //   return "lakemask_vostok";
+  // case RampdemReader::rockmask:
+  //   return "Rock Outcrops (m)";
+  case RampdemReader::surface:
+    return "Surface height (m)";
+  case RampdemReader::thickness:
+    return "Ice thickness (m)";
+  // case RampdemReader::bedmap2_thickness_uncertainty_5km:
+  //   return "Ice thickness uncertainty";
+  default:
+    std::cerr << "Error in " << __FILE__ << ", unknown RampdemReader::dataSet requested" << std::endl;
+    return NULL;
+
+  }
+}
+
+
+
+
+
+/**
+ * Handles reading in any data set.
+ * The BEDMAP2 data are handled in this function, RAMPDEM data read in by the old ReadRAMPDEM function
+ *
+ * @param dataSet is the selected data set
+ *
+ * @return a reference to the raw bedmap/rampdem data
+ */
+
+static const VecVec& getDataIfNeeded(RampdemReader::dataSet dataSet){
+
+
+  // If we haven't initialized the map with empty vectors, do it here
+  if(bedMap2Data.size()==0){
+    bedMap2Data[RampdemReader::rampdem] = VecVec();
+    bedMap2Data[RampdemReader::bed] = VecVec();
+    // bedMap2Data[RampdemReader::coverage] = VecVec();
+    // bedMap2Data[RampdemReader::grounded_bed_uncertainty] = VecVec();
+    bedMap2Data[RampdemReader::icemask_grounded_and_shelves] = VecVec();
+    // bedMap2Data[RampdemReader::lakemask_vostok] = VecVec();
+    // bedMap2Data[RampdemReader::rockmask] = VecVec();
+    bedMap2Data[RampdemReader::surface] = VecVec();
+    bedMap2Data[RampdemReader::thickness] = VecVec();
+  }
+
+
+  DataMap::iterator it = bedMap2Data.find(dataSet);
+  if(it==bedMap2Data.end()){
+    std::cerr << "Error in " << __FILE__ << ", unable to find requested data set!" << std::endl;
+    // std::cerr << it->first << std::endl;
+  }
+
+  VecVec& data = it->second;
+
+  // special case for old rampdem data...
+  if(dataSet==RampdemReader::rampdem){
+    if(data.size()==0){
+      RampdemReader::readRAMPDEM();
+    }
+    return data;
+  }
+
+
+  if(data.size() == 0){
+    const char* anitaEnv = "ANITA_UTIL_INSTALL_DIR";
+    const char* anitaUtilInstallDir = getenv(anitaEnv);
+    if(anitaUtilInstallDir==NULL){
+      std::cerr << "Error in " << __FILE__ << ", could not find environment variable " << anitaEnv << std::endl;
+    }
+
+
+    // Start with the anita install directory...
+    std::string fileName(anitaUtilInstallDir);
+    // ... append the calib subdir
+    fileName.append("/share/anitaCalib/bedmap2_bin/bedmap2_");
+
+    // append the appropriate filename
+    const char* dataName = dataSetToString(dataSet);
+    fileName.append(dataName);
+
+    // Header file suffix
+    std::string headName = fileName;
+    headName.append(".hdr");
+
+
+    // Open header file
+    std::ifstream header(headName.c_str());
+    if(!header.is_open()){
+      std::cerr << "Error! Unable to open file " << headName << std::endl;
+      std::cerr << "The BEDMAP2 data set is large and not bundled with anitaEventCorrelator by default." << std::endl;
+      std::cerr << "To download the BEDMAP2 data set and have it installed in the proper place, run the script anitaEventCorrelator/downloadBEDMAP2subset.sh" << std::endl;
+      std::cerr << "If you have a slow internet connection, beware, the total size of the files is ~50MB." << std::endl;
+      std::cerr << "See https://github.com/anitaNeutrino/subsetOfBedmap2Data for more information." << std::endl;
+    }
+    else{
+
+      // Parse and store variables
+      do{
+	std::string key, value;
+	header >> key >> value;
+
+	// Think these are all we care about...
+	if(key=="ncols"){
+	  numXs[dataSet] = atoi(value.c_str());
+	}
+	else if(key=="nrows"){
+	  numYs[dataSet] = atoi(value.c_str());
+	}
+	else if(key=="NODATA_value"){
+	  noDatas[dataSet] = atoi(value.c_str());
+	}
+	else if(key=="xllcorner"){
+	  minXs[dataSet]= atoi(value.c_str());
+	}
+	else if(key=="yllcorner"){
+	  minYs[dataSet] = atoi(value.c_str());
+	}
+	else if(key=="cellsize"){
+	  cellSizes[dataSet] = atoi(value.c_str());
+	}
+	// std::cout << key << "\t" << value << "\t" << header.eof() << std::endl;
+      } while(!header.eof());
+
+
+      // Calculate other edge points.
+      maxXs[dataSet] = minXs[dataSet] + numXs[dataSet]*cellSizes[dataSet];
+      maxYs[dataSet] = minYs[dataSet] + numYs[dataSet]*cellSizes[dataSet];
+
+      // Now get data file...
+      fileName.append(".flt");
+      FILE* fBedMap2 = fopen(fileName.c_str(), "r");
+      if(fBedMap2==NULL){
+	std::cerr << "Error in " << __FILE__ << ", could not open file " << fileName << std::endl;
+      }
+      else{
+	// int nCols = bedMap2Headers[HeaderKey(dataSet, "nrows")];
+	// int nRows = bedMap2Headers[HeaderKey(dataSet, "ncols")];
+
+	const int numX = numXs[dataSet];
+	const int numY = numYs[dataSet];
+
+	std::vector<float> tempData(numX, 0);
+
+	for(int y=0; y < numY; y++){
+	  fread(&tempData[0], sizeof(float), numX, fBedMap2);
+	  data.push_back(std::vector<short>(numX, 0));
+
+	  for(int x = 0; x < numX; x++){
+	    data.at(y).at(x) = short(tempData.at(x));
+	  }
+	}
+
+	fclose(fBedMap2);
+      }
+    }
+  }
+  return data;
+}
+
+
+
+
+
+
+/**
+ * Function to loop over a any created histogram and fill it with a given data set
+ * This won't work unless you created it with the correct limits. (See
+ *
+ * @param theHist is the TProfile2D to be filled
+ * @param dataSet is the selected data set
+ *
+ * @return the same histogram (theHist)
+ */
+TProfile2D* RampdemReader::fillThisHist(TProfile2D* theHist, RampdemReader::dataSet dataSet){
+
+  const VecVec& data = getDataIfNeeded(dataSet);
+  if(data.size() > 0){
+    Double_t cellSize = cellSizes[dataSet];
+
+    Int_t xBins = numXs[dataSet];
+    Int_t yBins = numYs[dataSet];
+
+    Double_t xMin = minXs[dataSet];
+    Double_t yMin = minYs[dataSet];
+
+    // Double_t xMax = maxXs[dataSet];
+    // Double_t yMax = maxYs[dataSet];
+    Double_t noData = noDatas[dataSet];
+
+    if(dataSet==RampdemReader::rampdem){
+      for(UInt_t yBin=0; yBin < data.at(0).size(); yBin++){
+	for(UInt_t xBin=0; xBin < data.size(); xBin++){
+
+	  theHist->Fill(xMin + double(xBin)*cellSize,
+			-(yMin + double(yBin)*cellSize),
+			data.at(xBin).at(yBin));
+	}
+      }
+    }
+    else{
+      for(Int_t yBin=0; yBin < yBins; yBin++){
+	for(Int_t xBin=0; xBin < xBins; xBin++){
+	  if(data[yBin][xBin] != noData){
+	    theHist->Fill(xMin + double(xBin)*cellSize,
+			  -(yMin + double(yBin)*cellSize),
+			  data[yBin][xBin]);
+	  }
+	}
+      }
+    }
+  }
+  theHist->SetStats(0);
+
+  return theHist;
+
+}
+
+
+
+
+/**
+ * Creates a lovely new map of Antarctica from the requested data set with the requested coarseness.
+ *
+ * @param dataSet is the dataSet
+ * @param coarseness is a rebinning factor for X and Y
+ *
+ * @return the new TProfile2D
+ */
+TProfile2D* RampdemReader::getMap(RampdemReader::dataSet dataSet, int coarseness){
+
+  getDataIfNeeded(dataSet);
+
+  Int_t xBins = numXs[dataSet];
+  Int_t yBins = numYs[dataSet];
+
+  Double_t xMin = minXs[dataSet];
+  Double_t yMin = minYs[dataSet];
+
+  Double_t xMax = maxXs[dataSet];
+  Double_t yMax = maxYs[dataSet];
+  Double_t cellSize = cellSizes[dataSet];
+
+  TString hName = TString::Format("h_%s_%d", dataSetToString(dataSet), coarseness);
+  TProfile2D * theHist = new TProfile2D(hName, "",
+					xBins/coarseness, xMin, xMax,
+					yBins/coarseness, yMin, yMax+cellSize);
+
+  fillThisHist(theHist, dataSet);
+  return theHist;
+
+}
+
+
+
+
+
+
+
+
+/**
+ * Create a TProfile2D of the continent with the specified data set, centred on the given coordinates.
+ *
+ * @param dataSet is the selected data set
+ * @param coarseness downsamples the easting/northing bins
+ * @param centralLon is the longitude (degrees) on which to centre the histogram
+ * @param centralLat is the latitude (degrees) on which to centre the histogram
+ * @param rangeMetres is the distance from the centre to any edge of the histogram
+ *
+ * @return the created histogram
+ */
+TProfile2D* RampdemReader::getMapPartial(RampdemReader::dataSet dataSet, int coarseness,
+					 double centralLon, double centralLat, double rangeMetres){
+
+  Int_t central_e_coord,central_n_coord;
+  LonLattoEN(centralLon, centralLat, central_e_coord, central_n_coord, dataSet);
+
+  Double_t central_easting,central_northing;
+  LonLatToEastingNorthing(centralLon, centralLat, central_easting, central_northing);
+
+  Int_t max_e_coord, max_n_coord;
+  EastingNorthingToEN(central_easting + rangeMetres, central_northing + rangeMetres,
+		      max_e_coord, max_n_coord, dataSet);
+
+  Int_t min_e_coord, min_n_coord;
+  EastingNorthingToEN(central_easting - rangeMetres, central_northing - rangeMetres,
+		      min_e_coord, min_n_coord, dataSet);
+
+  if(max_e_coord<min_e_coord){
+    Int_t swap_e = max_e_coord;
+    max_e_coord = min_e_coord;
+    min_e_coord = swap_e;
+  }
+  if(max_n_coord<min_n_coord){
+    Int_t swap_n = max_n_coord;
+    max_n_coord = min_n_coord;
+    min_n_coord = swap_n;
+  }
+
+  Int_t thisXBins = (max_e_coord-min_e_coord)/coarseness;
+  Int_t thisYBins = (max_n_coord-min_n_coord)/coarseness;
+
+  // std::cout << thisXBins << "\t" << thisYBins << std::endl;
+  // std::cout << max_e_coord << "\t" << min_e_coord << std::endl;
+  // std::cout << max_n_coord << "\t" << min_n_coord << std::endl;
+  double thisXMin = central_easting - rangeMetres;
+  double thisXMax = central_easting + rangeMetres;
+  double thisYMin = central_northing - rangeMetres;
+  double thisYMax = central_northing + rangeMetres;
+
+  TString histName = TString::Format("h_%s_partial_%d", dataSetToString(dataSet), coarseness);
+  TProfile2D *theHist = new TProfile2D(histName,"",
+				       thisXBins, thisXMin, thisXMax,
+				       thisYBins, thisYMin, thisYMax);
+
+  fillThisHist(theHist, dataSet);
+
+  return theHist;
+
+}
+
+
+
+/**
+ * Returns true if a specified latitude or longitude is on the continent...
+ * ...according to the RampdemReader::surface model
+ *
+ *
+ * @param lon is the longitude (degrees)
+ * @param lat is the latitude (degrees)
+ *
+ * @return true if on the continent, false otherwise
+ */
+Bool_t RampdemReader::isOnContinent(Double_t lon, Double_t lat){
+  const VecVec& data = getDataIfNeeded(RampdemReader::surface);
+  int e_coord, n_coord;
+  LonLattoEN(lon, lat, e_coord, n_coord, RampdemReader::surface);
+  // std::cout << lon << "\t" << lat << e_coord << "\t" << n_coord << std::endl;
+
+  Bool_t isOnContinent = false;
+  if(n_coord >= 0 && n_coord < numYs[RampdemReader::surface] &&
+     e_coord >= 0 && e_coord < numXs[RampdemReader::surface]){
+
+    if(data.at(n_coord).at(e_coord)!=noDatas[RampdemReader::surface]){
+      isOnContinent = true;
+    }
+
+  }
+  return isOnContinent;
+}
