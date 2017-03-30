@@ -202,6 +202,7 @@ class UsefulAdu5Pat: public Adu5Pat
   
   UInt_t getTaylorDomeTriggerTimeNs(); ///< Gets the time of flight to Taylor Dome
   UInt_t getWaisDivideTriggerTimeNs(); ///< Gets the time of flight to Wais Divide
+  UInt_t getSipleTriggerTimeNs(); ///< Gets the time of flight to Siple
   UInt_t getLDBTriggerTimeNs(); ///< Gets the time of flight to LDB camp
 
   UInt_t getTriggerTimeNsFromSource(Double_t sourceLat, Double_t sourceLong, Double_t sourceAlt); ///< Gets time of flight from any source

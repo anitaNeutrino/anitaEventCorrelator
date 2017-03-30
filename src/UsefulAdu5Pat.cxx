@@ -830,6 +830,13 @@ UInt_t UsefulAdu5Pat::getWaisDivideTriggerTimeNs()
 				    AnitaLocations::ALTITUDE_WAIS);
 }
 
+UInt_t UsefulAdu5Pat::getSipleTriggerTimeNs()
+{
+  return getTriggerTimeNsFromSource(AnitaLocations::LATITUDE_SIPLE,
+				    AnitaLocations::LONGITUDE_SIPLE,
+				    AnitaLocations::ALTITUDE_SIPLE);
+}
+
 UInt_t UsefulAdu5Pat::getLDBTriggerTimeNs()
 {
   return getTriggerTimeNsFromSource(AnitaLocations::LATITUDE_LDB,
