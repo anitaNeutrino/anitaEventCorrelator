@@ -224,6 +224,17 @@ class UsefulAdu5Pat: public Adu5Pat
   Double_t getAzimuthOfSun();
   Double_t getDifferencePointingToSun(Double_t phiAngle, Bool_t inputInDegrees=true);
 
+  /** getReflectionAngle 
+      Returns a source elevation angle, assuming the image is a specular reflection of a source at infinity
+        no refraction is considered
+      added by S. Stafford 02/01/2017
+      Parameters:  
+        plAlt: payload altitude (static method only)
+        imageEl: elevation of the image in payload coords
+        imageAlt: altitude at the reconstruction on continent 
+  **/
+  static Double_t getReflectionAngle(Double_t plAlt, Double_t imageEl, Double_t imageAlt);
+  Double_t getReflectionAngle(Double_t imageEl, Double_t imageAlt);
 
   /** Gets the astronomical coordinates corresponding to a wave coming from phiWave, thetaWave 
    *  

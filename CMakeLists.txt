@@ -42,7 +42,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${UTIL_SHARE_DIR}/cmake/modules/")
 
 
 #---Locate the ROOT package and defines a number of variables (e.g. ROOT_INCLUDE_DIRS)
-find_package(ROOT REQUIRED COMPONENTS MathMore MathCore RIO Hist Tree Net Minuit)
+find_package(ROOT REQUIRED COMPONENTS MathMore MathCore RIO Hist Tree Net Minuit Gui)
 find_package(FFTW REQUIRED)
 find_package(ZLIB REQUIRED)
 
@@ -58,7 +58,7 @@ if(TARGET AnitaEvent)
 else()
  link_directories(${UTIL_LIB_DIR})
 endif()
-  
+
 
 
 
@@ -70,7 +70,7 @@ if( ${ROOT_VERSION} VERSION_GREATER "5.99/99")
     include(${ROOT_USE_FILE})
 else()
 #    include(RootNewMacros)
-     add_definitions(${ROOT_DEFINITIONS})	
+     add_definitions(${ROOT_DEFINITIONS})
 endif()
 
 message("ROOT_INCLUDE_DIRS is set to ${ROOT_INCLUDE_DIRS}")
@@ -80,7 +80,7 @@ include_directories(${PROJECT_SOURCE_DIR} ${ROOT_INCLUDE_DIRS} ${PROJECT_SOURCE_
 add_definitions(${ROOT_CXX_FLAGS})
 
 file(GLOB HEADER_FILES
-    "include/*.h"    
+    "include/*.h"
 )
 
 file(GLOB_RECURSE SOURCE_FILES src/*.cxx)
@@ -110,53 +110,52 @@ install (TARGETS ${libname}
 	ARCHIVE DESTINATION ${UTIL_LIB_DIR}
 	LIBRARY DESTINATION ${UTIL_LIB_DIR}
 	RUNTIME DESTINATION ${UTIL_BIN_DIR})
-      #Only needed for ROOT6      
+      #Only needed for ROOT6
 if( ${ROOT_VERSION} VERSION_GREATER "5.99.99")
   install (FILES ${PROJECT_BINARY_DIR}/${DICTNAME}_rdict.pcm DESTINATION ${UTIL_LIB_DIR})
 #  install (FILES ${PROJECT_BINARY_DIR}/lib${libname}.rootmap DESTINATION ${UTIL_LIB_DIR})
-endif() 
+endif()
 
 install (DIRECTORY data/ DESTINATION ${UTIL_SHARE_DIR}/anitaCalib)
 
 #################################################################################3
-### The default build configuration is INSANE. No optimization? What is this 1971? 
+### The default build configuration is INSANE. No optimization? What is this 1971?
 
-message (" Adding new build type") 
+message (" Adding new build type")
 
-set(CMAKE_CXX_FLAGS_DEFAULT 
-  "-Os -g -Wall" 
-  CACHE STRING "c++ Flags used during default eventReaderRoot builds" 
-  FORCE ) 
-
-set(CMAKE_C_FLAGS_DEFAULT 
+set(CMAKE_CXX_FLAGS_DEFAULT
   "-Os -g -Wall"
-  CACHE STRING "c Flags used during default eventReaderRoot builds" 
-  FORCE ) 
+  CACHE STRING "c++ Flags used during default eventReaderRoot builds"
+  FORCE )
 
-set(CMAKE_EXE_LINKER_FLAGS_DEFAULT 
+set(CMAKE_C_FLAGS_DEFAULT
+  "-Os -g -Wall"
+  CACHE STRING "c Flags used during default eventReaderRoot builds"
+  FORCE )
+
+set(CMAKE_EXE_LINKER_FLAGS_DEFAULT
   "-g"
-  CACHE STRING "ld Flags used during default eventReaderRoot builds" 
-  FORCE ) 
+  CACHE STRING "ld Flags used during default eventReaderRoot builds"
+  FORCE )
 
-set(CMAKE_SHARED_LINKER_FLAGS_DEFAULT 
+set(CMAKE_SHARED_LINKER_FLAGS_DEFAULT
   "-g"
-  CACHE STRING "ld Flags used during default eventReaderRoot builds" 
-  FORCE ) 
+  CACHE STRING "ld Flags used during default eventReaderRoot builds"
+  FORCE )
 
 
-mark_as_advanced ( CMAKE_CXX_FLAGS_DEFAULT CMAKE_C_FLAGS_DEFAULT CMAKE_EXE_LINKER_FLAGS_DEFAULT CMAKE_SHARED_LINKER_FLAGS_DEFAULT) 
+mark_as_advanced ( CMAKE_CXX_FLAGS_DEFAULT CMAKE_C_FLAGS_DEFAULT CMAKE_EXE_LINKER_FLAGS_DEFAULT CMAKE_SHARED_LINKER_FLAGS_DEFAULT)
 
-if (NOT CMAKE_BUILD_TYPE) 
+if (NOT CMAKE_BUILD_TYPE)
   set (CMAKE_BUILD_TYPE Default
     CACHE STRING "Choose tye type of build: None Debug Release RelWithDebInfo MinSizeRel Default"
-    FORCE ) 
+    FORCE )
 endif()
 
 
-add_definitions("-DUSE_FFT_TOOLS") 
+add_definitions("-DUSE_FFT_TOOLS")
 
-option ( FORCE_OLD_GPP_ABI " Force old g++ ABI; this might be necessary if using new g++ with ROOT compiled with older g++ or other similar situations" OFF ) 
-if (FORCE_OLD_GPP_ABI) 
-  add_definitions( -D_GLIBCXX_USE_CXX11_ABI=0 ) 
-endif() 
- 
+option ( FORCE_OLD_GPP_ABI " Force old g++ ABI; this might be necessary if using new g++ with ROOT compiled with older g++ or other similar situations" OFF )
+if (FORCE_OLD_GPP_ABI)
+  add_definitions( -D_GLIBCXX_USE_CXX11_ABI=0 )
+endif()
