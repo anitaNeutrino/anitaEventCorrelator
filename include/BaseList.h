@@ -31,6 +31,7 @@ namespace BaseList{
 
   const base& getBase(UInt_t i);
   void makeBaseList();
+  void makeEmptyBaseList();
   size_t getNumBases();
 
 };

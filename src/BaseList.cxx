@@ -483,6 +483,13 @@ void BaseList::makeBaseList(){
   initializedBaseList = true;
 }
 
+
+void BaseList::makeEmptyBaseList(){
+  baseList.clear();
+  baseList.reserve(150); // approx
+  initializedBaseList = true;
+}
+
 const BaseList::base& BaseList::getBase(UInt_t index){
   if(!initializedBaseList){
     makeBaseList();
