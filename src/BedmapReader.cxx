@@ -144,8 +144,8 @@ Double_t BedmapReader::SurfaceAboveGeoidRampDem(Double_t lon, Double_t lat) {
   double lower = 0;
   double  upper = 0;
   double finalVal = 0;
-  double lowerEl;
-  double upperEl;
+  double lowerEl =0;
+  double upperEl =0;
   double finalEl;
 
 
