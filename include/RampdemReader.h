@@ -80,6 +80,9 @@ public:
   static Double_t Surface(Double_t longitude, Double_t latitude);
   static Double_t SurfaceAboveGeoid(Double_t longitude, Double_t latitude, RampdemReader::dataSet=rampdem);
   static Double_t SurfaceAboveGeoidRampDem(Double_t longitude, Double_t latitude);
+  static Double_t SurfaceAboveGeoidEN(Double_t Easting, Double_t Northing, RampdemReader::dataSet=rampdem);
+
+
 
   static TProfile2D *rampMap(int coarseness_factor, int set_log_scale,UInt_t &xBins,UInt_t &yBins) __attribute__((deprecated));
 

@@ -193,6 +193,37 @@ Double_t RampdemReader::SurfaceAboveGeoid(Double_t lon, Double_t lat, RampdemRea
 }
 
 
+/* this is a copy paste of above more or less :)  */ 
+Double_t RampdemReader::SurfaceAboveGeoidEN(Double_t Easting, Double_t Northing, RampdemReader::dataSet dataSet)
+{
+  getDataIfNeeded(dataSet);
+  VecVec& surface_elevation = bedMap2Data[dataSet];
+
+  Int_t nCols_surface = numXs[dataSet];
+  Int_t nRows_surface = numYs[dataSet];
+
+  Double_t surface=0;
+
+  Int_t e_coord_surface=0;
+  Int_t n_coord_surface=0;
+  EastingNorthingToEN(Easting,Northing,e_coord_surface,n_coord_surface, dataSet);
+
+  if(e_coord_surface >= nCols_surface || e_coord_surface <0){
+//     std::cerr<<"[RampdemReader::surfaceAboveGeoid]  Error!  Trying to access x-element "<<e_coord_surface<<" of the RAMP DEM data! (Longitude, latitude = "<<lon<<", "<<lat<<")\n";
+    return -9999;
+  }
+  else if(n_coord_surface >= nRows_surface || n_coord_surface <0){
+    //     std::cerr<<"[RampdemReader::surfaceAboveGeoid]  Error!  Trying to access y-element "<<n_coord_surface<<" of the RAMP DEM data! (Longitude, latitude = "<<lon<<", "<<lat<<")\n";
+    return -9999;
+  }
+  else{
+    surface = double(surface_elevation[e_coord_surface][n_coord_surface]);
+  }
+
+  return surface;
+}
+
+
 
 
 
