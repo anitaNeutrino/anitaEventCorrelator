@@ -71,10 +71,7 @@ public:
   static void LonLatToEastingNorthing(Double_t lon, Double_t lat, Double_t &easting, Double_t &northing);
 
 
-  // This one should be just a geometrical calculation... however, it uses goes via the EN bins of a dataset
-  // and the internal representation changes between RampDem and BEDMAP2... so beware...
-  // (Can't be bothered to change this at the present time)
-  static void EastingNorthingToLonLat(Double_t easting, Double_t northing, Double_t &lon, Double_t &lat, RampdemReader::dataSet=rampdem);
+  static void EastingNorthingToLonLat(Double_t easting, Double_t northing, Double_t &lon, Double_t &lat);
 
   static Bool_t isOnContinent(Double_t lon, Double_t lat);
 

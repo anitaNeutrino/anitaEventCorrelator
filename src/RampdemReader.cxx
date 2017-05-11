@@ -515,16 +515,15 @@ void RampdemReader::ENtoLonLat(Int_t e_coord, Int_t n_coord, Double_t& lon, Doub
  * @param lon is the longitude
  * @param lat is the latitude
  */
-void RampdemReader::EastingNorthingToLonLat(Double_t easting,Double_t northing,Double_t &lon,Double_t &lat, RampdemReader::dataSet dataSet){
+void RampdemReader::EastingNorthingToLonLat(Double_t easting,Double_t northing,Double_t &lon,Double_t &lat){
 
-  Int_t e_coord;
-  Int_t n_coord;
-
-  EastingNorthingToEN(easting,northing,e_coord,n_coord, dataSet);
-  ENtoLonLat(e_coord,n_coord,lon,lat, dataSet);
-
+  double lon_rad = atan2(easting,northing); 
+  lon = lon_rad * TMath::RadToDeg(); 
+  R_factor = sqrt(easting*easting+northing*northing); 
+  double isometric_lat = (TMath::Pi()/2) - 2*atan(R_factor/(scale_factor*c_0));
+  lat = isometric_lat + a_bar*sin(2*isometric_lat) + b_bar*sin(4*isometric_lat) + c_bar*sin(6*isometric_lat) + d_bar*sin(8*isometric_lat);
+  lat =  -lat*TMath::RadToDeg(); //convert to degrees, with -90 degrees at the south pole
   return;
-
 }
 
 
