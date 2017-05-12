@@ -575,7 +575,7 @@ void AntarcticaBackground::updateToolTip(Int_t event, Int_t x, Int_t y, const ch
     Double_t val = GetBinContent(FindBin(easting, northing));
     // gPad->AbsPixeltoX(y);
     Double_t lon, lat;
-    RampdemReader::EastingNorthingToLonLat(easting, northing, lon, lat, fDataSet);
+    RampdemReader::EastingNorthingToLonLat(easting, northing, lon, lat);
 
     TString theToolTipText = Form("Lon %4.2lf\nLat %4.2lf\n%4.2f%s", lon, lat, val, fToolTipUnits.Data());
 

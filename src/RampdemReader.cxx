@@ -193,6 +193,37 @@ Double_t RampdemReader::SurfaceAboveGeoid(Double_t lon, Double_t lat, RampdemRea
 }
 
 
+/* this is a copy paste of above more or less :)  */ 
+Double_t RampdemReader::SurfaceAboveGeoidEN(Double_t Easting, Double_t Northing, RampdemReader::dataSet dataSet)
+{
+  getDataIfNeeded(dataSet);
+  VecVec& surface_elevation = bedMap2Data[dataSet];
+
+  Int_t nCols_surface = numXs[dataSet];
+  Int_t nRows_surface = numYs[dataSet];
+
+  Double_t surface=0;
+
+  Int_t e_coord_surface=0;
+  Int_t n_coord_surface=0;
+  EastingNorthingToEN(Easting,Northing,e_coord_surface,n_coord_surface, dataSet);
+
+  if(e_coord_surface >= nCols_surface || e_coord_surface <0){
+//     std::cerr<<"[RampdemReader::surfaceAboveGeoid]  Error!  Trying to access x-element "<<e_coord_surface<<" of the RAMP DEM data! (Longitude, latitude = "<<lon<<", "<<lat<<")\n";
+    return -9999;
+  }
+  else if(n_coord_surface >= nRows_surface || n_coord_surface <0){
+    //     std::cerr<<"[RampdemReader::surfaceAboveGeoid]  Error!  Trying to access y-element "<<n_coord_surface<<" of the RAMP DEM data! (Longitude, latitude = "<<lon<<", "<<lat<<")\n";
+    return -9999;
+  }
+  else{
+    surface = double(surface_elevation[e_coord_surface][n_coord_surface]);
+  }
+
+  return surface;
+}
+
+
 
 
 
@@ -515,16 +546,15 @@ void RampdemReader::ENtoLonLat(Int_t e_coord, Int_t n_coord, Double_t& lon, Doub
  * @param lon is the longitude
  * @param lat is the latitude
  */
-void RampdemReader::EastingNorthingToLonLat(Double_t easting,Double_t northing,Double_t &lon,Double_t &lat, RampdemReader::dataSet dataSet){
+void RampdemReader::EastingNorthingToLonLat(Double_t easting,Double_t northing,Double_t &lon,Double_t &lat){
 
-  Int_t e_coord;
-  Int_t n_coord;
-
-  EastingNorthingToEN(easting,northing,e_coord,n_coord, dataSet);
-  ENtoLonLat(e_coord,n_coord,lon,lat, dataSet);
-
+  double lon_rad = atan2(easting,northing); 
+  lon = lon_rad * TMath::RadToDeg(); 
+  R_factor = sqrt(easting*easting+northing*northing); 
+  double isometric_lat = (TMath::Pi()/2) - 2*atan(R_factor/(scale_factor*c_0));
+  lat = isometric_lat + a_bar*sin(2*isometric_lat) + b_bar*sin(4*isometric_lat) + c_bar*sin(6*isometric_lat) + d_bar*sin(8*isometric_lat);
+  lat =  -lat*TMath::RadToDeg(); //convert to degrees, with -90 degrees at the south pole
   return;
-
 }
 
 

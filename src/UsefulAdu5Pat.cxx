@@ -464,8 +464,9 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
 
 
 void UsefulAdu5Pat::getThetaAndPhiWaveWaisDivide(Double_t &thetaWave, Double_t &phiWave)
-{
-  return getThetaAndPhiWave(AnitaLocations::LONGITUDE_WAIS,AnitaLocations::LATITUDE_WAIS,AnitaLocations::ALTITUDE_WAIS,thetaWave,phiWave);
+{  
+  return getThetaAndPhiWave(AnitaLocations::getWaisLongitude(), AnitaLocations::getWaisLatitude(),AnitaLocations::getWaisAltitude(),thetaWave,phiWave);
+  // return getThetaAndPhiWave(AnitaLocations::LONGITUDE_WAIS,AnitaLocations::LATITUDE_WAIS,AnitaLocations::ALTITUDE_WAIS,thetaWave,phiWave);  
 }
 
 void UsefulAdu5Pat::getThetaAndPhiWaveLDB(Double_t &thetaWave, Double_t &phiWave)

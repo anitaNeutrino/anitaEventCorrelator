@@ -13,5 +13,8 @@
 #pragma link C++ class BaseList::base+;
 #pragma link C++ class TGraphAntarctica+;
 #pragma link C++ class AntarcticaBackground+;
+#pragma link C++ class AntarcticSegmentationScheme;
+#pragma link C++ class AntarcticCoord;
+#pragma link C++ class StereographicGrid;
 
 #endif
