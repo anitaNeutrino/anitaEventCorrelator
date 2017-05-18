@@ -137,6 +137,15 @@ class PrettyAnitaEvent: public UsefulAnitaEvent
   */  
   CorrelationSummaryAnita3 *getCorrelationSummaryAnita3(Int_t centreAnt,AnitaPol::AnitaPol_t pol,Double_t deltaT=0);
 
+  //! Generates a CorrelationSummaryAnita3 object for a set of 15 antennas.
+  /*!
+    \param centreAnt The number of one of the antennas in the centre of the set of 10.
+    \param pol Which polarisation to use?
+    \param deltaT An optional value to use if interpolation is required. This value is taking as being the desired sampling period of the interpolated waveforms.
+    \return A pointer to the CorrelationSummaryAnita3 object that is created.
+    Only the antenna positions are filled in this function, not the correlation values!!!
+  */
+  CorrelationSummaryAnita3 *createCorrelationSummaryAnita3(Int_t centreAnt,AnitaPol::AnitaPol_t pol, Double_t deltaT=0);
 
   //Canvas panel getters
   //! Generates a TCanvas with six waveforms plotted in it.

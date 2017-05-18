@@ -1575,7 +1575,9 @@ CorrelationSummary *PrettyAnitaEvent::getCorrelationSummary(Int_t centreAnt,Anit
 }
 
 
-CorrelationSummaryAnita3 *PrettyAnitaEvent::getCorrelationSummaryAnita3(Int_t centreAnt,AnitaPol::AnitaPol_t pol, Double_t deltaT)
+
+
+CorrelationSummaryAnita3 *PrettyAnitaEvent::createCorrelationSummaryAnita3(Int_t centreAnt,AnitaPol::AnitaPol_t pol, Double_t deltaT)
 {
   //Gets the 11 correlations and then takes the max, rms and neighbouring maxima
   if(centreAnt<0)
@@ -1712,7 +1714,14 @@ CorrelationSummaryAnita3 *PrettyAnitaEvent::getCorrelationSummaryAnita3(Int_t ce
    theSum->secondAnt[50] = nineAnts[5];
    theSum->firstAnt[51]  = nineAnts[6];
    theSum->secondAnt[51] = nineAnts[8];
-   
+
+   return theSum;
+}
+
+
+CorrelationSummaryAnita3 *PrettyAnitaEvent::getCorrelationSummaryAnita3(Int_t centreAnt,AnitaPol::AnitaPol_t pol, Double_t deltaT){
+
+  CorrelationSummaryAnita3 *theSum = createCorrelationSummaryAnita3(centreAnt, pol, deltaT);
 
    //Now can make correlations and find max, rms, etc.
    for(int corInd=0;corInd<NUM_CORRELATIONS_ANITA3;corInd++) {
