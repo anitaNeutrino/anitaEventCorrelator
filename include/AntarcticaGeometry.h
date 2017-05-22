@@ -2,11 +2,15 @@
 #define ANTARCTICA_GEOM_H
 
 
+
 /** Some things to help divide up Antarctica 
  * Cosmin Deaconu <cozzyd@kicp.uchicago.edu> 
  * */ 
 
 #include "RampdemReader.h" 
+
+
+
 
 /** Slightly smarter Antarctic Coordinates.  */ 
 class AntarcticCoord
@@ -26,6 +30,8 @@ class AntarcticCoord
       set (coord_type,xval,yval,zval) ; 
     }
 
+
+    virtual ~AntarcticCoord() { ; } 
     void set(CoordType coord_type , double xval , double yval , double zval )
     {
       type = coord_type; 
@@ -50,6 +56,8 @@ class AntarcticCoord
   private:
     CoordType type; 
     void convert(CoordType new_type); 
+
+    ClassDef(AntarcticCoord,1); 
 
 }; 
 
@@ -105,8 +113,14 @@ class AntarcticSegmentationScheme {
      * */ 
     virtual AntarcticCoord * sampleSegment(int idx, int N, AntarcticCoord * fillus = 0, bool random = true, bool fillalt = true ) const = 0; 
 
-    /** Draw the segmentation scheme in Stereographic Coords. Default implementation samples each segment 64 times  and draws as a TGraph2D with z = segment number*/
-    virtual void Draw(const char * opt = "colz") const; 
+    /** Draw the segmentation scheme in Stereographic Coords. Default implementation samples each segment 64 times  and draws as a TGraph2D with z = segment numbe
+     *
+     *
+     * if data is 0, draws the index of each segment, otherwise draws the value in data[i] for each segment.
+     * */
+    virtual void Draw(const char * opt = "colz", const double * data = 0 ) const; 
+    virtual void Draw(const char * opt = "colz", const int * data = 0 ) const; 
+
 
 
     virtual void setRampdemDataset( RampdemReader::dataSet d)  { dataset = d; } 
@@ -114,6 +128,8 @@ class AntarcticSegmentationScheme {
   protected: 
     AntarcticSegmentationScheme() :  dataset (RampdemReader::rampdem) { ;} 
     RampdemReader::dataSet dataset; 
+
+    ClassDef(AntarcticSegmentationScheme,1); 
 
 }; 
 
@@ -130,9 +146,10 @@ class StereographicGrid : public AntarcticSegmentationScheme
     virtual int NSegments() const { return nx * ny; } 
     virtual void getSegmentCenter(int idx, AntarcticCoord * fill, bool fillalt=true) const; 
     virtual AntarcticCoord * sampleSegment(int idx, int N, AntarcticCoord * fillus = 0, bool random = true, bool fillalt = true) const; 
-    virtual void Draw(const char * opt = "colz") const; 
+    virtual void Draw(const char * opt = "colz", const double * data = 0) const; 
 
   private:
+
     int nx; 
     int ny; 
     double max_E; 
@@ -140,7 +157,27 @@ class StereographicGrid : public AntarcticSegmentationScheme
     double dx; 
     double dy; 
 
+    ClassDef(StereographicGrid,1); 
+
 
 }; 
+
+
+/*
+class HealPixSegmentation : public AntarcticSegmentationScheme
+{
+
+  public: 
+    HealPixSegmentation(int npix, double max_lat = 60); 
+    virtual ~HealPixSegmentation(); 
+    virtual int getSegmentIndex(const AntarcticCoord & coord) const; 
+    virtual int NSegments() const { return nx * ny; } 
+    virtual void getSegmentCenter(int idx, AntarcticCoord * fill, bool fillalt=true) const; 
+    virtual AntarcticCoord * sampleSegment(int idx, int N, AntarcticCoord * fillus = 0, bool random = true, bool fillalt = true) const; 
+  private:
+
+}; 
+
+*/
 
 #endif
