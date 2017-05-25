@@ -16,5 +16,6 @@
 #pragma link C++ class AntarcticSegmentationScheme;
 #pragma link C++ class AntarcticCoord;
 #pragma link C++ class StereographicGrid;
+#pragma link C++ class PayloadParameters;
 
 #endif

@@ -1,20 +1,23 @@
 #include "AntarcticaGeometry.h" 
 #include "AnitaGeomTool.h" 
 #include "RampdemReader.h" 
-
+#include "Adu5Pat.h" 
+#include "FFTtools.h"
+#include "UsefulAdu5Pat.h" 
 #include "TRandom.h" 
 #include "TGraph2D.h" 
 #include "TString.h" 
 
 ClassImp(AntarcticCoord); 
 ClassImp(AntarcticSegmentationScheme); 
+ClassImp(PayloadParameters); 
 ClassImp(StereographicGrid); 
 
 
 void AntarcticCoord::asString(TString * s) const
 {
 
-  if (type == CARTESIAN) 
+  if (type == WGS84) 
   {
     s->Form("%g N %g E %g m",x,y,z); 
   }
@@ -30,6 +33,50 @@ void AntarcticCoord::asString(TString * s) const
   }
 
 }
+
+PayloadParameters::PayloadParameters() 
+{
+  memset(this,0,sizeof(PayloadParameters)); 
+
+}
+
+PayloadParameters::PayloadParameters(const Adu5Pat * gps, const AntarcticCoord & source_pos) 
+  : payload(AntarcticCoord::WGS84, gps->latitude, gps->longitude, gps->altitude), 
+    source(source_pos)
+{
+  payload.to(AntarcticCoord::CARTESIAN); 
+  //vector from source to payload
+
+
+  TVector3 p = payload.v(); 
+  TVector3 s = source.v(); 
+
+  TVector3 sprime = s; 
+  // this is stolen from AnitaGeomTool. Seems like it should be equivalent to a rotateUZ
+  sprime.RotateZ(-1 * p.Phi()); 
+  sprime.RotateY(-1 * p.Theta()); 
+  sprime[2]=p.Mag()-sprime.z(); 
+
+  sprime.RotateZ(gps->heading*TMath::DegToRad()); 
+  //TODO: check if these axes need modification 
+  sprime.RotateY(-AnitaStaticAdu5Offsets::pitch *TMath::DegToRad()); 
+  sprime.RotateX(-AnitaStaticAdu5Offsets::roll *TMath::DegToRad()); 
+
+  source_phi = FFTtools::wrap(sprime.Phi() * TMath::RadToDeg(),360); 
+  source_theta = 90 - sprime.Theta() * TMath::RadToDeg(); 
+
+  //Now do the opposite 
+  TVector3 pprime = p;
+  pprime.RotateZ(-1*s.Phi()); 
+  pprime.RotateY(-1*s.Theta()); 
+  pprime[2] = pprime.z()-s.Mag(); 
+  payload_el = 90-pprime.Theta() * TMath::RadToDeg(); 
+  payload_az = pprime.Phi() * TMath::RadToDeg(); 
+
+  distance = (source.v() - payload.v()).Mag(); 
+}
+
+
 
 void AntarcticCoord::convert(CoordType t)
 {
@@ -123,7 +170,7 @@ AntarcticSegmentationScheme * AntarcticSegmentationScheme::factory(const char * 
 
 const int nsamples = 64; 
 
-void AntarcticSegmentationScheme::Draw(const char * opt, const int * idata) const 
+void AntarcticSegmentationScheme::DrawI(const char * opt, const int * idata) const 
 {
   int N = NSegments(); 
   double * data = 0;
@@ -249,6 +296,42 @@ void StereographicGrid::Draw(const char * opt, const double * data) const
     }
   }
   h.DrawCopy(opt); 
+}
+
+void StereographicGrid::asString(TString * str) const
+{
+  str->Form("stereographic_grid_%d_%d_%d_%d", nx,ny,(int) max_E,(int) max_N); 
+}
+
+
+
+int StereographicGrid::getNeighbors(int segment, std::vector<int> * neighbors) const
+{
+
+  int N = 0; 
+
+  bool left_edge = (segment % nx ) == 0; 
+  bool right_edge = (segment % nx ) == nx-1 ; 
+  bool top_edge = (segment / ny ) == 0; 
+  bool bottom_edge = (segment / ny ) == ny-1 ; 
+
+  int start_x = left_edge ? 0 : -1; 
+  int end_x = right_edge ? 0 : 1; 
+  int start_y = top_edge ? 0 : -1; 
+  int end_y = bottom_edge ? 0 : 1; 
+
+  for (int i = start_x; i <= end_x; i++) 
+  {
+    for (int j = start_y; j <= end_y; j++)
+    {
+      if (i == 0 && j == 0) continue; 
+
+      N++; 
+      if (neighbors) neighbors->push_back(segment + i + j *nx); 
+    }
+  }
+
+  return N; 
 }
 
 
