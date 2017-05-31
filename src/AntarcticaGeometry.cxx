@@ -52,13 +52,15 @@ PayloadParameters::PayloadParameters(const Adu5Pat * gps, const AntarcticCoord &
   TVector3 s = source.v(); 
 
   TVector3 sprime = s; 
-  // this is stolen from AnitaGeomTool. Seems like it should be equivalent to a rotateUZ
+  // this is stolen from AnitaGeomTool. Seems like it should be equivalent to a some form of rotateUz 
+  // wihch would probably be a more efficient way to do this without trig functions 
   sprime.RotateZ(-1 * p.Phi()); 
   sprime.RotateY(-1 * p.Theta()); 
   sprime[2]=p.Mag()-sprime.z(); 
 
   sprime.RotateZ(gps->heading*TMath::DegToRad()); 
-  //TODO: check if these axes need modification 
+
+  //TODO: check if these axes need modification. Right now pitch and roll are 0 :) 
   sprime.RotateY(-AnitaStaticAdu5Offsets::pitch *TMath::DegToRad()); 
   sprime.RotateX(-AnitaStaticAdu5Offsets::roll *TMath::DegToRad()); 
 
