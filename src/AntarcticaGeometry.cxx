@@ -112,7 +112,7 @@ void AntarcticCoord::convert(CoordType t)
 
     else if (t == CARTESIAN) 
     {
-      //be lazy 
+     //be lazy 
       convert(WGS84); 
       convert(CARTESIAN); 
     }
@@ -261,7 +261,7 @@ AntarcticCoord * StereographicGrid::sampleSegment(int idx, int N, AntarcticCoord
     for (int i = 0; i < N; i++)
     {
       double x = gRandom->Uniform(lx, lx+dx); 
-      double y = gRandom->Uniform(ly, ly+dy); 
+      double y = gRandom->Uniform(ly, ly-dy); 
       double z = fillalt ? RampdemReader::SurfaceAboveGeoidEN(x,y,dataset): 0; 
       fill[i].set(AntarcticCoord::STEREOGRAPHIC,x,y,z); 
     }
@@ -273,8 +273,8 @@ AntarcticCoord * StereographicGrid::sampleSegment(int idx, int N, AntarcticCoord
     for (int i = 0; i < N; i++)
     {
       //TODO check if this is what i want! 
-      double x = lx + (dx / (grid+1)) * (1+(i % grid)); 
-      double y = ly + (dy / (grid+1)) * (1+(i / grid)); 
+      double x = lx + (dx / (grid-1)) * ((i % grid)); 
+      double y = ly - (dy / (grid-1)) * ((i / grid)); 
       double z = fillalt ? RampdemReader::SurfaceAboveGeoidEN(x,y,dataset): 0; 
       fill[i].set(AntarcticCoord::STEREOGRAPHIC,x,y,z); 
     }
@@ -287,13 +287,17 @@ AntarcticCoord * StereographicGrid::sampleSegment(int idx, int N, AntarcticCoord
 
 void StereographicGrid::Draw(const char * opt, const double * data) const
 {
-  TH2I h("tmp","Stereographic Grid", nx, -max_E, max_E, ny, -max_N, max_N); 
+  TH2D h("tmp","Stereographic Grid", nx, -max_E, max_E, ny, -max_N, max_N); 
   for (int i = 1; i <= nx; i++) 
   {
     for (int j = 1; j <= ny; j++) 
     {
       AntarcticCoord c(AntarcticCoord::STEREOGRAPHIC, h.GetXaxis()->GetBinCenter(i), h.GetYaxis()->GetBinCenter(j));
       int idx = getSegmentIndex(c); 
+      if (data && data[idx] > 0)
+      {
+//        printf("%d %d %d %g\n", i,j,idx,data[idx]); 
+      }
       h.SetBinContent(i,j,  data ? data[idx] : idx); 
     }
   }
