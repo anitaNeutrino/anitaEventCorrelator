@@ -162,7 +162,7 @@ class StereographicGrid : public AntarcticSegmentationScheme
 {
 
   public:
-    StereographicGrid(int nx = 100, int ny = 100,  double max_E = 3330000, double max_N = 3330000); 
+    StereographicGrid(int nx = 512, int ny = 512,  double max_E = 3330000, double max_N = 3330000); 
     virtual ~StereographicGrid()  {; } 
     virtual int getSegmentIndex(const AntarcticCoord & coord) const; 
     virtual int getNeighbors(int segment, std::vector<int> * neighbors = NULL) const; 
