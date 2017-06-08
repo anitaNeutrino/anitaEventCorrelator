@@ -1,4 +1,4 @@
-#include "IGRF.h"
+#include "GeoMagnetic.h"
 #include "TH2D.h"
 #include "AnitaGeomTool.h"
 #include "TGraph.h"
@@ -45,9 +45,9 @@ void testIGRF(){
     for(int bx=1; bx <= nx;  bx++){
       double lon = hL->GetXaxis()->GetBinLowEdge(bx);
       double phi = hS->GetXaxis()->GetBinLowEdge(bx)*TMath::DegToRad();
-      double Z_spherical = IGRF::ZFromSpherical(0, r, theta, phi);
+      double Z_spherical = GeoMagnetic::Z_atSpherical(0, r, theta, phi);
       hS->SetBinContent(bx, by, Z_spherical);
-      double Z_lla = IGRF::ZFromLonLatAlt(0, lon, lat, 0);
+      double Z_lla = GeoMagnetic::Z_atLonLatAlt(0, lon, lat, 0);
       std::cout << Z_lla << std::endl;
       hL->SetBinContent(bx, by, Z_lla);
       
