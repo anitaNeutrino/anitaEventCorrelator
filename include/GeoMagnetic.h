@@ -24,5 +24,7 @@ namespace GeoMagnetic{
   double Z_atLonLatAlt(UInt_t unixTime, double lon,  double lat, double alt);
   double Z_atSpherical(UInt_t unixTime, double r,  double theta, double phi);
 
+  std::vector<double> XYZ_atSpherical(UInt_t unixTime, double r, double theta, double phi);
+
 }
 #endif

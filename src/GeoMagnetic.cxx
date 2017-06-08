@@ -258,9 +258,11 @@ void lonLatAltToSpherical(double lon, double lat, double alt, double& r, double&
   phi = -TMath::ATan2(y, x) + 0.5*TMath::Pi();
   phi = phi >= TMath::Pi() ?  phi - TMath::TwoPi() : phi;
 
-  std::cout << lon <<  "\t" << lat << "\t" << alt  << std::endl;
-  std::cout << phi*TMath::RadToDeg() << "\t" << theta*TMath::RadToDeg() << "\t" << r << std::endl << std::endl;
+  // std::cout << lon <<  "\t" << lat << "\t" << alt  << std::endl;
+  // std::cout << phi*TMath::RadToDeg() << "\t" << theta*TMath::RadToDeg() << "\t" << r << std::endl << std::endl;
 }
+
+
 
 
 
@@ -379,6 +381,17 @@ double GeoMagnetic::getPotentialAtSpherical(UInt_t unixTime, double r, double th
   }
   
   return V;
+}
+
+
+std::vector<double> GeoMagnetic::XYZ_atSpherical(UInt_t unixTime, double r, double theta, double phi){
+  init();
+
+  std::vector<double> vec(3);
+  vec[0] = X_atSpherical(unixTime, r,  theta, phi);
+  vec[1] = Y_atSpherical(unixTime, r,  theta, phi);
+  vec[2] = Z_atSpherical(unixTime, r,  theta, phi);
+  return vec;
 }
 
 

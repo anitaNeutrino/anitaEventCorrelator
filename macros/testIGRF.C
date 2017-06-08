@@ -28,37 +28,57 @@ void testIGRF(){
 
   const int nx = 360;
   const int ny = 180;
-  auto hS = new TH2D("hS", "Z component of geo-magnetic field (spherical coordinates)",
+  auto hZ = new TH2D("hZ", "Z component of geo-magnetic field (spherical coordinates)",
                      nx, -180, 180,
                      ny, 0,  180);
                     // ny, -180,  0);
+  auto hY = new TH2D("hY", "Y component of geo-magnetic field (spherical coordinates)",
+                     nx, -180, 180,
+                     ny, 0,  180);
+  auto hX = new TH2D("hX", "X component of geo-magnetic field (spherical coordinates)",
+                     nx, -180, 180,
+                     ny, 0,  180);
+
+  
   auto hL = new TH2D("hL", "Z component of geo-magnetic field (lon/lat/alt)",
                      nx, -180, 180,
                      ny, -90,  90);
                     // ny, -180,  0);
+
   
   const double r = 6371.2e3;
     
   for(int by=1; by <= ny;  by++){
     double lat = hL->GetYaxis()->GetBinLowEdge(by);
-    double theta = hS->GetYaxis()->GetBinLowEdge(by)*TMath::DegToRad();
+    double theta = hZ->GetYaxis()->GetBinLowEdge(by)*TMath::DegToRad();
     for(int bx=1; bx <= nx;  bx++){
       double lon = hL->GetXaxis()->GetBinLowEdge(bx);
-      double phi = hS->GetXaxis()->GetBinLowEdge(bx)*TMath::DegToRad();
-      double Z_spherical = GeoMagnetic::Z_atSpherical(0, r, theta, phi);
-      hS->SetBinContent(bx, by, Z_spherical);
+      double phi = hZ->GetXaxis()->GetBinLowEdge(bx)*TMath::DegToRad();
+
+      std::vector<double> XYZ = GeoMagnetic::XYZ_atSpherical(0, r, theta, phi);      
+      
+      hZ->SetBinContent(bx, by, XYZ[2]);
+      hY->SetBinContent(bx, by, XYZ[1]);
+      hX->SetBinContent(bx, by, XYZ[0]);
       double Z_lla = GeoMagnetic::Z_atLonLatAlt(0, lon, lat, 0);
-      std::cout << Z_lla << std::endl;
+      // std::cout << Z_lla << std::endl;
       hL->SetBinContent(bx, by, Z_lla);
       
     }
   }
   auto c1 = new TCanvas();
-  c1->Divide(2);
-  c1->cd(1);
-  hS->Draw("colz");
-  c1->cd(2);
   hL->Draw("colz");
+
+  auto c1b = new TCanvas();
+  c1b->Divide(3);
+  c1b->cd(1);
+  hX->Draw("colz");
+  c1b->cd(2);
+  hY->Draw("colz");
+  c1b->cd(3);
+  hZ->Draw("colz");
+
+  return;
 
   auto c2 = new TCanvas();  
   TGraph* grTheta = new TGraph();
