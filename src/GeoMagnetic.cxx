@@ -26,9 +26,50 @@ std::map<int, std::vector<double> > h_vs_time; // Gauss coefficients (needed to 
 const double earth_radius = 6371.2e3; // earth radius in meters for the magnetic model
 TF1* fAssocLegendre[numPoly][numPoly] = {{NULL}}; // Associated Legendre polynomials
 
+
+
+// for differentiating the potential
+const double dr = 1;
+const double dTheta = 0.01*TMath::DegToRad();  
+const double dPhi = 0.01*TMath::DegToRad();
+
+typedef enum {
+  r_hat,
+  theta_hat,
+  phi_hat
+} unitVec;
+
+
+
 // --------------------------------------------------------------------------------------------------------------------------------------
 // Utility functions, for initialisation and internal calculation
 // --------------------------------------------------------------------------------------------------------------------------------------
+
+TVector3 makeUnitVectorSpherical(double theta, double phi, unitVec dir){
+  TVector3 unit;
+  switch(dir){
+    case r_hat:
+      unit.SetXYZ(TMath::Sin(theta)*TMath::Cos(phi),
+                  TMath::Sin(theta)*TMath::Sin(phi),
+                  TMath::Cos(theta));
+    break;    
+    
+    case theta_hat:
+      unit.SetXYZ(TMath::Cos(theta)*TMath::Cos(phi),
+                  TMath::Cos(theta)*TMath::Sin(phi),
+                  -TMath::Sin(theta));
+    break;
+    case phi_hat:
+      unit.SetXYZ(-TMath::Sin(phi),
+                  TMath::Cos(phi),
+                  0);
+      break;
+    default:
+      std::cerr << "Error in " << __FILE__ << ", unknown unit vector requested..." << std::endl;
+      break;
+  }
+  return unit;
+}
 
 /** 
  * Maps the polynomials degree(n) and order (n) to an index for the vectors inside the g_vs_time, g_vs_time maps
@@ -153,8 +194,12 @@ void getGaussCoefficients(){
       }
     }
   }
-
 }
+
+
+
+
+
 
 
 /** 
@@ -262,6 +307,31 @@ void lonLatAltToSpherical(double lon, double lat, double alt, double& r, double&
   // std::cout << phi*TMath::RadToDeg() << "\t" << theta*TMath::RadToDeg() << "\t" << r << std::endl << std::endl;
 }
 
+
+
+/** 
+ * Convert from spherical polar (r, theta, phi) to lon, lat, alt
+ * 
+ * @param lon is the longitude (degrees)
+ * @param lat is the latitude (degrees)
+ * @param alt is the altitude (meters)
+ * @param r is the radial position (meters)
+ * @param theta is the elevation angle (radians), theta = 0 at the north pole, increases to pi at the south pole
+ * @param phi is the azimuthal angle (radians), east is +ve, west is -ve.
+ */
+void sphericalToLatLonAlt(double& lon, double& lat, double& alt, double r, double theta, double phi){
+
+  double x = r*TMath::Sin(phi)*TMath::Sin(theta);
+  double y = r*TMath::Cos(phi)*TMath::Sin(theta);
+  double z = r*TMath::Cos(theta);
+  double cartesian[3] = {x, y, z};
+
+  auto g = AnitaGeomTool::Instance();
+  g->getLatLonAltFromCartesian(cartesian, lat, lon, alt);
+
+  // fml... 
+  lat = theta*TMath::RadToDeg() <= 90 ? -lat : lat;
+}
 
 
 
@@ -384,14 +454,61 @@ double GeoMagnetic::getPotentialAtSpherical(UInt_t unixTime, double r, double th
 }
 
 
-std::vector<double> GeoMagnetic::XYZ_atSpherical(UInt_t unixTime, double r, double theta, double phi){
+
+
+
+
+
+
+
+
+/** 
+ * Calculates the X, Y, Z components of the geo-magnetic field
+ * 
+ * @param unixTime 
+ * @param lon 
+ * @param lat 
+ * @param alt 
+ * 
+ * @return a Field object containing the vector field components
+ */
+GeoMagnetic::Field GeoMagnetic::getFieldAtLonLatAlt(UInt_t unixTime, double lon, double lat, double alt){
+  init();
+  double r, theta, phi;
+  lonLatAltToSpherical(lon, lat, alt, r, theta, phi);
+  return getFieldAtSpherical(unixTime, r, theta, phi);
+}
+
+
+
+/** 
+ * Calculates the X, Y, Z components of the geo-magnetic field
+ * 
+ * @param unixTime 
+ * @param r 
+ * @param theta 
+ * @param phi 
+ * 
+ * @return a Field object containing the vector field components
+ */
+GeoMagnetic::Field GeoMagnetic::getFieldAtSpherical(UInt_t unixTime, double r, double theta, double phi){
   init();
 
-  std::vector<double> vec(3);
-  vec[0] = X_atSpherical(unixTime, r,  theta, phi);
-  vec[1] = Y_atSpherical(unixTime, r,  theta, phi);
-  vec[2] = Z_atSpherical(unixTime, r,  theta, phi);
-  return vec;
+  // There are some efficiency gains to be had if anyone wants them.
+  // Each of these functions calculates the potential at r, theta, phi (and each a small, orthogonal distance away)
+  // This could be done just once to save 2/6 geomagnetic potnential calculations...
+  
+  Field f;
+  f.X = X_atSpherical(unixTime, r,  theta, phi);
+  f.Y = Y_atSpherical(unixTime, r,  theta, phi);
+  f.Z = Z_atSpherical(unixTime, r,  theta, phi);
+
+  // since the direction of the X, Y, Z changes with position
+  // I will put the source location in the back end of the vector
+  f.r = r;
+  f.theta = theta;
+  f.phi = phi;
+  return f;
 }
 
 
@@ -456,7 +573,6 @@ double GeoMagnetic::X_atSpherical(UInt_t unixTime, double r, double theta, doubl
 //   lonLatAltToSpherical(lon, lat, alt, r, theta, phi);
 
   double V0 = getPotentialAtSpherical(unixTime, r, theta, phi);
-  double dTheta = 0.01*TMath::DegToRad();  
   double V1 = getPotentialAtSpherical(unixTime, r, theta+dTheta, phi);
   double BX = (V1-V0)/(dTheta*r);
   return BX;
@@ -496,7 +612,6 @@ double GeoMagnetic::Y_atLonLatAlt(UInt_t unixTime, double lon,  double lat, doub
 double GeoMagnetic::Y_atSpherical(UInt_t unixTime, double r,  double theta, double phi){
   init();
   double V0 = getPotentialAtSpherical(unixTime, r, theta, phi);
-  double dPhi = 0.01*TMath::DegToRad();
   double V1 = getPotentialAtSpherical(unixTime, r, theta, phi+dPhi);
   double BY = -(V1-V0)/(dPhi*r*TMath::Sin(theta));
   return BY;
@@ -538,8 +653,9 @@ double GeoMagnetic::Z_atSpherical(UInt_t unixTime, double r,  double theta, doub
   init();
   
   double V0 = getPotentialAtSpherical(unixTime, r, theta, phi);
-  double dr = 1; //0.1;
   double V1 = getPotentialAtSpherical(unixTime, r+dr, theta, phi);
   double BZ = -(V1-V0)/dr; // negative of the gradient of the potential
   return BZ;
 }
+
+

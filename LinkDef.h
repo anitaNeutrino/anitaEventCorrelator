@@ -9,6 +9,7 @@
 #pragma link C++ class CorrelationSummaryAnita3+;
 #pragma link C++ class UsefulAdu5Pat+;
 #pragma link C++ namespace GeoMagnetic;
+#pragma link C++ class GeoMagnetic::Field+;
 #pragma link C++ namespace AnitaStaticAdu5Offsets;
 #pragma link C++ namespace BaseList;
 #pragma link C++ class BaseList::base+;
