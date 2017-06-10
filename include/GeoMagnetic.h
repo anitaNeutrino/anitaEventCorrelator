@@ -2,8 +2,8 @@
 #define GEOMAGNETIC_H
 
 #include <vector>
+#include "TArrow.h"
 #include "TVector3.h"
-
 
 /** 
  * @namespace Functions to calculate the Earth's geo-magnetic field for ANITA
@@ -11,6 +11,8 @@
  * Currently uses the IGRF model
  * 
  */
+
+class TCanvas;
 namespace GeoMagnetic{
 
 
@@ -21,22 +23,32 @@ namespace GeoMagnetic{
  * move as a function of position. So here I keep the field result with the position.
  * 
  */
-class Field {
+class FieldPoint : public TArrow {
  public:
-  /** 
-   * @brief Default constructor
-   */
-  Field () : X(0), Y(0), Z(0), r(0), theta(0), phi(0) {}
-  /** 
-   * Default destructor
-   */
-  virtual ~Field(){}
-  double X; ///< northwards pointing magnetic field in nT
-  double Y; ///< East/west pointing magnetic field in nT
-  double Z; ///< Downwards pointing magnetic field in nT
-  double r; ///< Radial position of vector origin in Earth centred spherical polar coordinates
-  double theta; ///< Elevation angle (0 = along +ve Z axis to north pole) of vector origin
-  double phi; ///< Azimuth angle (0 = Greenwich maridian), increases +ve is west.
+  FieldPoint (UInt_t unixTime, double lon, double lat, double alt);
+  virtual ~FieldPoint(){}
+  virtual void Draw(Option_t* opt = "");
+
+  double posX() const {return fPosition.X();}
+  double posY() const {return fPosition.Y();}
+  double posZ() const {return fPosition.Z();}
+  double posR() const {return fPosition.Mag();}
+  double posTheta() const {return fPosition.Theta();}
+  double posPhi() const {return fPosition.Phi();}
+  
+  double componentX() const {return fField.X();}
+  double componentY() const {return fField.Y();}
+  double componentZ() const {return fField.Z();}
+
+  // TODO, maybe for checking
+  // double componentRHat() const;
+  // double componentThetaHat() const;
+  // double componentPhiHat() const;   
+  
+ private:
+  double fDrawScaleFactor; ///< Conversion factor (metres/nT) to draw on an AntarcticaBackground
+  TVector3 fField; ///< Cartesian components of the geomagnetic field
+  TVector3 fPosition; ///< Location of the magnetic field
 };
 
 
@@ -55,8 +67,7 @@ class Field {
   double Z_atLonLatAlt(UInt_t unixTime, double lon,  double lat, double alt);
   double Z_atSpherical(UInt_t unixTime, double r,  double theta, double phi);
 
-  Field getFieldAtLonLatAlt(UInt_t unixTime, double lon, double lat, double alt);
-  Field getFieldAtSpherical(UInt_t unixTime, double r, double theta, double phi);
+  TCanvas* plotFieldAtAltitude(UInt_t unixTime, double altitude);
 
 }
 #endif

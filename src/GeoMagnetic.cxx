@@ -13,6 +13,7 @@
 
 #include "AnitaGeomTool.h"
 #include "TDatime.h"
+#include "TCanvas.h"
 
 // --------------------------------------------------------------------------------------------------------------------------------------
 // Silly globals, but I want to hide the internal complexities inside the namespace
@@ -33,43 +34,11 @@ const double dr = 1;
 const double dTheta = 0.01*TMath::DegToRad();  
 const double dPhi = 0.01*TMath::DegToRad();
 
-typedef enum {
-  r_hat,
-  theta_hat,
-  phi_hat
-} unitVec;
-
 
 
 // --------------------------------------------------------------------------------------------------------------------------------------
 // Utility functions, for initialisation and internal calculation
 // --------------------------------------------------------------------------------------------------------------------------------------
-
-TVector3 makeUnitVectorSpherical(double theta, double phi, unitVec dir){
-  TVector3 unit;
-  switch(dir){
-    case r_hat:
-      unit.SetXYZ(TMath::Sin(theta)*TMath::Cos(phi),
-                  TMath::Sin(theta)*TMath::Sin(phi),
-                  TMath::Cos(theta));
-    break;    
-    
-    case theta_hat:
-      unit.SetXYZ(TMath::Cos(theta)*TMath::Cos(phi),
-                  TMath::Cos(theta)*TMath::Sin(phi),
-                  -TMath::Sin(theta));
-    break;
-    case phi_hat:
-      unit.SetXYZ(-TMath::Sin(phi),
-                  TMath::Cos(phi),
-                  0);
-      break;
-    default:
-      std::cerr << "Error in " << __FILE__ << ", unknown unit vector requested..." << std::endl;
-      break;
-  }
-  return unit;
-}
 
 /** 
  * Maps the polynomials degree(n) and order (n) to an index for the vectors inside the g_vs_time, g_vs_time maps
@@ -461,57 +430,6 @@ double GeoMagnetic::getPotentialAtSpherical(UInt_t unixTime, double r, double th
 
 
 
-
-/** 
- * Calculates the X, Y, Z components of the geo-magnetic field
- * 
- * @param unixTime 
- * @param lon 
- * @param lat 
- * @param alt 
- * 
- * @return a Field object containing the vector field components
- */
-GeoMagnetic::Field GeoMagnetic::getFieldAtLonLatAlt(UInt_t unixTime, double lon, double lat, double alt){
-  init();
-  double r, theta, phi;
-  lonLatAltToSpherical(lon, lat, alt, r, theta, phi);
-  return getFieldAtSpherical(unixTime, r, theta, phi);
-}
-
-
-
-/** 
- * Calculates the X, Y, Z components of the geo-magnetic field
- * 
- * @param unixTime 
- * @param r 
- * @param theta 
- * @param phi 
- * 
- * @return a Field object containing the vector field components
- */
-GeoMagnetic::Field GeoMagnetic::getFieldAtSpherical(UInt_t unixTime, double r, double theta, double phi){
-  init();
-
-  // There are some efficiency gains to be had if anyone wants them.
-  // Each of these functions calculates the potential at r, theta, phi (and each a small, orthogonal distance away)
-  // This could be done just once to save 2/6 geomagnetic potnential calculations...
-  
-  Field f;
-  f.X = X_atSpherical(unixTime, r,  theta, phi);
-  f.Y = Y_atSpherical(unixTime, r,  theta, phi);
-  f.Z = Z_atSpherical(unixTime, r,  theta, phi);
-
-  // since the direction of the X, Y, Z changes with position
-  // I will put the source location in the back end of the vector
-  f.r = r;
-  f.theta = theta;
-  f.phi = phi;
-  return f;
-}
-
-
 /** 
  * @brief Get the geomagnetic potential at a particular time,  longitude, latitude, and altitude
  * 
@@ -638,6 +556,46 @@ double GeoMagnetic::Z_atLonLatAlt(UInt_t unixTime, double lon, double lat, doubl
 }
 
 
+
+
+TCanvas* GeoMagnetic::plotFieldAtAltitude(UInt_t unixTime, double altitude){
+
+  // const int nArrows = 40;
+  // AntarcticaBackground* bg = new AntarcticaBackground();
+  auto c = new TCanvas();
+  AntarcticaBackground* bg = new AntarcticaBackground();
+
+  int nx = bg->GetNbinsX();
+  int ny = bg->GetNbinsY();
+
+  std::vector<FieldPoint*> points;
+  const int arrowEvery = 20;
+  for(int by=1; by <= ny; by+=arrowEvery){
+    double northing = bg->GetYaxis()->GetBinLowEdge(by);
+    for(int bx=1; bx <= nx; bx+=arrowEvery){
+      double easting = bg->GetXaxis()->GetBinLowEdge(bx);
+      double lon, lat;
+      RampdemReader::EastingNorthingToLonLat(easting, northing, lon, lat);
+      FieldPoint* f = new FieldPoint(0, lon, lat, 0);
+      points.push_back(f);
+    }
+  }
+
+  bg->Draw();
+  for(auto& f : points){
+    f->Draw();
+  }
+
+  return c;
+}
+
+
+
+
+
+
+
+
 /** 
  * Get the downwards facing component of the geomagnetic field
  * 
@@ -657,5 +615,70 @@ double GeoMagnetic::Z_atSpherical(UInt_t unixTime, double r,  double theta, doub
   double BZ = -(V1-V0)/dr; // negative of the gradient of the potential
   return BZ;
 }
+
+
+
+
+/** 
+ * Handles conversion to easting/northing for use with AntarcticaBackground
+ * 
+ * @param opt the draw option, passed to the TArrow draw option
+ */
+void GeoMagnetic::FieldPoint::Draw(Option_t* opt){
+
+  double lon, lat, alt;
+  double r = fPosition.Mag();
+  double theta = fPosition.Theta();
+  double phi = fPosition.Phi();
+
+  // std::cout << "here 1" << std::endl;
+  sphericalToLatLonAlt(lon, lat, alt, r, theta, phi);
+  
+  RampdemReader::LonLatToEastingNorthing(lon, lat, fX1, fY1);
+
+  TVector3 position = fPosition;
+  position += fDrawScaleFactor*fField;
+  sphericalToLatLonAlt(lon, lat, alt, position.Mag(), position.Theta(), position.Phi());
+  RampdemReader::LonLatToEastingNorthing(lon, lat, fX2, fY2);
+  
+  TArrow::Draw(opt);
+}
+
+
+
+GeoMagnetic::FieldPoint::FieldPoint(UInt_t unixTime, double lon, double lat, double alt) : TArrow(0, 0, 0, 0, 0.001, "|>"), fPosition(),fField(), fDrawScaleFactor(10)
+{
+  double r, theta, phi;
+  lonLatAltToSpherical(lon, lat, alt, r, theta, phi);
+  fPosition.SetMagThetaPhi(r, theta, phi);
+
+  // each of these functions calcuates calculates V0, so you could save 2 of 6 calculations here...
+  double X = X_atSpherical(unixTime, r,  theta, phi);
+  double Y = -Y_atSpherical(unixTime, r,  theta, phi);
+  double radial_field = -Z_atSpherical(unixTime, r,  theta, phi);
+
+  // now I'm going to rotate into cartesian...
+  double cos_theta = TMath::Cos(theta);
+  double sin_theta = TMath::Sin(theta);
+  double cos_phi = TMath::Cos(phi);
+  double sin_phi = TMath::Sin(phi);
+
+  // this rotates the field components pointing along RHat, thetaHat, phiHat into the Cartesian coordinate system
+  double x = sin_theta*cos_phi*radial_field + cos_theta*cos_phi*X - sin_phi*Y;
+  double y = sin_theta*sin_phi*radial_field + cos_theta*sin_phi*X + cos_phi*Y;
+  double z = cos_theta*radial_field         - sin_theta*X         + 0;
+
+  fField.SetXYZ(x, y, z);
+  
+}
+
+
+
+
+
+
+
+
+
 
 
