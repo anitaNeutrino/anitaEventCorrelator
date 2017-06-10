@@ -563,12 +563,14 @@ TCanvas* GeoMagnetic::plotFieldAtAltitude(UInt_t unixTime, double altitude){
   // const int nArrows = 40;
   // AntarcticaBackground* bg = new AntarcticaBackground();
   auto c = new TCanvas();
+  // c->Divide(2);
+  // c->cd(1);
   AntarcticaBackground* bg = new AntarcticaBackground();
 
   int nx = bg->GetNbinsX();
   int ny = bg->GetNbinsY();
+  bg->Draw();
 
-  std::vector<FieldPoint*> points;
   const int arrowEvery = 20;
   for(int by=1; by <= ny; by+=arrowEvery){
     double northing = bg->GetYaxis()->GetBinLowEdge(by);
@@ -577,14 +579,27 @@ TCanvas* GeoMagnetic::plotFieldAtAltitude(UInt_t unixTime, double altitude){
       double lon, lat;
       RampdemReader::EastingNorthingToLonLat(easting, northing, lon, lat);
       FieldPoint* f = new FieldPoint(0, lon, lat, 0);
-      points.push_back(f);
+      f->Draw();
     }
   }
+  // TH2D* h1 = new TH2D("hTemp", "",
+  //                     nx/10, bg->GetXaxis()->GetBinLowEdge(1), bg->GetXaxis()->GetBinUpEdge(nx),
+  //                     ny/10, bg->GetYaxis()->GetBinLowEdge(1), bg->GetYaxis()->GetBinUpEdge(ny));
+  
+  // for(int by=1; by <= ny; by++){
+  //   double northing = bg->GetYaxis()->GetBinLowEdge(by);
+  //   for(int bx=1; bx <= nx; bx++){
+  //     double easting = bg->GetXaxis()->GetBinLowEdge(bx);
+  //     double lon, lat;
+  //     RampdemReader::EastingNorthingToLonLat(easting, northing, lon, lat);
+  //     FieldPoint f(0, lon, lat, 0);
+  //     h1->SetBinContent(bx,  by,  f.componentZ());      
+  //   }
+  // }
+  
 
-  bg->Draw();
-  for(auto& f : points){
-    f->Draw();
-  }
+  // c->cd(2);
+  // h1->Draw("colz");
 
   return c;
 }

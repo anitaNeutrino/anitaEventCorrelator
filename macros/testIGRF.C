@@ -34,13 +34,9 @@ void testIGRF(){
 
       GeoMagnetic::FieldPoint f(0, lon, lat, alt);
 
-      // hZ->SetBinContent(bx, by, f.fField.Mag());
-      // hY->SetBinContent(bx, by, f.fField.Theta());
-      // hX->SetBinContent(bx, by, f.fField.Phi());
-      
-      hZ->SetBinContent(bx, by, f.fField.Z());
-      hY->SetBinContent(bx, by, f.fField.Y());
-      hX->SetBinContent(bx, by, f.fField.X());
+      hZ->SetBinContent(bx, by, f.componentZ());
+      hY->SetBinContent(bx, by, f.componentY());
+      hX->SetBinContent(bx, by, f.componentX());
       
       // hZ->SetBinContent(bx, by, f.fField.Mag());
       // hY->SetBinContent(bx, by, f.fField.Phi());
