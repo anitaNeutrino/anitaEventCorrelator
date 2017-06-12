@@ -744,6 +744,101 @@ TVector3 GeoMagnetic::reflection(const TVector3& sourceToReflection, const TVect
 
 
 
+/** 
+ * Get a unit length TVector that points along thetaWave and phiWave 
+ * 
+ * @param usefulPat is ANITA's position
+ * @param phiWave is the incoming azimuth direction (radians) in payload coordinates
+ * @param thetaWave is the elevation angle (radians) theta=0 lies along the horizonal with -ve theta being up (the UsefulAdu5Pat convention)
+ * 
+ * @return TVector3 containing a unit vector pointing to thetaWave/phiWave away from ANITA
+ */
+
+TVector3 GeoMagnetic::getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave){
+
+  TVector3 anitaPosition = lonLatAltToVector(usefulPat.longitude, usefulPat.latitude, usefulPat.altitude);
+  
+  // now I need to get a vector pointing along thetaWave and phiWave from ANITA's position
+  // so let's get theta and phi wave from an arbitrary position close to the payload,
+  // evaluate theta/phi expected and rotate that vector until it aligns with phiWave
+
+  // so this is just due north of ANITA
+  double testLon = usefulPat.longitude;
+  double testLat = usefulPat.latitude - 0.1; // if ANITA could be at the north pole, this wouldn't work
+  double testAlt = usefulPat.altitude;
+
+  double testThetaWave, testPhiWave;
+  usefulPat.getThetaAndPhiWave(testLon, testLat, testAlt, testThetaWave, testPhiWave);
+
+  TVector3 testVector = lonLatAltToVector(testLon, testLat, testAlt);
+
+  // std::cout << "Before rotation..." << std::endl;
+  // std::cout << testLon << "\t" << testLat << "\t" << testAlt << std::endl;
+  // std::cout << testThetaWave << "\t" << testPhiWave << std::endl;
+  // std::cout << testThetaWave*TMath::RadToDeg() << "\t" << testPhiWave*TMath::RadToDeg() << std::endl;
+
+  // payload phi increases anticlockwise (around +ve z axis)
+  // the TVector3 phi increases clockwise (around +ve z axis)
+
+  const TVector3 unitAnita = anitaPosition.Unit();
+  testVector.Rotate(-testPhiWave, unitAnita); // if we were to recalculate the phiWave expected, it would now point to 0
+  testVector.Rotate(phiWave, unitAnita); // if we were to recalculate the phiWave expected, it would now point to phiWave
+
+  vectorToLonLatAlt(testLon, testLat, testAlt, testVector);
+  usefulPat.getThetaAndPhiWave(testLon, testLat, testAlt, testThetaWave, testPhiWave);
+    
+  // std::cout << "After phi rotation..." << std::endl;
+  // std::cout << testLon << "\t" << testLat << "\t" << testAlt << std::endl;
+  // std::cout << testThetaWave << "\t" << testPhiWave << std::endl;
+  // std::cout << testThetaWave*TMath::RadToDeg() << "\t" << testPhiWave*TMath::RadToDeg() << std::endl;
+
+  
+  // now need to set the magnitude of the testVector such that thetaWave is correct
+  //
+  //                        
+  //                      O   
+  // Earth Centre (Origin) o
+  //                       |\  a 
+  //                     t | \ 
+  //                       |  \
+  //                 ANITA o---o 
+  //                       A    T
+    
+  // O, A, T are the angles
+  // o, a, t are the lengths. I'm trying to find the length a for a given angle A.
+  // a / sin(A) = t / sin(T)
+  //
+  // t = anitaPosition.Mag();
+  // A = (pi/2 - thetaWave);
+  // O = angle between ANITA and the test vector
+  // T = pi - A - O
+  // so...
+  // a = sin(A) * t / (pi - A - O)
+  double A = TMath::PiOver2() - thetaWave;
+  double O = testVector.Angle(anitaPosition); //angle between the vectors
+  double T = TMath::Pi() - A - O;
+  double t = anitaPosition.Mag();
+  double a = TMath::Sin(A)*(t/TMath::Sin(T));
+    
+  // std::cout << thetaWave*TMath::RadToDeg() << "\t" << A*TMath::RadToDeg() << "\t" << O*TMath::RadToDeg() << "\t" << T*TMath::RadToDeg() << std::endl;
+  // std::cout << a << "\t" << t << "\t" << a - t << std::endl;
+
+  testVector.SetMag(a);
+    
+  vectorToLonLatAlt(testLon, testLat, testAlt, testVector);
+  usefulPat.getThetaAndPhiWave(testLon, testLat, testAlt, testThetaWave, testPhiWave);
+    
+  // std::cout << "After extending R..." << std::endl;
+  // std::cout << testLon << "\t" << testLat << "\t" << testAlt << std::endl;
+  // std::cout << testThetaWave << "\t" << testPhiWave << std::endl;
+  // std::cout << testThetaWave*TMath::RadToDeg() << "\t" << testPhiWave*TMath::RadToDeg() << std::endl;
+
+  TVector3 deltaVec = testVector - anitaPosition;
+  return deltaVec.Unit();
+}
+
+
+
 bool GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave){
   // use the silly UsefulAdu5Pat convention that -ve theta is down...
   // phiWave is in radians relative to ADU5 Aft Fore line
@@ -751,107 +846,35 @@ bool GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phiWa
   double lat=0, lon=0, alt=0, deltaTheta=0;
   usefulPat.traceBackToContinent(phiWave, thetaWave, &lat, &lon, &alt, &deltaTheta);
 
-  TVector3 anitaPosition; // ANITA's position in Cartesian coordinates (origin at earth centre)
-  double anitaPosR, anitaPosTheta, anitaPosPhi;
-  lonLatAltToSpherical(usefulPat.longitude, usefulPat.latitude, usefulPat.altitude, anitaPosR, anitaPosTheta, anitaPosPhi);
-  anitaPosition.SetMagThetaPhi(anitaPosR, anitaPosTheta, anitaPosPhi);
+  TVector3 unitVec; // from ANITA (if direct) or reflection position position
+  TVector3 endPoint; // ANITA position if direct or surface position if indirect
+  bool directCosmicRay = false; // switch  
   
   if(TMath::Abs(deltaTheta) < 1e-20){// direct cosmic ray
-
-    // now I need to get a vector pointing along thetaWave and phiWave from ANITA's position
-    // so let's get theta and phi wave from an arbitrary position close to the payload,
-    // evaluate theta/phi expected and rotate that vector until it matches our expectation
-
-    // so this is just due north of ANITA
-    double testLon = usefulPat.longitude;
-    double testLat = usefulPat.latitude - 0.1; // if ANITA could be at the north pole, this wouldn't work
-    double testAlt = usefulPat.altitude;
-
-    double testThetaWave, testPhiWave;
-    usefulPat.getThetaAndPhiWave(testLon, testLat, testAlt, testThetaWave, testPhiWave);
-
-    TVector3 testVector = lonLatAltToVector(testLon, testLat, testAlt);
-
-    std::cout << "Before rotation..." << std::endl;
-    std::cout << testLon << "\t" << testLat << "\t" << testAlt << std::endl;
-    std::cout << testThetaWave << "\t" << testPhiWave << std::endl;
-    std::cout << testThetaWave*TMath::RadToDeg() << "\t" << testPhiWave*TMath::RadToDeg() << std::endl;
-
-    // payload phi increases anticlockwise (around +ve z axis)
-    // the TVector3 phi increases clockwise (around +ve z axis)
-
-    const TVector3 unitAnita = anitaPosition.Unit();
-    testVector.Rotate(-testPhiWave, unitAnita); // if we were to recalculate the phiWave expected, it would now point to 0
-    testVector.Rotate(phiWave, unitAnita); // if we were to recalculate the phiWave expected, it would now point to phiWave
-
-    vectorToLonLatAlt(testLon, testLat, testAlt, testVector);
-    usefulPat.getThetaAndPhiWave(testLon, testLat, testAlt, testThetaWave, testPhiWave);
-    
-    std::cout << "After phi rotation..." << std::endl;
-    std::cout << testLon << "\t" << testLat << "\t" << testAlt << std::endl;
-    std::cout << testThetaWave << "\t" << testPhiWave << std::endl;
-    std::cout << testThetaWave*TMath::RadToDeg() << "\t" << testPhiWave*TMath::RadToDeg() << std::endl;
-    
-    // now need to set the magnitude of the testVector such that thetaWave is correct
-    //
-    //                        
-    //                      O   
-    // Earth Centre (Origin) o
-    //                       |\  a 
-    //                     t | \ 
-    //                       |  \
-    //                 ANITA o---o 
-    //                       A    T
-    
-    // O, A, T are the angles
-    // o, a, t are the lengths. I'm trying to find the length a for a given angle A.
-    // a / sin(A) = t / sin(T)
-    //
-    // t = anitaPosition.Mag();
-    // A = (pi/2 - thetaWave);
-    // O = angle between ANITA and the test vector
-    // T = pi - A - O
-    // so...
-    // a = sin(A) * t / (pi - A - O)
-    double A = TMath::PiOver2() - thetaWave;
-    double O = testVector.Angle(anitaPosition); //angle between the vectors
-    double T = TMath::Pi() - A - O;
-    double t = anitaPosition.Mag();
-    double a = TMath::Sin(A)*(t/TMath::Sin(T));
-    
-    // std::cout << thetaWave*TMath::RadToDeg() << "\t" << A*TMath::RadToDeg() << "\t" << O*TMath::RadToDeg() << "\t" << T*TMath::RadToDeg() << std::endl;
-    // std::cout << a << "\t" << t << "\t" << a - t << std::endl;
-
-    testVector.SetMag(a);
-    
-    vectorToLonLatAlt(testLon, testLat, testAlt, testVector);
-    usefulPat.getThetaAndPhiWave(testLon, testLat, testAlt, testThetaWave, testPhiWave);
-    
-    std::cout << "After extending R..." << std::endl;
-    std::cout << testLon << "\t" << testLat << "\t" << testAlt << std::endl;
-    std::cout << testThetaWave << "\t" << testPhiWave << std::endl;
-    std::cout << testThetaWave*TMath::RadToDeg() << "\t" << testPhiWave*TMath::RadToDeg() << std::endl;
-       
-    // double globalTheta = anitaPosition.Theta();
-    // double globalPhi = anitaPosition.Phi();
-
-    return true;
+    unitVec = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, thetaWave);
+    directCosmicRay = true;
   }
   else{ // reflected cosmic ray
-    std::cout  << "somehow here" << std::endl;
-    TVector3 reflectionPosition;
-    double rR, rTheta, rPhi;
-    lonLatAltToSpherical(lon, lat, alt, rR, rTheta, rPhi);
-    reflectionPosition.SetMagThetaPhi(rR, rTheta, rPhi);
 
-    // from reflection to anita...
-    TVector3 reflectionToAnita = anitaPosition - reflectionPosition;
+    directCosmicRay = false;
+
+    endPoint = lonLatAltToVector(lon, lat, alt); // i.e. the reflection point
+    TVector3 anitaPosition = lonLatAltToVector(usefulPat.longitude, usefulPat.latitude, usefulPat.altitude);
+        
+    TVector3 reflectionToAnita = anitaPosition - endPoint; // from reflection to anita...
 
     // assume reflection point is perfectly horizonal... 
-    TVector3 surfaceNormal = reflectionPosition.Unit();
+    TVector3 surfaceNormal = endPoint.Unit(); // points perfectly up
 
-    TVector3 incomingVector = reflection(reflectionToAnita, surfaceNormal);    
+    TVector3 incomingVector = reflection(reflectionToAnita, surfaceNormal);
+    unitVec = -incomingVector.Unit();
+        
   }
+
+  // now need to do something clever here...
+  
+
+
   return false;
 }
 

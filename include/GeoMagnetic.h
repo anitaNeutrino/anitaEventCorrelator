@@ -53,6 +53,7 @@ class FieldPoint : public TArrow {
 };
 
   bool getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave);
+  TVector3 getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave);
   TVector3 reflection(const TVector3& reflectionPointToSource, const TVector3& surfaceNormal);
 
   double g(UInt_t unixTime, int n, int m);
