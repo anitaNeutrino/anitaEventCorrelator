@@ -4,6 +4,7 @@
 #include <vector>
 #include "TArrow.h"
 #include "TVector3.h"
+#include "UsefulAdu5Pat.h"
 
 /** 
  * @namespace Functions to calculate the Earth's geo-magnetic field for ANITA
@@ -51,6 +52,8 @@ class FieldPoint : public TArrow {
   TVector3 fPosition; ///< Location of the magnetic field
 };
 
+  bool getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave);
+  TVector3 reflection(const TVector3& reflectionPointToSource, const TVector3& surfaceNormal);
 
   double g(UInt_t unixTime, int n, int m);
   double h(UInt_t unixTime, int n, int m);

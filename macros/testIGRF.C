@@ -7,6 +7,33 @@
 
 
 void testIGRF(){
+
+
+  Adu5Pat pat;
+  pat.longitude = 139;
+  pat.altitude =  40e3;
+  pat.latitude = -79;
+
+  pat.heading = 180;
+  pat.pitch = 0;
+  pat.roll = 0;
+
+
+  UsefulAdu5Pat usefulPat(&pat);
+
+  // double thetaWave = 1.11111 * TMath::DegToRad();
+  double thetaWave = -10 * TMath::DegToRad();  
+  double phiWave = 13.333 * TMath::DegToRad();
+
+  std::cout << "Trying to get phiWave = " << phiWave*TMath::RadToDeg() << ", thetaWave = " << thetaWave*TMath::RadToDeg() << std::endl;
+  
+  GeoMagnetic::getExpectedPolarisation(usefulPat, phiWave, thetaWave);
+
+  // std::cout << "I got phiWave = " << phiWave*TMath::RadToDeg() << ", thetaWave = " << thetaWave*TMath::RadToDeg() << std::endl;
+  
+  return;
+
+  
   const int nx = 360;
   const int ny = 180;
   auto hZ = new TH2D("hZ", "z-component of geo-magnetic field (spherical coordinates)",
