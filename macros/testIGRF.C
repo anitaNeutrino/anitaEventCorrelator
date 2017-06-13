@@ -8,6 +8,10 @@
 
 void testIGRF(){
 
+  
+  
+  // GeoMagnetic::plotAtmosphere();
+  // return;
 
   Adu5Pat pat;
   pat.longitude = 139;

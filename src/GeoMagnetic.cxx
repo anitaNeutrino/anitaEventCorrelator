@@ -36,7 +36,13 @@ const double dr = 1;
 const double dTheta = 0.01*TMath::DegToRad();  
 const double dPhi = 0.01*TMath::DegToRad();
 
+TGraph grAtmosDensity;
+TF1* fExpAtmos;
 
+
+// const double xMax = 800; // g / cm^{2}
+// const double xMax = 0.800; // kg / cm^{2}
+const double xMax = 0.8e4; // kg / m^{2}
 
 // --------------------------------------------------------------------------------------------------------------------------------------
 // Utility functions, for initialisation and internal calculation
@@ -196,7 +202,22 @@ void init(){
           // std::cout << m << "\t" << n << std::endl;
         }
       }
-    }  
+    }
+
+    const int numAtmospherePoints = 8;    
+    double heights[numAtmospherePoints]   = {-611,   11019,  20063,  32162,  47350,  51413, 71802, 86000};
+    double densities[numAtmospherePoints] = {1.2985, 0.3639, 0.0880, 0.0132, 0.0020, 0,     0,     0    };
+    for(int i=0;  i < numAtmospherePoints; i++){
+      grAtmosDensity.SetPoint(i, heights[i], densities[i]);      
+    }
+    grAtmosDensity.SetTitle("Atmospheric density (International Standard); Altitude above MSL (m); Densities (kg/m^{3})a");
+    grAtmosDensity.SetName("grAtmosDensity");    
+    grAtmosDensity.Fit("expo", "Q");
+    fExpAtmos = (TF1*) grAtmosDensity.FindObject("expo");
+    if(!fExpAtmos){
+      std::cerr << "Warning in " << __FILE__ << " unable to find exponential fit to atmosphere..." << std::endl;
+    }
+    
     doneInit = true;
   }
 }
@@ -336,7 +357,7 @@ void sphericalToLatLonAlt(double& lon, double& lat, double& alt, double r, doubl
  * @param alt 
  * @param v 
  */
-void vectorToLonLatAlt(double& lon, double& lat, double& alt, TVector3 v){
+void vectorToLonLatAlt(double& lon, double& lat, double& alt, const TVector3& v){
   sphericalToLatLonAlt(lon, lat, alt, v.Mag(), v.Theta(), v.Phi());
 }
 
@@ -755,7 +776,8 @@ TVector3 GeoMagnetic::reflection(const TVector3& sourceToReflection, const TVect
  */
 
 TVector3 GeoMagnetic::getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave){
-
+  init();
+  
   TVector3 anitaPosition = lonLatAltToVector(usefulPat.longitude, usefulPat.latitude, usefulPat.altitude);
   
   // now I need to get a vector pointing along thetaWave and phiWave from ANITA's position
@@ -840,6 +862,7 @@ TVector3 GeoMagnetic::getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPa
 
 
 bool GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave){
+  init();
   // use the silly UsefulAdu5Pat convention that -ve theta is down...
   // phiWave is in radians relative to ADU5 Aft Fore line
 
@@ -860,7 +883,7 @@ bool GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phiWa
 
     endPoint = lonLatAltToVector(lon, lat, alt); // i.e. the reflection point
     TVector3 anitaPosition = lonLatAltToVector(usefulPat.longitude, usefulPat.latitude, usefulPat.altitude);
-        
+
     TVector3 reflectionToAnita = anitaPosition - endPoint; // from reflection to anita...
 
     // assume reflection point is perfectly horizonal... 
@@ -873,8 +896,6 @@ bool GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phiWa
 
   // now need to do something clever here...
   
-
-
   return false;
 }
 
@@ -885,4 +906,58 @@ bool GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phiWa
 
 
 
+TCanvas* GeoMagnetic::plotAtmosphere(){
+  init();
+  TCanvas* c1 = new TCanvas();
+  grAtmosDensity.Draw("al");
+}
 
+
+double GeoMagnetic::getAtmosphericDensity(double altitude){
+  // TODO, convert altitude (above geoid) to height above MSL...
+  fExpAtmos->Eval(altitude);
+}
+
+
+
+
+
+TVector3 GeoMagnetic::getInitialPosition(const TVector3& destination, const TVector3& destinationToSource){
+  init();
+
+  if(destinationToSource.Mag() != 1){
+    std::cerr  << "Warning in " << __PRETTY_FUNCTION__ << ", was expecting a unit vector, didn't get one. "
+               << "This calculation might be wonky... " << std::endl;
+  }
+  
+  
+  // moves out from the destination in 1km steps until the altitude is 80km
+  const double startAlt = 80e3; // 100 km
+  TVector3 initialPosition = destination;
+  double initialLon, initialLat, initialAlt;
+  vectorToLonLatAlt(initialLon, initialLat, initialAlt, initialPosition);
+  while(initialAlt < startAlt){
+    initialPosition += 1e3*destinationToSource;
+    vectorToLonLatAlt(initialLon, initialLat, initialAlt, initialPosition);
+    std::cout << initialLon << "\t" << initialLat << "\t" << initialAlt << std::endl;
+  }
+  
+  return initialPosition;
+}
+
+
+TVector3 GeoMagnetic::getXMaxPosition(const TVector3& initialPosition, const TVector3& cosmicRayDirection){
+  init();
+
+  TVector3 currentPosition = initialPosition;
+  double currentAtmosphereTraversed = 0; // kg / m ^{2}
+
+  while(currentAtmosphereTraversed < xMax){
+    currentPosition+= cosmicRayDirection;
+    double currentLon, currentLat, currentAlt;
+    vectorToLonLatAlt(currentLon, currentLat, currentAlt, currentPosition);    
+    currentAtmosphereTraversed += fExpAtmos->Eval(currentAlt); // implicit * 1 meter here since we have a unit vector
+  }
+  
+  return currentPosition;
+}

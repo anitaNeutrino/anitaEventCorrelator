@@ -72,6 +72,14 @@ class FieldPoint : public TArrow {
   double Z_atSpherical(UInt_t unixTime, double r,  double theta, double phi);
 
   TCanvas* plotFieldAtAltitude(UInt_t unixTime, double altitude);
+  TCanvas* plotAtmosphere();
+
+
+
+  double getAtmosphericDensity(double altitude);
+  TVector3 getXMaxPosition(const TVector3& initialPosition, const TVector3& cosmicRayDirection);
+  TVector3 getInitialPosition(const TVector3& destination, const TVector3& destinationToSource);
+
 
 }
 #endif
