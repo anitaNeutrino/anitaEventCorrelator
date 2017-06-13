@@ -910,12 +910,13 @@ TCanvas* GeoMagnetic::plotAtmosphere(){
   init();
   TCanvas* c1 = new TCanvas();
   grAtmosDensity.Draw("al");
+  return c1;
 }
 
 
 double GeoMagnetic::getAtmosphericDensity(double altitude){
   // TODO, convert altitude (above geoid) to height above MSL...
-  fExpAtmos->Eval(altitude);
+  return fExpAtmos->Eval(altitude);
 }
 
 
@@ -956,7 +957,7 @@ TVector3 GeoMagnetic::getXMaxPosition(const TVector3& initialPosition, const TVe
     currentPosition+= cosmicRayDirection;
     double currentLon, currentLat, currentAlt;
     vectorToLonLatAlt(currentLon, currentLat, currentAlt, currentPosition);    
-    currentAtmosphereTraversed += fExpAtmos->Eval(currentAlt); // implicit * 1 meter here since we have a unit vector
+    currentAtmosphereTraversed += getAtmosphericDensity(currentAlt); // implicit * 1 meter here since we have a unit vector
   }
   
   return currentPosition;
