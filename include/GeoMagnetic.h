@@ -41,6 +41,9 @@ class FieldPoint : public TArrow {
   double componentY() const {return fField.Y();}
   double componentZ() const {return fField.Z();}
 
+  const TVector3& field(){return fField;}
+  const TVector3& position(){return fPosition;}  
+
   // TODO, maybe for checking
   // double componentRHat() const;
   // double componentThetaHat() const;
@@ -52,7 +55,8 @@ class FieldPoint : public TArrow {
   TVector3 fPosition; ///< Location of the magnetic field
 };
 
-  bool getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave);
+  double getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave);
+
   TVector3 getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave);
   TVector3 reflection(const TVector3& reflectionPointToSource, const TVector3& surfaceNormal);
 
@@ -79,6 +83,7 @@ class FieldPoint : public TArrow {
   double getAtmosphericDensity(double altitude);
   TVector3 getXMaxPosition(const TVector3& initialPosition, const TVector3& cosmicRayDirection);
   TVector3 getInitialPosition(const TVector3& destination, const TVector3& destinationToSource);
+  void setDebug(bool db);
 
 
 }

@@ -18,31 +18,33 @@
 #include "TCanvas.h"
 
 // --------------------------------------------------------------------------------------------------------------------------------------
-// Silly globals, best kept tucked away from prying eyes
+// Silly globals, kept tucked away from prying eyes
 // --------------------------------------------------------------------------------------------------------------------------------------
 
 bool doneInit = false; // Tells you whether we've read in the data and precalculated the factorials
-const int numPoly = 14; // actually there are only 13 polynomial coeffients, but I'm going to start counting from one for simplicity
+const int numPoly = 14; // there are only 13 polynomial coeffients, but I'm going to start counting from one for simplicity
 std::vector<double> factorials(2*numPoly, 0);
 std::map<int, std::vector<double> > g_vs_time; // Gauss coefficients (needed to calc potential)
 std::map<int, std::vector<double> > h_vs_time; // Gauss coefficients (needed to calc potential)
 const double earth_radius = 6371.2e3; // earth radius in meters for the magnetic model
 TF1* fAssocLegendre[numPoly][numPoly] = {{NULL}}; // Associated Legendre polynomials
+bool debug = false;
 
-
+void GeoMagnetic::setDebug(bool db){
+  debug = db;
+}
 
 // for differentiating the potential
 const double dr = 1;
 const double dTheta = 0.01*TMath::DegToRad();  
 const double dPhi = 0.01*TMath::DegToRad();
 
+
+// for the atmospheric model
 TGraph grAtmosDensity;
 TF1* fExpAtmos;
-
-
-// const double xMax = 800; // g / cm^{2}
-// const double xMax = 0.800; // kg / cm^{2}
 const double xMax = 0.8e4; // kg / m^{2}
+
 
 // --------------------------------------------------------------------------------------------------------------------------------------
 // Utility functions, for initialisation and internal calculation
@@ -210,7 +212,7 @@ void init(){
     for(int i=0;  i < numAtmospherePoints; i++){
       grAtmosDensity.SetPoint(i, heights[i], densities[i]);      
     }
-    grAtmosDensity.SetTitle("Atmospheric density (International Standard); Altitude above MSL (m); Densities (kg/m^{3})a");
+    grAtmosDensity.SetTitle("Atmospheric density (International Standard); Altitude above MSL (m); Densities (kg/m^{3})");
     grAtmosDensity.SetName("grAtmosDensity");    
     grAtmosDensity.Fit("expo", "Q");
     fExpAtmos = (TF1*) grAtmosDensity.FindObject("expo");
@@ -360,6 +362,10 @@ void sphericalToLatLonAlt(double& lon, double& lat, double& alt, double r, doubl
 void vectorToLonLatAlt(double& lon, double& lat, double& alt, const TVector3& v){
   sphericalToLatLonAlt(lon, lat, alt, v.Mag(), v.Theta(), v.Phi());
 }
+
+
+
+
 
 
 
@@ -861,43 +867,98 @@ TVector3 GeoMagnetic::getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPa
 
 
 
-bool GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave){
+
+
+/** 
+ * Gets the expected polarisation angle for a 1e19 eV cosmic ray traversing the atmosphere
+ * 
+ * @param usefulPat contains ANITA's position
+ * @param phiWave azimith
+ * @param thetaWave elevation angle (radians) in payload coordinates (-ve theta is up, +ve theta is down)
+ * 
+ * @return 
+ */
+
+double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave){
+
   init();
+  std::cout << "Anita position = " << usefulPat.longitude << "\t" << usefulPat.latitude << "\t" << usefulPat.altitude << std::endl;
+  
   // use the silly UsefulAdu5Pat convention that -ve theta is down...
   // phiWave is in radians relative to ADU5 Aft Fore line
 
-  double lat=0, lon=0, alt=0, deltaTheta=0;
-  usefulPat.traceBackToContinent(phiWave, thetaWave, &lat, &lon, &alt, &deltaTheta);
+  double reflectionLon=0, reflectionLat=0, reflectionAlt=0, deltaTheta=100; // need non-zero deltaTheta when testing whether things intersectg, as theta < 0 returns instantly
+  usefulPat.traceBackToContinent(phiWave, thetaWave, &reflectionLat, &reflectionLon, &reflectionAlt, &deltaTheta);
 
-  TVector3 unitVec; // from ANITA (if direct) or reflection position position
-  TVector3 endPoint; // ANITA position if direct or surface position if indirect
-  bool directCosmicRay = false; // switch  
-  
-  if(TMath::Abs(deltaTheta) < 1e-20){// direct cosmic ray
-    unitVec = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, thetaWave);
-    directCosmicRay = true;
+  TVector3 destination; // ANITA position if direct cosmic ray or surface position if reflected cosmic ray
+  TVector3 destinationToSource; // unit vector from ANITA (if direct) or reflection position (if indirect) which points in the direction the cosmic ray signal came from
+  bool directCosmicRay = TMath::Abs(deltaTheta) > 1e-20 ? true : false; // direct cosmic ray?
+
+  TVector3 anitaPosition = lonLatAltToVector(usefulPat.longitude, usefulPat.latitude, usefulPat.altitude);
+
+  // here we do the geometry slightly differently for the direct vs. reflected case
+  if(directCosmicRay){
+    std::cout << "I'm a direct Cosmic Ray! " << deltaTheta << "\t" <<  reflectionLon << "\t" << reflectionLat << "\t"  << reflectionAlt  << std::endl;
+    destination = anitaPosition;
+    destinationToSource = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, thetaWave);
   }
   else{ // reflected cosmic ray
+    std::cout << "I'm a reflected Cosmic Ray! " << deltaTheta << "\t" <<  reflectionLon << "\t" << reflectionLat << "\t"  << reflectionAlt  << std::endl;
+    destination = lonLatAltToVector(reflectionLon, reflectionLat, reflectionAlt); // i.e. the reflection point
 
-    directCosmicRay = false;
+    TVector3 reflectionToAnita = anitaPosition - destination; // from reflection to anita...
 
-    endPoint = lonLatAltToVector(lon, lat, alt); // i.e. the reflection point
-    TVector3 anitaPosition = lonLatAltToVector(usefulPat.longitude, usefulPat.latitude, usefulPat.altitude);
+    // here I find the normal to  the geoid surface by getting the vector difference between
+    // a point 1 m above the reflection and the reflection
+    TVector3 surfaceNormal = (lonLatAltToVector(reflectionLon, reflectionLat, reflectionAlt + 1) - destination).Unit();
 
-    TVector3 reflectionToAnita = anitaPosition - endPoint; // from reflection to anita...
-
-    // assume reflection point is perfectly horizonal... 
-    TVector3 surfaceNormal = endPoint.Unit(); // points perfectly up
-
+    // Reflect the incoming vector...
     TVector3 incomingVector = reflection(reflectionToAnita, surfaceNormal);
-    unitVec = -incomingVector.Unit();
-        
+
+    // but I want the vector pointing from the reflection out towards where the income came from
+    destinationToSource = -incomingVector.Unit();
   }
 
-  // now need to do something clever here...
+  // Here we get the position the cosmic way was on top of the atmosphere...
+  TVector3 topOfAtmosphere = getInitialPosition(destination, destinationToSource);
+
+  // ...And the direction it travelled through the atmosphere...
+  const TVector3 cosmicRayDirection = -destinationToSource.Unit();
+
+  // We integrate along that vector with our atmospheric model until we get to xMax for the shower
+  TVector3 xMaxPosition = getXMaxPosition(topOfAtmosphere, cosmicRayDirection);
+
+  // and calculate the geo-magnetic field field at the shower maximum
+  double xMaxLon=0, xMaxLat=0, xMaxAlt=0;
+  vectorToLonLatAlt(xMaxLon, xMaxLat, xMaxAlt, xMaxPosition);
+  FieldPoint fp(usefulPat.realTime, xMaxLon, xMaxLat, xMaxAlt);
+
+  // This is our electric field vector!
+  TVector3 EVec = fp.field().Cross(cosmicRayDirection).Unit();
   
-  return false;
+  if(!directCosmicRay){
+    std::cerr << "Need to implement E-Field reflection with Fresnel coefficients and other bells and whistles." << std::endl;
+  }
+
+  // Here I find the VPol and HPol axes
+  // Since the antennas points down at -10 degrees, the VPol axis is 80 degrees above the horizontal plane
+  TVector3 vPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, -80*TMath::DegToRad());
+  // The HPol axis is at 90 degrees (pi/2 radians) to the shower, currently not sure whether this should be plus or minus...
+  TVector3 hPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave + TMath::PiOver2(), -10*TMath::DegToRad());
+  
+  // Dot the electric field with the antenna polarisations
+  double vPolComponent = EVec.Dot(vPolAxis);
+  double hPolComponent = EVec.Dot(hPolAxis);
+  
+  // et voila
+  double polarisationAngle = TMath::ATan2(vPolComponent, hPolComponent);
+  
+  return polarisationAngle;
 }
+
+
+
+
 
 
 
@@ -914,7 +975,9 @@ TCanvas* GeoMagnetic::plotAtmosphere(){
 }
 
 
+
 double GeoMagnetic::getAtmosphericDensity(double altitude){
+  init();
   // TODO, convert altitude (above geoid) to height above MSL...
   return fExpAtmos->Eval(altitude);
 }
@@ -933,15 +996,17 @@ TVector3 GeoMagnetic::getInitialPosition(const TVector3& destination, const TVec
   
   
   // moves out from the destination in 1km steps until the altitude is 80km
-  const double startAlt = 80e3; // 100 km
+  const double desiredAlt = 80e3; // 100 km
   TVector3 initialPosition = destination;
   double initialLon, initialLat, initialAlt;
   vectorToLonLatAlt(initialLon, initialLat, initialAlt, initialPosition);
-  while(initialAlt < startAlt){
+  // std::cout  <<  "Initial alt = " << initialAlt << ", (desiredAlt = "  << desiredAlt << ")" << std::endl;
+  while(initialAlt < desiredAlt){
     initialPosition += 1e3*destinationToSource;
     vectorToLonLatAlt(initialLon, initialLat, initialAlt, initialPosition);
-    std::cout << initialLon << "\t" << initialLat << "\t" << initialAlt << std::endl;
+    // std::cout << initialLon << "\t" << initialLat << "\t" << initialAlt << std::endl;
   }
+  // std::cout <<  "Got initial position..." << std::endl;
   
   return initialPosition;
 }
@@ -952,12 +1017,53 @@ TVector3 GeoMagnetic::getXMaxPosition(const TVector3& initialPosition, const TVe
 
   TVector3 currentPosition = initialPosition;
   double currentAtmosphereTraversed = 0; // kg / m ^{2}
+  double dx = cosmicRayDirection.Mag();
 
+  int numSteps = 0;
+
+  TGraph* grAltPath = debug ? new TGraph() : NULL;
+
+  double lastAlt = 0;
+  double initialAlt = 0;
   while(currentAtmosphereTraversed < xMax){
-    currentPosition+= cosmicRayDirection;
+    
+    currentPosition += cosmicRayDirection;
     double currentLon, currentLat, currentAlt;
-    vectorToLonLatAlt(currentLon, currentLat, currentAlt, currentPosition);    
-    currentAtmosphereTraversed += getAtmosphericDensity(currentAlt); // implicit * 1 meter here since we have a unit vector
+    vectorToLonLatAlt(currentLon, currentLat, currentAlt, currentPosition);
+
+    if(initialAlt==0){
+      initialAlt= currentAlt;
+    }
+
+
+    if(currentAtmosphereTraversed == 0){
+      std::cout << "Finding xMax position... Initial position... " << currentLon << "\t" << currentLat << "\t" << currentAlt << "\t" << currentAtmosphereTraversed << std::endl;
+    }
+    
+    currentAtmosphereTraversed += getAtmosphericDensity(currentAlt)*dx;
+
+    if(currentAtmosphereTraversed >= xMax){
+      std::cout << "Found xMax position... " << currentLon << "\t" << currentLat << "\t" << currentAlt << "\t" << currentAtmosphereTraversed << std::endl;
+    }
+
+    // then we're ascending without reaching xMax, which is bad
+    if(currentAlt > lastAlt && lastAlt > initialAlt){
+      std::cerr << "Warning in "  <<__PRETTY_FUNCTION__ << ", unable to find xMax, terminating loop." << std::endl;
+      std::cerr << "Current position = " << currentLon << "\t" << currentLat << "\t" << currentAlt << "\t" << currentAtmosphereTraversed << std::endl;
+      break;
+    }
+
+    if(debug){
+      grAltPath->SetPoint(numSteps, dx*numSteps, currentAlt);
+      numSteps++;
+    }
+    lastAlt = currentAlt;
+  }
+
+  if(debug){
+    TCanvas* c1 = new TCanvas();
+    grAltPath->SetTitle("Cosmic Ray Altitude vs. distance traversed; Distance through atmosphere (m); Altitude (m)");
+    grAltPath->Draw("al");
   }
   
   return currentPosition;

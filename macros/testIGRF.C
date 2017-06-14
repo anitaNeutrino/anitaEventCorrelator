@@ -7,11 +7,10 @@
 
 
 void testIGRF(){
-
+  auto cc = GeoMagnetic::plotFieldAtAltitude(0, 40e3);
+  GeoMagnetic::setDebug(true);
   
-  
-  // GeoMagnetic::plotAtmosphere();
-  // return;
+  GeoMagnetic::plotAtmosphere();
 
   Adu5Pat pat;
   pat.longitude = 139;
@@ -22,19 +21,16 @@ void testIGRF(){
   pat.pitch = 0;
   pat.roll = 0;
 
-
   UsefulAdu5Pat usefulPat(&pat);
 
   // double thetaWave = 1.11111 * TMath::DegToRad();
-  double thetaWave = -10 * TMath::DegToRad();  
+  double thetaWave = -2 * TMath::DegToRad();  
   double phiWave = 13.333 * TMath::DegToRad();
 
   std::cout << "Trying to get phiWave = " << phiWave*TMath::RadToDeg() << ", thetaWave = " << thetaWave*TMath::RadToDeg() << std::endl;
   
   GeoMagnetic::getExpectedPolarisation(usefulPat, phiWave, thetaWave);
 
-  // std::cout << "I got phiWave = " << phiWave*TMath::RadToDeg() << ", thetaWave = " << thetaWave*TMath::RadToDeg() << std::endl;
-  
   return;
 
   
@@ -112,6 +108,5 @@ void testIGRF(){
   // grPhi->SetTitle("Longitude tranform; Longitude (Deg); #phi (Deg)");
   // grPhi->Draw();
   
-  auto cc = GeoMagnetic::plotFieldAtAltitude(0, 40e3);
             
 }
