@@ -13,6 +13,7 @@
 
 #include "AnitaGeomTool.h"
 #include "UsefulAdu5Pat.h"
+#include "TGraphAntarctica.h"
 
 #include "TDatime.h"
 #include "TCanvas.h"
@@ -30,6 +31,14 @@ const double earth_radius = 6371.2e3; // earth radius in meters for the magnetic
 TF1* fAssocLegendre[numPoly][numPoly] = {{NULL}}; // Associated Legendre polynomials
 bool debug = false;
 
+
+
+
+/** 
+ * Will print a bunch of stuff to the screen and draw pretty-ish pictures
+ * 
+ * @param db debugging boolian
+ */
 void GeoMagnetic::setDebug(bool db){
   debug = db;
 }
@@ -547,14 +556,8 @@ double GeoMagnetic::X_atLonLatAlt(UInt_t unixTime, double lon, double lat, doubl
  * @return 
  */
 
-
-double GeoMagnetic::X_atSpherical(UInt_t unixTime, double r, double theta, double phi){
-// double GeoMagnetic::X(UInt_t unixTime, double lon, double lat, double alt){  
-  
+double GeoMagnetic::X_atSpherical(UInt_t unixTime, double r, double theta, double phi){  
   init();
-//   double r, phi, theta;
-//   lonLatAltToSpherical(lon, lat, alt, r, theta, phi);
-
   double V0 = getPotentialAtSpherical(unixTime, r, theta, phi);
   double V1 = getPotentialAtSpherical(unixTime, r, theta+dTheta, phi);
   double BX = (V1-V0)/(dTheta*r);
@@ -623,13 +626,17 @@ double GeoMagnetic::Z_atLonLatAlt(UInt_t unixTime, double lon, double lat, doubl
 
 
 
+/** 
+ * Plots arrows representing the B field direction to visualise the magnetic field over Antarctica
+ * 
+ * @param unixTime is the time
+ * @param altitude is the altitude at which to calculate the B-field
+ * 
+ * @return the canvas on which the plot is produced
+ */
 TCanvas* GeoMagnetic::plotFieldAtAltitude(UInt_t unixTime, double altitude){
 
-  // const int nArrows = 40;
-  // AntarcticaBackground* bg = new AntarcticaBackground();
   auto c = new TCanvas();
-  // c->Divide(2);
-  // c->cd(1);
   AntarcticaBackground* bg = new AntarcticaBackground();
 
   int nx = bg->GetNbinsX();
@@ -644,28 +651,11 @@ TCanvas* GeoMagnetic::plotFieldAtAltitude(UInt_t unixTime, double altitude){
       double lon, lat;
       RampdemReader::EastingNorthingToLonLat(easting, northing, lon, lat);
       FieldPoint* f = new FieldPoint(0, lon, lat, 0);
+      f->SetBit(kMustCleanup);
+      f->SetBit(kCanDelete);
       f->Draw();
     }
   }
-  // TH2D* h1 = new TH2D("hTemp", "",
-  //                     nx/10, bg->GetXaxis()->GetBinLowEdge(1), bg->GetXaxis()->GetBinUpEdge(nx),
-  //                     ny/10, bg->GetYaxis()->GetBinLowEdge(1), bg->GetYaxis()->GetBinUpEdge(ny));
-  
-  // for(int by=1; by <= ny; by++){
-  //   double northing = bg->GetYaxis()->GetBinLowEdge(by);
-  //   for(int bx=1; bx <= nx; bx++){
-  //     double easting = bg->GetXaxis()->GetBinLowEdge(bx);
-  //     double lon, lat;
-  //     RampdemReader::EastingNorthingToLonLat(easting, northing, lon, lat);
-  //     FieldPoint f(0, lon, lat, 0);
-  //     h1->SetBinContent(bx,  by,  f.componentZ());      
-  //   }
-  // }
-  
-
-  // c->cd(2);
-  // h1->Draw("colz");
-
   return c;
 }
 
@@ -692,7 +682,7 @@ double GeoMagnetic::Z_atSpherical(UInt_t unixTime, double r,  double theta, doub
   
   double V0 = getPotentialAtSpherical(unixTime, r, theta, phi);
   double V1 = getPotentialAtSpherical(unixTime, r+dr, theta, phi);
-  double BZ = -(V1-V0)/dr; // negative of the gradient of the potential
+  double BZ = (V1-V0)/dr; // negative of the gradient of the potential
   return BZ;
 }
 
@@ -711,7 +701,6 @@ void GeoMagnetic::FieldPoint::Draw(Option_t* opt){
   double theta = fPosition.Theta();
   double phi = fPosition.Phi();
 
-  // std::cout << "here 1" << std::endl;
   sphericalToLatLonAlt(lon, lat, alt, r, theta, phi);
   
   RampdemReader::LonLatToEastingNorthing(lon, lat, fX1, fY1);
@@ -734,8 +723,17 @@ GeoMagnetic::FieldPoint::FieldPoint(UInt_t unixTime, double lon, double lat, dou
 
   // each of these functions calcuates calculates V0, so you could save 2 of 6 calculations here...
   double X = X_atSpherical(unixTime, r,  theta, phi);
-  double Y = -Y_atSpherical(unixTime, r,  theta, phi);
-  double radial_field = -Z_atSpherical(unixTime, r,  theta, phi);
+  double Y = Y_atSpherical(unixTime, r,  theta, phi);
+  double Z = Z_atSpherical(unixTime, r,  theta, phi);
+
+  // now convert into proper spherical polar coordinates..
+  
+  // X points north, but thetaHat increases to the south, so *= -1
+  double B_theta = -X;
+  // Y points east, if you add positive values of phi, you're going east, which is the same as spherical coordinates so the sign is the same
+  double B_phi = Y;
+  // Z points down, but we want the radial component to point away from the origin, so *=-1
+  double B_r = -Z;
 
   // now I'm going to rotate into cartesian...
   double cos_theta = TMath::Cos(theta);
@@ -744,9 +742,9 @@ GeoMagnetic::FieldPoint::FieldPoint(UInt_t unixTime, double lon, double lat, dou
   double sin_phi = TMath::Sin(phi);
 
   // this rotates the field components pointing along RHat, thetaHat, phiHat into the Cartesian coordinate system
-  double x = sin_theta*cos_phi*radial_field + cos_theta*cos_phi*X - sin_phi*Y;
-  double y = sin_theta*sin_phi*radial_field + cos_theta*sin_phi*X + cos_phi*Y;
-  double z = cos_theta*radial_field         - sin_theta*X         + 0;
+  double x = sin_theta*cos_phi*B_r + cos_theta*cos_phi*B_theta - sin_phi*B_phi;
+  double y = sin_theta*sin_phi*B_r + cos_theta*sin_phi*B_theta + cos_phi*B_phi;
+  double z = cos_theta*B_r         - sin_theta*B_theta         + 0;
 
   fField.SetXYZ(x, y, z);  
 }
@@ -788,9 +786,10 @@ TVector3 GeoMagnetic::getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPa
   
   // now I need to get a vector pointing along thetaWave and phiWave from ANITA's position
   // so let's get theta and phi wave from an arbitrary position close to the payload,
-  // evaluate theta/phi expected and rotate that vector until it aligns with phiWave
+  // evaluate theta/phi expected and rotate that vector around ANITA's position
+  // until it aligns with phiWave...
 
-  // so this is just due north of ANITA
+  // This is just due north of ANITA
   double testLon = usefulPat.longitude;
   double testLat = usefulPat.latitude - 0.1; // if ANITA could be at the north pole, this wouldn't work
   double testAlt = usefulPat.altitude;
@@ -800,11 +799,13 @@ TVector3 GeoMagnetic::getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPa
 
   TVector3 testVector = lonLatAltToVector(testLon, testLat, testAlt);
 
-  // std::cout << "Before rotation..." << std::endl;
-  // std::cout << testLon << "\t" << testLat << "\t" << testAlt << std::endl;
-  // std::cout << testThetaWave << "\t" << testPhiWave << std::endl;
-  // std::cout << testThetaWave*TMath::RadToDeg() << "\t" << testPhiWave*TMath::RadToDeg() << std::endl;
-
+  if(debug){
+    std::cout << "Before rotation..." << std::endl;
+    std::cout << testLon << "\t" << testLat << "\t" << testAlt << std::endl;
+    std::cout << testThetaWave << "\t" << testPhiWave << std::endl;
+    std::cout << testThetaWave*TMath::RadToDeg() << "\t" << testPhiWave*TMath::RadToDeg() << std::endl;
+  }
+  
   // payload phi increases anticlockwise (around +ve z axis)
   // the TVector3 phi increases clockwise (around +ve z axis)
 
@@ -815,13 +816,15 @@ TVector3 GeoMagnetic::getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPa
   vectorToLonLatAlt(testLon, testLat, testAlt, testVector);
   usefulPat.getThetaAndPhiWave(testLon, testLat, testAlt, testThetaWave, testPhiWave);
     
-  // std::cout << "After phi rotation..." << std::endl;
-  // std::cout << testLon << "\t" << testLat << "\t" << testAlt << std::endl;
-  // std::cout << testThetaWave << "\t" << testPhiWave << std::endl;
-  // std::cout << testThetaWave*TMath::RadToDeg() << "\t" << testPhiWave*TMath::RadToDeg() << std::endl;
-
+  if(debug){
+    std::cout << "After phi rotation..." << std::endl;
+    std::cout << testLon << "\t" << testLat << "\t" << testAlt << std::endl;
+    std::cout << testThetaWave << "\t" << testPhiWave << std::endl;
+    std::cout << testThetaWave*TMath::RadToDeg() << "\t" << testPhiWave*TMath::RadToDeg() << std::endl;
+  }
   
-  // now need to set the magnitude of the testVector such that thetaWave is correct
+  // now need to raise/lower the point described by testVector such that thetaWave is correct
+  // i.e. set the magnitude of the testVector such that thetaWave is correct
   //
   //                        
   //                      O   
@@ -829,7 +832,7 @@ TVector3 GeoMagnetic::getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPa
   //                       |\  a 
   //                     t | \ 
   //                       |  \
-  //                 ANITA o---o 
+  //                 ANITA o---o "Test Vector"
   //                       A    T
     
   // O, A, T are the angles
@@ -847,19 +850,22 @@ TVector3 GeoMagnetic::getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPa
   double T = TMath::Pi() - A - O;
   double t = anitaPosition.Mag();
   double a = TMath::Sin(A)*(t/TMath::Sin(T));
-    
-  // std::cout << thetaWave*TMath::RadToDeg() << "\t" << A*TMath::RadToDeg() << "\t" << O*TMath::RadToDeg() << "\t" << T*TMath::RadToDeg() << std::endl;
-  // std::cout << a << "\t" << t << "\t" << a - t << std::endl;
 
+  if(debug){
+    std::cout << thetaWave*TMath::RadToDeg() << "\t" << A*TMath::RadToDeg() << "\t" << O*TMath::RadToDeg() << "\t" << T*TMath::RadToDeg() << std::endl;
+    std::cout << a << "\t" << t << "\t" << a - t << std::endl;
+  }
+  
   testVector.SetMag(a);
-    
-  vectorToLonLatAlt(testLon, testLat, testAlt, testVector);
-  usefulPat.getThetaAndPhiWave(testLon, testLat, testAlt, testThetaWave, testPhiWave);
-    
-  // std::cout << "After extending R..." << std::endl;
-  // std::cout << testLon << "\t" << testLat << "\t" << testAlt << std::endl;
-  // std::cout << testThetaWave << "\t" << testPhiWave << std::endl;
-  // std::cout << testThetaWave*TMath::RadToDeg() << "\t" << testPhiWave*TMath::RadToDeg() << std::endl;
+
+  if(debug){
+    vectorToLonLatAlt(testLon, testLat, testAlt, testVector);
+    usefulPat.getThetaAndPhiWave(testLon, testLat, testAlt, testThetaWave, testPhiWave);
+    std::cout << "After setting mangitude..." << std::endl;
+    std::cout << testLon << "\t" << testLat << "\t" << testAlt << std::endl;
+    std::cout << testThetaWave << "\t" << testPhiWave << std::endl;
+    std::cout << testThetaWave*TMath::RadToDeg() << "\t" << testPhiWave*TMath::RadToDeg() << std::endl;
+  }
 
   TVector3 deltaVec = testVector - anitaPosition;
   return deltaVec.Unit();
@@ -882,7 +888,10 @@ TVector3 GeoMagnetic::getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPa
 double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave){
 
   init();
-  std::cout << "Anita position = " << usefulPat.longitude << "\t" << usefulPat.latitude << "\t" << usefulPat.altitude << std::endl;
+  
+  if(debug){
+    std::cout << "Anita position = " << usefulPat.longitude << "\t" << usefulPat.latitude << "\t" << usefulPat.altitude << std::endl;
+  }
   
   // use the silly UsefulAdu5Pat convention that -ve theta is down...
   // phiWave is in radians relative to ADU5 Aft Fore line
@@ -898,12 +907,16 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
 
   // here we do the geometry slightly differently for the direct vs. reflected case
   if(directCosmicRay){
-    std::cout << "I'm a direct Cosmic Ray! " << deltaTheta << "\t" <<  reflectionLon << "\t" << reflectionLat << "\t"  << reflectionAlt  << std::endl;
+    if(debug){
+      std::cout << "I'm a direct Cosmic Ray! " << deltaTheta << "\t" <<  reflectionLon << "\t" << reflectionLat << "\t"  << reflectionAlt  << std::endl;
+    }
     destination = anitaPosition;
     destinationToSource = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, thetaWave);
   }
   else{ // reflected cosmic ray
-    std::cout << "I'm a reflected Cosmic Ray! " << deltaTheta << "\t" <<  reflectionLon << "\t" << reflectionLat << "\t"  << reflectionAlt  << std::endl;
+    if(debug){
+      std::cout << "I'm a reflected Cosmic Ray! " << deltaTheta << "\t" <<  reflectionLon << "\t" << reflectionLat << "\t"  << reflectionAlt  << std::endl;
+    }
     destination = lonLatAltToVector(reflectionLon, reflectionLat, reflectionAlt); // i.e. the reflection point
 
     TVector3 reflectionToAnita = anitaPosition - destination; // from reflection to anita...
@@ -932,7 +945,7 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
   double xMaxLon=0, xMaxLat=0, xMaxAlt=0;
   vectorToLonLatAlt(xMaxLon, xMaxLat, xMaxAlt, xMaxPosition);
   FieldPoint fp(usefulPat.realTime, xMaxLon, xMaxLat, xMaxAlt);
-
+  
   // This is our electric field vector!
   TVector3 EVec = fp.field().Cross(cosmicRayDirection).Unit();
   
@@ -940,7 +953,9 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
     std::cerr << "Need to implement E-Field reflection with Fresnel coefficients and other bells and whistles." << std::endl;
   }
 
-  // Here I find the VPol and HPol axes
+  // Here I find the VPol and HPol antenna axes.
+  // And I'm going to  pretend that one of ANITA's antennas points exactly at phiWave
+
   // Since the antennas points down at -10 degrees, the VPol axis is 80 degrees above the horizontal plane
   TVector3 vPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, -80*TMath::DegToRad());
   // The HPol axis is at 90 degrees (pi/2 radians) to the shower, currently not sure whether this should be plus or minus...
@@ -1000,13 +1015,17 @@ TVector3 GeoMagnetic::getInitialPosition(const TVector3& destination, const TVec
   TVector3 initialPosition = destination;
   double initialLon, initialLat, initialAlt;
   vectorToLonLatAlt(initialLon, initialLat, initialAlt, initialPosition);
-  // std::cout  <<  "Initial alt = " << initialAlt << ", (desiredAlt = "  << desiredAlt << ")" << std::endl;
+  if(debug){
+    std::cout  <<  "Initial alt = " << initialAlt << ", (desiredAlt = "  << desiredAlt << ")" << std::endl;
+  }
   while(initialAlt < desiredAlt){
     initialPosition += 1e3*destinationToSource;
     vectorToLonLatAlt(initialLon, initialLat, initialAlt, initialPosition);
     // std::cout << initialLon << "\t" << initialLat << "\t" << initialAlt << std::endl;
   }
-  // std::cout <<  "Got initial position..." << std::endl;
+  if(debug){
+    std::cout << "Got initial position... " << initialLon << "\t" << initialLat << "\t" << initialAlt << std::endl;    
+  }
   
   return initialPosition;
 }
@@ -1036,13 +1055,13 @@ TVector3 GeoMagnetic::getXMaxPosition(const TVector3& initialPosition, const TVe
     }
 
 
-    if(currentAtmosphereTraversed == 0){
+    if(debug && currentAtmosphereTraversed == 0){
       std::cout << "Finding xMax position... Initial position... " << currentLon << "\t" << currentLat << "\t" << currentAlt << "\t" << currentAtmosphereTraversed << std::endl;
     }
     
     currentAtmosphereTraversed += getAtmosphericDensity(currentAlt)*dx;
 
-    if(currentAtmosphereTraversed >= xMax){
+    if(debug && currentAtmosphereTraversed >= xMax){
       std::cout << "Found xMax position... " << currentLon << "\t" << currentLat << "\t" << currentAlt << "\t" << currentAtmosphereTraversed << std::endl;
     }
 

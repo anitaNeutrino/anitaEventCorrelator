@@ -7,7 +7,7 @@
 
 
 void testIGRF(){
-  auto cc = GeoMagnetic::plotFieldAtAltitude(0, 40e3);
+
   GeoMagnetic::setDebug(true);
   
   GeoMagnetic::plotAtmosphere();
@@ -17,7 +17,7 @@ void testIGRF(){
   pat.altitude =  40e3;
   pat.latitude = -79;
 
-  pat.heading = 180;
+  pat.heading = 27;
   pat.pitch = 0;
   pat.roll = 0;
 
@@ -29,10 +29,10 @@ void testIGRF(){
 
   std::cout << "Trying to get phiWave = " << phiWave*TMath::RadToDeg() << ", thetaWave = " << thetaWave*TMath::RadToDeg() << std::endl;
   
-  GeoMagnetic::getExpectedPolarisation(usefulPat, phiWave, thetaWave);
+  double polAngle = GeoMagnetic::getExpectedPolarisation(usefulPat, phiWave, thetaWave);
+  std::cout << TMath::RadToDeg()*polAngle << std::endl;
 
-  return;
-
+  auto cc = GeoMagnetic::plotFieldAtAltitude(0, 40e3);
   
   const int nx = 360;
   const int ny = 180;
@@ -48,9 +48,7 @@ void testIGRF(){
   auto hL = new TH2D("hL", "Z component of geo-magnetic field (lon/lat/alt)",
                      nx, -180, 180,
                      ny, -90,  90);
-  
   const double alt = 0;
-
   
   for(int by=1; by <= ny;  by++){
     double lat = hL->GetYaxis()->GetBinLowEdge(by);
@@ -61,14 +59,14 @@ void testIGRF(){
 
       GeoMagnetic::FieldPoint f(0, lon, lat, alt);
 
-      hZ->SetBinContent(bx, by, f.componentZ());
-      hY->SetBinContent(bx, by, f.componentY());
-      hX->SetBinContent(bx, by, f.componentX());
+      // hZ->SetBinContent(bx, by, f.componentZ());
+      // hY->SetBinContent(bx, by, f.componentY());
+      // hX->SetBinContent(bx, by, f.componentX());
       
       // hZ->SetBinContent(bx, by, f.fField.Mag());
       // hY->SetBinContent(bx, by, f.fField.Phi());
       // hX->SetBinContent(bx, by, f.fField.Theta());
-      double Z_lla = GeoMagnetic::Z_atLonLatAlt(0, lon, lat, 0);
+      double Z_lla = GeoMagnetic::Z_atLonLatAlt(0, lon, lat, 40e3);
       // std::cout << Z_lla << std::endl;
       hL->SetBinContent(bx, by, Z_lla);
     }
@@ -77,14 +75,14 @@ void testIGRF(){
   auto c1 = new TCanvas();
   hL->Draw("colz");
 
-  auto c1b = new TCanvas();
-  c1b->Divide(3);
-  c1b->cd(1);
-  hX->Draw("colz");
-  c1b->cd(2);
-  hY->Draw("colz");
-  c1b->cd(3);
-  hZ->Draw("colz");
+  // auto c1b = new TCanvas();
+  // c1b->Divide(3);
+  // c1b->cd(1);
+  // hX->Draw("colz");
+  // c1b->cd(2);
+  // hY->Draw("colz");
+  // c1b->cd(3);
+  // hZ->Draw("colz");
 
   // return;
 
