@@ -735,7 +735,7 @@ GeoMagnetic::FieldPoint::FieldPoint(UInt_t unixTime, double lon, double lat, dou
   // Z points down, but we want the radial component to point away from the origin, so *=-1
   double B_r = -Z;
 
-  // now I'm going to rotate into cartesian...
+  // now I'm going to rotate into a cartesian coordinate system with the +ve z-axis running through the geographic north pole  
   double cos_theta = TMath::Cos(theta);
   double sin_theta = TMath::Sin(theta);
   double cos_phi = TMath::Cos(phi);
@@ -947,6 +947,10 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
   FieldPoint fp(usefulPat.realTime, xMaxLon, xMaxLat, xMaxAlt);
   
   // This is our electric field vector!
+  // If we care about getting the magnitude correct in addition to the orientation, there are some missing factors
+  // It should be:
+  // B_vec x S_vec = (1/mu0)B^{2} E_vec
+  // but for now this will do.
   TVector3 EVec = fp.field().Cross(cosmicRayDirection).Unit();
   
   if(!directCosmicRay){
@@ -958,10 +962,11 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
 
   // Since the antennas points down at -10 degrees, the VPol axis is 80 degrees above the horizontal plane
   TVector3 vPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, -80*TMath::DegToRad());
-  // The HPol axis is at 90 degrees (pi/2 radians) to the shower, currently not sure whether this should be plus or minus...
+  // The VPol feed is up... (if) the HPol feed is to the right (looking down the boresight) then it points anticlockwise around the payload
+  // phi increases anti-clockwise in payload coordinates, therefore
   TVector3 hPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave + TMath::PiOver2(), -10*TMath::DegToRad());
   
-  // Dot the electric field with the antenna polarisations
+  // Dot the electric field with the antenna polarisation vectors...
   double vPolComponent = EVec.Dot(vPolAxis);
   double hPolComponent = EVec.Dot(hPolAxis);
   
