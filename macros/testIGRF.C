@@ -8,7 +8,7 @@
 
 void testIGRF(){
 
-  GeoMagnetic::setDebug(true);
+  // GeoMagnetic::setDebug(true);
   
   GeoMagnetic::plotAtmosphere();
 
@@ -24,7 +24,7 @@ void testIGRF(){
   UsefulAdu5Pat usefulPat(&pat);
 
   // double thetaWave = 1.11111 * TMath::DegToRad();
-  double thetaWave = -2 * TMath::DegToRad();  
+  double thetaWave = -2 * TMath::DegToRad();
   double phiWave = 13.333 * TMath::DegToRad();
 
   std::cout << "Trying to get phiWave = " << phiWave*TMath::RadToDeg() << ", thetaWave = " << thetaWave*TMath::RadToDeg() << std::endl;

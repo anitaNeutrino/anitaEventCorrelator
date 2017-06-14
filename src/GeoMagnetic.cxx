@@ -625,7 +625,6 @@ double GeoMagnetic::Z_atLonLatAlt(UInt_t unixTime, double lon, double lat, doubl
 
 
 
-
 /** 
  * Plots arrows representing the B field direction to visualise the magnetic field over Antarctica
  * 
@@ -714,17 +713,33 @@ void GeoMagnetic::FieldPoint::Draw(Option_t* opt){
 }
 
 
+GeoMagnetic::FieldPoint::FieldPoint(UInt_t unixTime, const TVector3& position) : TArrow(0, 0, 0, 0, 0.001, "|>"), fPosition(),fField(), fDrawScaleFactor(10)
+{
+  fPosition = position;
+  fUnixTime = unixTime;
+  calculateFieldAtPosition();  
+}
+
 
 GeoMagnetic::FieldPoint::FieldPoint(UInt_t unixTime, double lon, double lat, double alt) : TArrow(0, 0, 0, 0, 0.001, "|>"), fPosition(),fField(), fDrawScaleFactor(10)
 {
   double r, theta, phi;
   lonLatAltToSpherical(lon, lat, alt, r, theta, phi);
   fPosition.SetMagThetaPhi(r, theta, phi);
+  fUnixTime = unixTime;
+  calculateFieldAtPosition();
+}
 
+
+void GeoMagnetic::FieldPoint::calculateFieldAtPosition(){
   // each of these functions calcuates calculates V0, so you could save 2 of 6 calculations here...
-  double X = X_atSpherical(unixTime, r,  theta, phi);
-  double Y = Y_atSpherical(unixTime, r,  theta, phi);
-  double Z = Z_atSpherical(unixTime, r,  theta, phi);
+  double r = fPosition.Mag();
+  double theta = fPosition.Theta();
+  double phi = fPosition.Phi();
+  
+  double X = X_atSpherical(fUnixTime, r,  theta, phi);
+  double Y = Y_atSpherical(fUnixTime, r,  theta, phi);
+  double Z = Z_atSpherical(fUnixTime, r,  theta, phi);
 
   // now convert into proper spherical polar coordinates..
   
@@ -942,9 +957,7 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
   TVector3 xMaxPosition = getXMaxPosition(topOfAtmosphere, cosmicRayDirection);
 
   // and calculate the geo-magnetic field field at the shower maximum
-  double xMaxLon=0, xMaxLat=0, xMaxAlt=0;
-  vectorToLonLatAlt(xMaxLon, xMaxLat, xMaxAlt, xMaxPosition);
-  FieldPoint fp(usefulPat.realTime, xMaxLon, xMaxLat, xMaxAlt);
+  FieldPoint fp(usefulPat.realTime, xMaxPosition);
   
   // This is our electric field vector!
   // If we care about getting the magnitude correct in addition to the orientation, there are some missing factors

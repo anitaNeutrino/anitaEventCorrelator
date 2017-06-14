@@ -27,6 +27,7 @@ namespace GeoMagnetic{
 class FieldPoint : public TArrow {
  public:
   FieldPoint (UInt_t unixTime, double lon, double lat, double alt);
+  FieldPoint (UInt_t unixTime, const TVector3& position);
   virtual ~FieldPoint(){}
   virtual void Draw(Option_t* opt = "");
 
@@ -43,17 +44,21 @@ class FieldPoint : public TArrow {
 
   const TVector3& field(){return fField;}
   const TVector3& position(){return fPosition;}  
-
+  UInt_t getUnixTime(){return fUnixTime;}
+  
   // TODO, maybe for checking
   // double componentRHat() const;
   // double componentThetaHat() const;
   // double componentPhiHat() const;   
   
  private:
+  void calculateFieldAtPosition();
   double fDrawScaleFactor; ///< Conversion factor (metres/nT) to draw on an AntarcticaBackground
   TVector3 fField; ///< Cartesian components of the geomagnetic field
   TVector3 fPosition; ///< Location of the magnetic field
+  UInt_t fUnixTime;  
 };
+
 
   double getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave);
 
