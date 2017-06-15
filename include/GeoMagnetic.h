@@ -63,7 +63,12 @@ class FieldPoint : public TArrow {
   double getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave);
 
   TVector3 getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave);
-  TVector3 reflection(const TVector3& reflectionPointToSource, const TVector3& surfaceNormal);
+
+  const double n_air = 1;
+  const double n_ice = 1.31; // might need to check this
+  TVector3 specularReflection(const TVector3& reflectionPointToSource, const TVector3& surfaceNormal);
+  TVector3 fresnelReflection(const TVector3& sourceToReflection, const TVector3& surfaceNormal, TVector3& electricFieldVec, double n1=n_air, double n2=n_ice);
+  TCanvas* plotFresnelReflection();
 
   double g(UInt_t unixTime, int n, int m);
   double h(UInt_t unixTime, int n, int m);
@@ -82,8 +87,6 @@ class FieldPoint : public TArrow {
 
   TCanvas* plotFieldAtAltitude(UInt_t unixTime, double altitude);
   TCanvas* plotAtmosphere();
-
-
 
   double getAtmosphericDensity(double altitude);
   TVector3 getXMaxPosition(const TVector3& initialPosition, const TVector3& cosmicRayDirection);

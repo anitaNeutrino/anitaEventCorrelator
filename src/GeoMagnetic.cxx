@@ -10,6 +10,7 @@
 #include "RampdemReader.h"
 #include "AntarcticaBackground.h"
 #include "TF1.h"
+#include "TLegend.h"
 
 #include "AnitaGeomTool.h"
 #include "UsefulAdu5Pat.h"
@@ -31,27 +32,18 @@ const double earth_radius = 6371.2e3; // earth radius in meters for the magnetic
 TF1* fAssocLegendre[numPoly][numPoly] = {{NULL}}; // Associated Legendre polynomials
 bool debug = false;
 
-
-
-
-/** 
- * Will print a bunch of stuff to the screen and draw pretty-ish pictures
- * 
- * @param db debugging boolian
- */
-void GeoMagnetic::setDebug(bool db){
-  debug = db;
-}
-
-// for differentiating the potential
+// for "differentiating" the potential (really it's a difference with small delta values)
+// I suppose I could differentiate the expression by hand and evaluate that... but that's work
 const double dr = 1;
 const double dTheta = 0.01*TMath::DegToRad();  
 const double dPhi = 0.01*TMath::DegToRad();
 
 
-// for the atmospheric model
+// Globals for the atmospheric model, currently just an exponential fit to some numbers
+// from a table in the Wikipedia
 TGraph grAtmosDensity;
 TF1* fExpAtmos;
+// I read xMax for a 1e19 eV proton off a plot in an Auger paper
 const double xMax = 0.8e4; // kg / m^{2}
 
 
@@ -196,7 +188,7 @@ void getGaussCoefficients(){
  * This involves reading in the coefficients, precalculating the factorials
  * and making the TF1 associated legendre polynomials
  */
-void init(){
+void prepareGeoMagnetics(){
 
   if(!doneInit){
     getGaussCoefficients();
@@ -288,7 +280,7 @@ double unixTimeToFractionalYear(UInt_t unixTime){
  * @param lat is the latitude 
  * @param alt is the altitude above the geoid in metres
  * @param r is the radial position is metres
- * @param phi is the the azimuthal angle (increasing east/(west?) from Greenwich meridian)
+ * @param phi is the the azimuthal angle (increasing east from Greenwich meridian)
  * @param theta is the elevation angle (theta = 0 points to north, theta = pi points south)
  */
 void lonLatAltToSpherical(double lon, double lat, double alt, double& r, double& theta, double& phi){
@@ -380,6 +372,29 @@ void vectorToLonLatAlt(double& lon, double& lat, double& alt, const TVector3& v)
 
 
 
+
+// --------------------------------------------------------------------------------------------------------------------------------------
+// Namespace functions, for public consumption
+// --------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+/** 
+ * @brief 3D geometry is hard, set this true to get more info.
+ *
+ * Setting this flag will print a bunch of stuff to the screen and maybe draw pretty-ish plots as functions are called
+ * 
+ * @param db debugging boolian
+ */
+void GeoMagnetic::setDebug(bool db){
+  debug = db;
+}
+
+
+
+
+
 /** 
  * Get the g Gauss coefficient in the IGRF/DGRF model
  *
@@ -392,11 +407,14 @@ void vectorToLonLatAlt(double& lon, double& lat, double& alt, const TVector3& v)
  * @return the time interpolated IGRF/DGRF g coefficient
  */
 double GeoMagnetic::g(UInt_t unixTime, int n, int m){
-  init();
+  prepareGeoMagnetics();
   int year = 2015;
   int index = getIndex(n, m);
   return g_vs_time[year].at(index);
 }
+
+
+
 
 
 /** 
@@ -411,7 +429,7 @@ double GeoMagnetic::g(UInt_t unixTime, int n, int m){
  * @return the time interpolated IGRF h coefficient
  */
 double GeoMagnetic::h(UInt_t unixTime, int n, int m){
-  init();  
+  prepareGeoMagnetics();  
   int year = 2015;
   int index = getIndex(n, m);  
   return h_vs_time[year].at(index);
@@ -449,6 +467,10 @@ double evalSchmidtQuasiNormalisedAssociatedLegendre(int n, int m, double x){
   return P_n_m;
 }
 
+
+
+
+
 /** 
  * @brief Workhorse function for calculating the geomagnetic potential at any point above the earth spherical polar coordinates
  * Uses the GeoMagnetic model.
@@ -461,8 +483,8 @@ double evalSchmidtQuasiNormalisedAssociatedLegendre(int n, int m, double x){
  * @return 
  */
 double GeoMagnetic::getPotentialAtSpherical(UInt_t unixTime, double r, double theta, double phi){
-  init();
-  int year = 2015; // for now,  should be a function of time  
+  prepareGeoMagnetics();
+  int year = 2015; // for now, should be a function of time
   double V = 0; // the potential
 
   // sum over the legendre polynomials normalised by the Gauss coefficients g and h
@@ -515,7 +537,7 @@ double GeoMagnetic::getPotentialAtSpherical(UInt_t unixTime, double r, double th
  * @return 
  */
 double GeoMagnetic::getPotentialAtLonLatAlt(UInt_t unixTime, double lon, double lat, double alt){
-  init();
+  prepareGeoMagnetics();
   
   double r, theta, phi;
   lonLatAltToSpherical(lon, lat, alt, r, theta, phi);
@@ -537,7 +559,7 @@ double GeoMagnetic::getPotentialAtLonLatAlt(UInt_t unixTime, double lon, double 
  * @return 
  */
 double GeoMagnetic::X_atLonLatAlt(UInt_t unixTime, double lon, double lat, double alt){  
-  init();
+  prepareGeoMagnetics();
   double r, phi, theta;
   lonLatAltToSpherical(lon, lat, alt, r, theta, phi);
 
@@ -557,7 +579,7 @@ double GeoMagnetic::X_atLonLatAlt(UInt_t unixTime, double lon, double lat, doubl
  */
 
 double GeoMagnetic::X_atSpherical(UInt_t unixTime, double r, double theta, double phi){  
-  init();
+  prepareGeoMagnetics();
   double V0 = getPotentialAtSpherical(unixTime, r, theta, phi);
   double V1 = getPotentialAtSpherical(unixTime, r, theta+dTheta, phi);
   double BX = (V1-V0)/(dTheta*r);
@@ -568,7 +590,7 @@ double GeoMagnetic::X_atSpherical(UInt_t unixTime, double r, double theta, doubl
 
 
 /** 
- * Get the east/(west?) component of the geo-magnetic field,
+ * Get the eastwards component of the geo-magnetic field,
  * 
  * @param unixTime 
  * @param lon 
@@ -578,7 +600,7 @@ double GeoMagnetic::X_atSpherical(UInt_t unixTime, double r, double theta, doubl
  * @return 
  */
 double GeoMagnetic::Y_atLonLatAlt(UInt_t unixTime, double lon,  double lat, double alt){
-  init();
+  prepareGeoMagnetics();
   double r, phi, theta;
   lonLatAltToSpherical(lon, lat, alt, r, theta, phi);
   return Y_atSpherical(unixTime, lon, lat, alt);
@@ -586,7 +608,7 @@ double GeoMagnetic::Y_atLonLatAlt(UInt_t unixTime, double lon,  double lat, doub
 
 
 /** 
- * Get the east/(west?) component of the geo-magnetic field,
+ * Get the eastwards component of the geo-magnetic field,
  * 
  * @param unixTime 
  * @param lon 
@@ -596,7 +618,7 @@ double GeoMagnetic::Y_atLonLatAlt(UInt_t unixTime, double lon,  double lat, doub
  * @return 
  */
 double GeoMagnetic::Y_atSpherical(UInt_t unixTime, double r,  double theta, double phi){
-  init();
+  prepareGeoMagnetics();
   double V0 = getPotentialAtSpherical(unixTime, r, theta, phi);
   double V1 = getPotentialAtSpherical(unixTime, r, theta, phi+dPhi);
   double BY = -(V1-V0)/(dPhi*r*TMath::Sin(theta));
@@ -610,14 +632,14 @@ double GeoMagnetic::Y_atSpherical(UInt_t unixTime, double r,  double theta, doub
  * Get the downwards facing component of the geomagnetic fielda
  * 
  * @param unixTime 
- * @param lon is the longitude, -ve is east, +ve is west (degrees)
+ * @param lon is the longitude, +ve is east, -ve is west (degrees)
  * @param lat is latitude, +ve is north, -ve is south
  * @param alt is altitude above geoid surface
  * 
  * @return Downwards component of geom-magnetic field
  */
 double GeoMagnetic::Z_atLonLatAlt(UInt_t unixTime, double lon, double lat, double alt){  
-  init();
+  prepareGeoMagnetics();
   double r, theta, phi;
   lonLatAltToSpherical(lon, lat, alt, r, theta,  phi);
   return Z_atSpherical(unixTime, r, theta, phi);
@@ -627,6 +649,8 @@ double GeoMagnetic::Z_atLonLatAlt(UInt_t unixTime, double lon, double lat, doubl
 
 /** 
  * Plots arrows representing the B field direction to visualise the magnetic field over Antarctica
+ * 
+ * The graphical objects have the kCanDelete bit set, so if you delete the canvas they are destroyed
  * 
  * @param unixTime is the time
  * @param altitude is the altitude at which to calculate the B-field
@@ -641,7 +665,8 @@ TCanvas* GeoMagnetic::plotFieldAtAltitude(UInt_t unixTime, double altitude){
   int nx = bg->GetNbinsX();
   int ny = bg->GetNbinsY();
   bg->Draw();
-
+  bg->SetBit(kCanDelete);
+  
   const int arrowEvery = 20;
   for(int by=1; by <= ny; by+=arrowEvery){
     double northing = bg->GetYaxis()->GetBinLowEdge(by);
@@ -649,7 +674,7 @@ TCanvas* GeoMagnetic::plotFieldAtAltitude(UInt_t unixTime, double altitude){
       double easting = bg->GetXaxis()->GetBinLowEdge(bx);
       double lon, lat;
       RampdemReader::EastingNorthingToLonLat(easting, northing, lon, lat);
-      FieldPoint* f = new FieldPoint(0, lon, lat, 0);
+      FieldPoint* f = new FieldPoint(unixTime, lon, lat, altitude);
       f->SetBit(kMustCleanup);
       f->SetBit(kCanDelete);
       f->Draw();
@@ -677,7 +702,7 @@ TCanvas* GeoMagnetic::plotFieldAtAltitude(UInt_t unixTime, double altitude){
  * @return Downwards component of geomagnetic field
  */
 double GeoMagnetic::Z_atSpherical(UInt_t unixTime, double r,  double theta, double phi){
-  init();
+  prepareGeoMagnetics();
   
   double V0 = getPotentialAtSpherical(unixTime, r, theta, phi);
   double V1 = getPotentialAtSpherical(unixTime, r+dr, theta, phi);
@@ -713,6 +738,16 @@ void GeoMagnetic::FieldPoint::Draw(Option_t* opt){
 }
 
 
+
+
+
+
+/** 
+ * Constructor for the field point taking a TVector containing the cartesian position at which you want to evaluate the field
+ * 
+ * @param unixTime is the time at which you wish to evaluate the field
+ * @param position is the cartesian position at which you wish to evaluate the field
+ */
 GeoMagnetic::FieldPoint::FieldPoint(UInt_t unixTime, const TVector3& position) : TArrow(0, 0, 0, 0, 0.001, "|>"), fPosition(),fField(), fDrawScaleFactor(10)
 {
   fPosition = position;
@@ -721,6 +756,15 @@ GeoMagnetic::FieldPoint::FieldPoint(UInt_t unixTime, const TVector3& position) :
 }
 
 
+
+/** 
+ * Human friendly constructor for the field point taking lontitude, latitude and altitude at which you want to evaluate the field
+ * 
+ * @param unixTime is the time at which you wish to evaluate the field
+ * @param lon is the longitude
+ * @param lat is the latitude
+ * @param alt is the altitude above the geoid surface
+ */
 GeoMagnetic::FieldPoint::FieldPoint(UInt_t unixTime, double lon, double lat, double alt) : TArrow(0, 0, 0, 0, 0.001, "|>"), fPosition(),fField(), fDrawScaleFactor(10)
 {
   double r, theta, phi;
@@ -731,24 +775,34 @@ GeoMagnetic::FieldPoint::FieldPoint(UInt_t unixTime, double lon, double lat, dou
 }
 
 
+
+
+/** 
+ * Workhorse function to calcuate the magnetic field from the potential at fPosition
+ * Everything difficult regarding coordinate transformations with the field is in here
+ */
 void GeoMagnetic::FieldPoint::calculateFieldAtPosition(){
   // each of these functions calcuates calculates V0, so you could save 2 of 6 calculations here...
   double r = fPosition.Mag();
   double theta = fPosition.Theta();
   double phi = fPosition.Phi();
   
-  double X = X_atSpherical(fUnixTime, r,  theta, phi);
-  double Y = Y_atSpherical(fUnixTime, r,  theta, phi);
-  double Z = Z_atSpherical(fUnixTime, r,  theta, phi);
+  double X = X_atSpherical(fUnixTime, r,  theta, phi); // north
+  double Y = Y_atSpherical(fUnixTime, r,  theta, phi); // east
+  double Z = Z_atSpherical(fUnixTime, r,  theta, phi); // down
 
   // now convert into proper spherical polar coordinates..
   
-  // X points north, but thetaHat increases to the south, so *= -1
+  // X points north, but theta_hat increases to the south, so *= -1
   double B_theta = -X;
   // Y points east, if you add positive values of phi, you're going east, which is the same as spherical coordinates so the sign is the same
   double B_phi = Y;
   // Z points down, but we want the radial component to point away from the origin, so *=-1
   double B_r = -Z;
+
+  // Red for radially upwards pointing B-field
+  // Blue for radially downwards pointing B-field
+  SetLineColor(B_r > 0 ? kRed : kBlue);
 
   // now I'm going to rotate into a cartesian coordinate system with the +ve z-axis running through the geographic north pole  
   double cos_theta = TMath::Cos(theta);
@@ -759,27 +813,222 @@ void GeoMagnetic::FieldPoint::calculateFieldAtPosition(){
   // this rotates the field components pointing along RHat, thetaHat, phiHat into the Cartesian coordinate system
   double x = sin_theta*cos_phi*B_r + cos_theta*cos_phi*B_theta - sin_phi*B_phi;
   double y = sin_theta*sin_phi*B_r + cos_theta*sin_phi*B_theta + cos_phi*B_phi;
-  double z = cos_theta*B_r         - sin_theta*B_theta         + 0;
-
+  double z = cos_theta*B_r         - sin_theta*B_theta         + 0;  
+  
   fField.SetXYZ(x, y, z);  
 }
 
 
 
+
+
 /** 
- * Does some specular reflection, make sure the "incident vector" points FROM the source to the reflection point
+ * Does some specular reflection, make sure the incident vector points FROM the source TO the reflection point
  * 
- * @param reflectionPointToSource 
- * @param surfaceNormal 
+ * @param reflectionPointToSource incoming vector
+ * @param surfaceNormal defines the plane of reflection
  * 
  * @return reflected vector
  */
-TVector3 GeoMagnetic::reflection(const TVector3& sourceToReflection, const TVector3& surfaceNormal){
+TVector3 GeoMagnetic::specularReflection(const TVector3& incidentPoyntingVector, const TVector3& surfaceNormal){
 
   // https://en.wikipedia.org/wiki/Specular_reflection#Vector_formulation
-  TVector3 reflectionPointToSource = -1*sourceToReflection;
+  TVector3 reflectionPointToSource = -1*incidentPoyntingVector;
   TVector3 reflectionPointToDestination = 2*(reflectionPointToSource.Dot(surfaceNormal))*surfaceNormal - reflectionPointToSource;
   return reflectionPointToDestination;
+}
+
+
+
+
+/** 
+ * Draw the fresnel electric field coefficients to test they are correctly implemented.
+ * 
+ * The graphical objects have the kCanDelete bit set, so if you delete the canvas they are destroyed
+ * 
+ * @return the canvas upon which the plots were drawn
+ */
+TCanvas* GeoMagnetic::plotFresnelReflection(){
+
+  const int nSteps = 90; //1000;
+  double d_theta_i = TMath::PiOver2()/nSteps;
+
+  const TVector3 surfaceNormal(0, 0, 1); // reflection in the x-y plane, == z_hat
+  const TVector3 x_hat(1, 0, 0);
+  const TVector3 y_hat(0, 1, 0);
+      
+  const double pol_angle = 45*TMath::DegToRad();
+
+  const double E_mag = 1;
+
+  TGraph* grThetas = new TGraph();
+  TGraph* gr_r_p = new TGraph();
+  TGraph* gr_r_s = new TGraph();
+
+  for(int i=0; i <= nSteps; i++){
+    double theta_i = d_theta_i * i;
+
+    TVector3 incidentRay = -surfaceNormal; // *-1 to make it downgoing
+    incidentRay.RotateY(theta_i); // this should rotate the vector into the x-z plane, the plane of incidence
+
+    TVector3 E = E_mag*y_hat; // y_hat should be perpendicular to the incident ray in the x-z plane
+    E.Rotate(pol_angle, incidentRay);
+   
+    if(debug){
+      std::cout << "theta_i = " << theta_i*TMath::RadToDeg() << " degrees, (incidentRay . E) = " << incidentRay.Dot(E) << std::endl;
+      std::cout << "Incident ray = (" << incidentRay.X() << ", " << incidentRay.Y() << ", " << incidentRay.Z() << ")" << std::endl;
+      std::cout << "E = (" << E.X() << ", " << E.Y() << ", " << E.Z() << ")" << std::endl;
+    }
+
+    double E_s_initial = E.Y();
+    double E_p_initial = TMath::Sqrt(E.X()*E.X() + E.Z()*E.Z());
+
+    TVector3 reflectedRay = fresnelReflection(incidentRay, surfaceNormal, E);
+
+    if(debug){
+      TVector3 npi = incidentRay.Cross(reflectedRay).Unit();
+      std::cout << "normal to the plane of incidence = (" << npi.X() << ", " << npi.Y() << ", " << npi.Z() << ")" << std::endl;
+    }
+
+    double theta_r = surfaceNormal.Angle(reflectedRay);
+    double theta_i_2 = surfaceNormal.Angle(-incidentRay);
+
+    grThetas->SetPoint(grThetas->GetN(), theta_i_2*TMath::RadToDeg(), theta_r*TMath::RadToDeg());
+
+    double E_s_reflected = E.Y();
+    double E_p_reflected = TMath::Sqrt(E.X()*E.X() + E.Z()*E.Z());
+
+    double r_p = TMath::Abs(E_p_initial) > 0 ? E_p_reflected/E_p_initial : 0; // might be a better value to choose here?
+    double r_s = TMath::Abs(E_s_initial) > 0 ? E_s_reflected/E_s_initial : 0; // might be a better value to choose here?
+
+    gr_r_p->SetPoint(gr_r_p->GetN(), theta_i_2*TMath::RadToDeg(), r_p);
+    gr_r_s->SetPoint(gr_r_s->GetN(), theta_i_2*TMath::RadToDeg(), r_s);
+  }    
+    
+  TCanvas* c1 = new TCanvas();
+  c1->Divide(2);
+  c1->cd(1);
+  grThetas->SetTitle("Law of reflection; Angle of incidence, #theta_{i} (Degrees); Angle of reflection #theta_{r} (Degrees)");
+  grThetas->Draw();
+  grThetas->SetBit(kCanDelete);
+
+  c1->cd(2);
+  
+  TLegend* l1b = new TLegend(0.15, 0.55, 0.6, 0.85);
+  gr_r_p->SetTitle("E-field amplitude reflection coefficients; Incident angle, #theta_{i} (Degrees); Reflection coefficient");
+  gr_r_p->SetLineColor(kRed);
+  gr_r_p->Draw("al");
+  gr_r_p->SetBit(kCanDelete);  
+  double r_min = -1;
+  double r_max = 1;
+  gr_r_p->SetMaximum(r_max);
+  gr_r_p->SetMinimum(r_min);
+  gr_r_p->GetXaxis()->SetRangeUser(0, 90);
+  gr_r_s->Draw("lsame");
+  gr_r_s->SetBit(kCanDelete);    
+  TGraph* grBrewster = new TGraph();
+  double brewster_angle = TMath::RadToDeg()*TMath::ATan2(n_ice, n_air);
+  grBrewster->SetPoint(0, brewster_angle, r_min);
+  grBrewster->SetPoint(1, brewster_angle, r_max);
+  grBrewster->SetLineStyle(2);
+  grBrewster->SetLineColor(kMagenta);
+  grBrewster->Draw("lsame");
+  grBrewster->SetBit(kCanDelete);
+  
+  l1b->AddEntry(gr_r_s, "r_s (E-field perpendicular to plane of incidence)", "l");
+  l1b->AddEntry(gr_r_p, "r_p (H-field perpendicular to plane of incidence)", "l");
+  l1b->AddEntry(grBrewster, "Brewster angle", "l");  
+  l1b->SetBit(kCanDelete);
+  
+  l1b->Draw();
+  
+  c1->cd();
+
+  return c1;
+}
+
+
+
+/** 
+ * Applies a reflection to the fresnel coefficients
+ * 
+ * @param incidentPoyntingVector is a vector pointing to the reflection surface 
+ * @param surfaceNormal defines the plane of reflection
+ * @param electricFieldVec is the electric field vector of the incident ray
+ * @param n1 is the refractive index of the medium through which the incident and reflected rays are traveling (default is n_air)
+ * @param n2 is the refractive index of the medium upon which the incident ray is reflected (default is n_ice)
+ * 
+ * @return the reflected poynting vector
+ */
+TVector3 GeoMagnetic::fresnelReflection(const TVector3& incidentPoyntingVector, const TVector3& surfaceNormal, TVector3& electricFieldVec, double n1, double n2){  
+  
+  double theta_i = surfaceNormal.Angle(-incidentPoyntingVector); // factor of -1 since the incident ray is downgoing
+  double cos_theta_i = TMath::Cos(theta_i);
+  double sin_theta_i = TMath::Sin(theta_i);
+
+  // Snell's law + trig identities
+  double cos_theta_t = TMath::Sqrt(1 - (n1*n1*sin_theta_i*sin_theta_i/(n2*n2)));
+
+  const TVector3 reflectedPoyntingVector = specularReflection(incidentPoyntingVector, surfaceNormal);  
+
+  // from the Wikipedia...
+  // In this treatment, the coefficient r is the ratio of the reflected wave's complex electric field amplitude to that of the incident wave.
+  // The light is split into s and p polarizations
+  // s => E field is perpendicular to plane of incidence
+  // p => E field is parallel to the plane of incidence
+  // For s polarization, a POSITIVE r or t means that the ELECTRIC fields of the incoming and reflected (or transmitted) waves are PARALLEL, while negative means anti-parallel.
+  // For p polarization, a POSITIVE r or t means that the MAGNETIC fields of the incoming and reflected (or transmitted) waves are PARALLEL, while negative means anti-parallel.
+
+  // +ve r_s means E field (perpendicular to plane of incidence) is parallel on the way out (-ve means anti-parallel)
+  // +ve r_p means H field (perpendicular to plane of incidence) is parallel on the way out (-ve means anti-parallel)
+  // in the case of normal incidence, if the poynting vector is reversed but the H field is parallel, the E field must be anti-parallel...
+  // therefore there should be a factor of -1 applied to the reflected electric field vector in front of r_p.
+  
+  TVector3 normalToPlaneOfIncidence = incidentPoyntingVector.Cross(reflectedPoyntingVector).Unit();
+
+  if(normalToPlaneOfIncidence.Mag()==0){
+    // then the incoming and outgoing vectors are anti-parallel and we are free to chose a plane of incidence.
+    normalToPlaneOfIncidence.SetXYZ(0, 1, 0);
+  }
+  
+  double r_s = (n1*cos_theta_i - n2*cos_theta_t)/(n1*cos_theta_i + n2*cos_theta_t);
+  double r_p = (n2*cos_theta_i - n1*cos_theta_t)/(n2*cos_theta_i + n1*cos_theta_t);
+  
+  const TVector3 z_hat_local = surfaceNormal.Unit();
+  const TVector3 y_hat_local = normalToPlaneOfIncidence; // therefore y_hat is definitionally perpendicular to the plane of incidence
+  const TVector3 x_hat_local = y_hat_local.Cross(z_hat_local); 
+
+  double E_s = electricFieldVec.Dot(y_hat_local);
+  double E_p_x = electricFieldVec.Dot(x_hat_local);
+  double E_p_z = electricFieldVec.Dot(z_hat_local);
+
+  double reflected_E_s = r_s*E_s; // +ve r_s means E field is parallel
+  double reflected_E_p_x = -r_p*E_p_x; // +ve r_p means H field is parallel, which means E-field is flipped
+  double reflected_E_p_z = -r_p*E_p_z; // +ve r_p means H field is parallel, which means E-field is flipped
+
+  TVector3 reflectedElectricFieldVec = reflected_E_p_x*x_hat_local + reflected_E_s*y_hat_local + reflected_E_p_z*z_hat_local;
+
+  if(debug){
+    std::cout << "incident angle = " << theta_i*TMath::RadToDeg() << " degrees, transmission angle = " << TMath::ACos(cos_theta_t)*TMath::RadToDeg() << " degrees" << std::endl;
+    std::cout << "cos(theta_i) = " << cos_theta_i << ", cos(theta_t) = " << cos_theta_t << std::endl;
+    std::cout << "r_s(theta_i) = " << r_s << ", r_p(theta_i) = " << r_p << std::endl;
+    
+    if(TMath::Abs((x_hat_local.Cross(y_hat_local) - z_hat_local).Mag()) > 1e-19){
+      std::cout << "Checking that my unit vectors make sense..." << std::endl;
+      std::cout << "|x| = " << x_hat_local.Mag() << ", |y| = " << y_hat_local.Mag() << ", |z| = " << z_hat_local.Mag() << std::endl;
+      std::cout << "x.y = " << x_hat_local.Dot(y_hat_local) << ", x.z = " << x_hat_local.Dot(z_hat_local) << ", x.z = " << y_hat_local.Dot(z_hat_local) << std::endl;
+      std::cout << "|(x.Cross(y)) - z| = " << (x_hat_local.Cross(y_hat_local) - z_hat_local).Mag() << std::endl;
+    }
+    std::cout << "Original electric field  = (" << electricFieldVec.X() << ", " << electricFieldVec.Y() << ", " << electricFieldVec.Z() << ")"  << std::endl;
+    std::cout << "Reflected electric field = (" << reflectedElectricFieldVec.X() << ", " << reflectedElectricFieldVec.Y() << ", " << reflectedElectricFieldVec.Z() << ")"  << std::endl;
+    std::cout << std::endl;
+  }
+
+  // modify the input electric field vector with the reflected value
+  electricFieldVec = reflectedElectricFieldVec;
+
+  // return the reflected poynting vector...
+  return reflectedPoyntingVector;
 }
 
 
@@ -788,14 +1037,14 @@ TVector3 GeoMagnetic::reflection(const TVector3& sourceToReflection, const TVect
  * Get a unit length TVector that points along thetaWave and phiWave 
  * 
  * @param usefulPat is ANITA's position
- * @param phiWave is the incoming azimuth direction (radians) in payload coordinates
+ * @param phiWave is the azimuth direction (radians) in payload coordinates
  * @param thetaWave is the elevation angle (radians) theta=0 lies along the horizonal with -ve theta being up (the UsefulAdu5Pat convention)
  * 
  * @return TVector3 containing a unit vector pointing to thetaWave/phiWave away from ANITA
  */
 
 TVector3 GeoMagnetic::getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave){
-  init();
+  prepareGeoMagnetics();
   
   TVector3 anitaPosition = lonLatAltToVector(usefulPat.longitude, usefulPat.latitude, usefulPat.altitude);
   
@@ -806,7 +1055,7 @@ TVector3 GeoMagnetic::getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPa
 
   // This is just due north of ANITA
   double testLon = usefulPat.longitude;
-  double testLat = usefulPat.latitude - 0.1; // if ANITA could be at the north pole, this wouldn't work
+  double testLat = usefulPat.latitude - 0.1; // if ANITA could be at the north pole, this might not work
   double testAlt = usefulPat.altitude;
 
   double testThetaWave, testPhiWave;
@@ -902,7 +1151,7 @@ TVector3 GeoMagnetic::getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPa
 
 double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave){
 
-  init();
+  prepareGeoMagnetics();
   
   if(debug){
     std::cout << "Anita position = " << usefulPat.longitude << "\t" << usefulPat.latitude << "\t" << usefulPat.altitude << std::endl;
@@ -920,6 +1169,10 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
 
   TVector3 anitaPosition = lonLatAltToVector(usefulPat.longitude, usefulPat.latitude, usefulPat.altitude);
 
+  // Only used in the reflected case...
+  TVector3 surfaceNormal;
+  TVector3 reflectionToAnita;
+  
   // here we do the geometry slightly differently for the direct vs. reflected case
   if(directCosmicRay){
     if(debug){
@@ -934,44 +1187,50 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
     }
     destination = lonLatAltToVector(reflectionLon, reflectionLat, reflectionAlt); // i.e. the reflection point
 
-    TVector3 reflectionToAnita = anitaPosition - destination; // from reflection to anita...
+    reflectionToAnita = anitaPosition - destination; // from reflection to anita...
 
     // here I find the normal to  the geoid surface by getting the vector difference between
     // a point 1 m above the reflection and the reflection
-    TVector3 surfaceNormal = (lonLatAltToVector(reflectionLon, reflectionLat, reflectionAlt + 1) - destination).Unit();
+    surfaceNormal = (lonLatAltToVector(reflectionLon, reflectionLat, reflectionAlt + 1) - destination).Unit();
 
     // Reflect the incoming vector...
-    TVector3 incomingVector = reflection(reflectionToAnita, surfaceNormal);
+    TVector3 incomingVector = specularReflection(reflectionToAnita, surfaceNormal);
 
-    // but I want the vector pointing from the reflection out towards where the income came from
+    // but I want the vector pointing from the reflection out towards where the incoming signal came from
     destinationToSource = -incomingVector.Unit();
   }
 
-  // Here we get the position the cosmic way was on top of the atmosphere...
-  TVector3 topOfAtmosphere = getInitialPosition(destination, destinationToSource);
+  // Here we get the position the cosmic ray was on top of the atmosphere...
+  TVector3 cosmicRayAtmosphericEntry = getInitialPosition(destination, destinationToSource);
 
   // ...And the direction it travelled through the atmosphere...
   const TVector3 cosmicRayDirection = -destinationToSource.Unit();
 
-  // We integrate along that vector with our atmospheric model until we get to xMax for the shower
-  TVector3 xMaxPosition = getXMaxPosition(topOfAtmosphere, cosmicRayDirection);
+  // We integrate along that vector with our atmospheric model until we get to xMax, where the cosmic ray would interact, on average
+  TVector3 xMaxPosition = getXMaxPosition(cosmicRayAtmosphericEntry, cosmicRayDirection);
 
-  // and calculate the geo-magnetic field field at the shower maximum
+  // Calculate the geo-magnetic field field at x-max
   FieldPoint fp(usefulPat.realTime, xMaxPosition);
   
   // This is our electric field vector!
-  // If we care about getting the magnitude correct in addition to the orientation, there are some missing factors
-  // It should be:
-  // B_vec x S_vec = (1/mu0)B^{2} E_vec
-  // but for now this will do.
+  // If I cared about getting the magnitude correct in addition to the orientation, there are some missing factors
+  // It should be: B_vec x S_vec = (1/mu0)B^{2} E_vec
+  // But there's no radio cherenkov/geomagnetic shower model or anything so for now just the cross product will do.
   TVector3 EVec = fp.field().Cross(cosmicRayDirection).Unit();
   
   if(!directCosmicRay){
-    std::cerr << "Need to implement E-Field reflection with Fresnel coefficients and other bells and whistles." << std::endl;
+    // Modifies EVec by applying the Fresnel coefficients during the reflection
+    TVector3 reflectionToAnita2 = fresnelReflection(cosmicRayDirection, surfaceNormal, EVec);
+
+    if(debug){
+      double shouldBeZero = reflectionToAnita.Angle(reflectionToAnita2);
+      std::cout << "Doing the reflection on the way back... the angle between reflectionToAnita and reflectionToAnita2 = " << shouldBeZero << std::endl;
+    }
   }
 
   // Here I find the VPol and HPol antenna axes.
   // And I'm going to  pretend that one of ANITA's antennas points exactly at phiWave
+  // getting an off axis response will be more complicated
 
   // Since the antennas points down at -10 degrees, the VPol axis is 80 degrees above the horizontal plane
   TVector3 vPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, -80*TMath::DegToRad());
@@ -998,10 +1257,14 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
 
 
 
-
+/** 
+ * Plot the atmospheric density as a function of altitude used in the model
+ * 
+ * @return the canvas on which the plot is drawn
+ */
 
 TCanvas* GeoMagnetic::plotAtmosphere(){
-  init();
+  prepareGeoMagnetics();
   TCanvas* c1 = new TCanvas();
   grAtmosDensity.Draw("al");
   return c1;
@@ -1010,7 +1273,7 @@ TCanvas* GeoMagnetic::plotAtmosphere(){
 
 
 double GeoMagnetic::getAtmosphericDensity(double altitude){
-  init();
+  prepareGeoMagnetics();
   // TODO, convert altitude (above geoid) to height above MSL...
   return fExpAtmos->Eval(altitude);
 }
@@ -1019,8 +1282,17 @@ double GeoMagnetic::getAtmosphericDensity(double altitude){
 
 
 
+/** 
+ * Takes the final position and incoming direction and solves for the top of the atmosphere 
+ * Currently uses 80km as the top of the atmosphere.
+ * 
+ * @param destination is the final position of the ray (either ANITA or the reflection point)
+ * @param destinationToSource point away from the final position towards the arrival direction
+ * 
+ * @return the cartesian coordinate position vector at the top of the atmosphere
+ */
 TVector3 GeoMagnetic::getInitialPosition(const TVector3& destination, const TVector3& destinationToSource){
-  init();
+  prepareGeoMagnetics();
 
   if(destinationToSource.Mag() != 1){
     std::cerr  << "Warning in " << __PRETTY_FUNCTION__ << ", was expecting a unit vector, didn't get one. "
@@ -1042,15 +1314,27 @@ TVector3 GeoMagnetic::getInitialPosition(const TVector3& destination, const TVec
     // std::cout << initialLon << "\t" << initialLat << "\t" << initialAlt << std::endl;
   }
   if(debug){
-    std::cout << "Got initial position... " << initialLon << "\t" << initialLat << "\t" << initialAlt << std::endl;    
+    std::cout << "Got initial position... " << initialLon << "\t" << initialLat << "\t" << initialAlt << std::endl;
   }
   
   return initialPosition;
 }
 
 
+
+
+
+/** 
+ * Takes a vector from the top of the atmosphere, and the direction of travel of the cosmic ray
+ * and moves along the vector, integrating the atmospheric density until X_{max} is reached.
+ * 
+ * @param initialPosition is the cosmic ray's entry position to the atmosphere (cartesian TVector3)
+ * @param cosmicRayDirection is it's direction of travel (cartesian TVector3)
+ * 
+ * @return a cartesian vector containing the position of X_{max}
+ */
 TVector3 GeoMagnetic::getXMaxPosition(const TVector3& initialPosition, const TVector3& cosmicRayDirection){
-  init();
+  prepareGeoMagnetics();
 
   TVector3 currentPosition = initialPosition;
   double currentAtmosphereTraversed = 0; // kg / m ^{2}
@@ -1100,6 +1384,7 @@ TVector3 GeoMagnetic::getXMaxPosition(const TVector3& initialPosition, const TVe
   if(debug){
     TCanvas* c1 = new TCanvas();
     grAltPath->SetTitle("Cosmic Ray Altitude vs. distance traversed; Distance through atmosphere (m); Altitude (m)");
+    grAltPath->SetBit(kCanDelete);
     grAltPath->Draw("al");
   }
   
