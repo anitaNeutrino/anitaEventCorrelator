@@ -46,6 +46,7 @@ TF1* fExpAtmos;
 // I read xMax for a 1e19 eV proton off a plot in an Auger paper
 const double xMax = 0.8e4; // kg / m^{2}
 
+std::map<UInt_t, Int_t> unixTimeToYear; // actually portable time function silly map of unixTime to year 
 
 // --------------------------------------------------------------------------------------------------------------------------------------
 // Utility functions, for initialisation and internal calculation
@@ -220,6 +221,22 @@ void prepareGeoMagnetics(){
     if(!fExpAtmos){
       std::cerr << "Warning in " << __FILE__ << " unable to find exponential fit to atmosphere..." << std::endl;
     }
+
+
+    // https://www.epochconverter.com
+    unixTimeToYear[0] = 1970;
+    unixTimeToYear[157766400] = 1975;
+    unixTimeToYear[315532800] = 1980;
+    unixTimeToYear[631152000] = 1990;
+    unixTimeToYear[788918400] = 1995;
+    unixTimeToYear[946684800] = 2000;
+    unixTimeToYear[1104537600] = 2005;
+    unixTimeToYear[1262304000] = 2010;
+    unixTimeToYear[1420070400] = 2015;
+    unixTimeToYear[1577836800] = 2020;
+    unixTimeToYear[1735689600] = 2025;
+    unixTimeToYear[1893456000] = 2030;
+    unixTimeToYear[2051222400] = 2035;
     
     doneInit = true;
   }
@@ -248,62 +265,44 @@ double getFactorial(int i){
 
 
 /** 
- * Convert unixTime to fractional year with waaayyy too much precision
- * I think this should correctly handle leap years and other anomolies
+ * Convert unixTime to previous IGRF epoch and fraction through that epoch
  * 
- * @param unixTime is the seconds since 1970
+ * IGRF/DGRF coefficients 
  * 
- * @return year as a decimal quantity
+ * @param unixTime is the number of seconds since 1970
+ * 
+ * @return std::pair, first is five year IGRF epoch, second is fraction through that epoch
  */
-double unixTimeToFractionalYear(UInt_t unixTime){
-  TDatime t2(unixTime);
-  int thisYear = t2.GetYear();
-  TDatime t1(thisYear, 0, 0, 0, 0, 0);
-  UInt_t unixTimeYearStart = t1.Convert();
-  TDatime t3(thisYear+1, 0, 0, 0, 0, 0);
-  UInt_t unixTimeNextYear = t3.Convert();
-  double year = thisYear;
-  year += double(unixTime - unixTimeYearStart)/double(unixTimeNextYear - unixTimeYearStart);
-  // std::cout << unixTime << "\t" << thisYear << "\t" << unixTimeYearStart << "\t" << unixTimeNextYear << std::endl;
-  return year;
+std::pair<int, double> unixTimeToTimeCoefficientsOfIGRF(UInt_t unixTime){
+  
+  std::map<UInt_t, Int_t>::iterator next5YearIt = unixTimeToYear.upper_bound(unixTime);
+
+  std::pair<int, double> fifthYearAndFrac;
+
+  if(next5YearIt != unixTimeToYear.begin() && next5YearIt != unixTimeToYear.end()){
+
+    // upper bound returns first item greater than the search
+    UInt_t nextUnixTime = next5YearIt->first;
+
+    // we also want the last time less than or equal to, so decrement iterator
+    std::map<UInt_t, Int_t>::iterator last5YearIt = next5YearIt;
+    last5YearIt--;
+    Int_t last5Year = last5YearIt->second;
+    UInt_t lastUnixTime = last5YearIt->first;
+
+    double fracThrough5YearPeriod = double(unixTime - lastUnixTime)/double(nextUnixTime - lastUnixTime);
+    
+    return std::pair<int, double>(last5Year, fracThrough5YearPeriod);
+    
+  }
+  else{
+    std::cerr << "Error in " << __PRETTY_FUNCTION__ << ", the laziness of a programmer in the distant past has caused you a problem, could not figure out the IGRF time coefficients from unixTime!" << std::endl;
+    return std::pair<int, double> (0, 0);
+  }  
 }
 
 
 
-
-/** 
- * Acquire starting epoch from unixTime.
- * IGRF lookup table is printed at years of 1900, 1905, ..., 2020
- * TDatime.h usage isn't immediately apparent since it seems to start from 1995 epoch.
- * 
- * @param unixTime is the seconds since 1970
- * 
- * @return startEpoch is the epoch in which the unixTime coincides
- */
-int getStartEpochFromUnixTime(UInt_t unixTime){
-  int startEpoch = unixTime / 432000 + 394;
-  startEpoch *= 5;
-  return startEpoch;
-}
-
-
-
-/** 
- * Acquire fractional epoch from elapsed start epoch from unixTime.
- * IGRF lookup table is printed at years of 1900, 1905, ..., 2020
- * Hopefully unixTime accounts for leap years and other anomolies
- * 
- * @param unixTime is the seconds since 1970
- * 
- * @return fracEpoch is the elapsed fractional epoch from when
- * the unixTime epoch began
- */
-double getFracEpochFromUnixTime(UInt_t unixTime){
-  int startEpoch = getStartEpochFromUnixTime(unixTime);
-  double fracEpoch = unixTime / 86400 + 1970;
-  fracEpoch = (fracEpoch - startEpoch) / 5;
-  return fracEpoch;
-}
 
 
 
@@ -444,9 +443,11 @@ void GeoMagnetic::setDebug(bool db){
  */
 double GeoMagnetic::g(UInt_t unixTime, int n, int m){
   prepareGeoMagnetics();
-  int startEpoch = getStartEpochFromUnixTime(unixTime);
-  double fracEpoch = getFracEpochFromUnixTime(unixTime);
-//  int year = 2015;
+
+  std::pair<int, double> yearInterp = unixTimeToTimeCoefficientsOfIGRF(unixTime);
+  int startEpoch = yearInterp.first;
+  int fracEpoch = yearInterp.second;
+  
   int index = getIndex(n, m);
   return g_vs_time[startEpoch + 5].at(index) * fracEpoch + g_vs_time[startEpoch].at(index) * (1 - fracEpoch);
 //  return g_vs_time[year].at(index);
@@ -469,9 +470,11 @@ double GeoMagnetic::g(UInt_t unixTime, int n, int m){
  */
 double GeoMagnetic::h(UInt_t unixTime, int n, int m){
   prepareGeoMagnetics();
-  int startEpoch = getStartEpochFromUnixTime(unixTime);
-  double fracEpoch = getFracEpochFromUnixTime(unixTime);
-//  int year = 2015;
+
+  std::pair<int, double> yearInterp = unixTimeToTimeCoefficientsOfIGRF(unixTime);
+  int startEpoch = yearInterp.first;
+  int fracEpoch = yearInterp.second;  
+
   int index = getIndex(n, m);
   return h_vs_time[startEpoch + 5].at(index) * fracEpoch + h_vs_time[startEpoch].at(index) * (1 - fracEpoch);
 //  return h_vs_time[year].at(index);
