@@ -8,76 +8,9 @@
 
 
 
-/** 
- * Convert unixTime to year
- * 
- * @param unixTime is the number of seconds since 1970
- * 
- * @return year as a decimal quantity
- */
-std::pair<int, double> unixTimeToFractionalYear2(UInt_t unixTime){
-
-  std::map<UInt_t, Int_t> unixTimeToYear; // map of unixTime to year (1st Jan zero seconds past midnight GMT), every fifth year
-  unixTimeToYear[0] = 1970;
-  unixTimeToYear[157766400] = 1975;
-  unixTimeToYear[315532800] = 1980;
-  unixTimeToYear[631152000] = 1990;
-  unixTimeToYear[788918400] = 1995;
-  unixTimeToYear[946684800] = 2000;
-  unixTimeToYear[1104537600] = 2005;
-  unixTimeToYear[1262304000] = 2010;
-  unixTimeToYear[1420070400] = 2015;
-  unixTimeToYear[1577836800] = 2020;
-  unixTimeToYear[1735689600] = 2025;
-  unixTimeToYear[1893456000] = 2030;
-  unixTimeToYear[2051222400] = 2035;
-  
-  std::map<UInt_t, Int_t>::iterator next5YearIt = unixTimeToYear.upper_bound(unixTime);
-
-  std::pair<int, double> fifthYearAndFrac;
-
-  if(next5YearIt != unixTimeToYear.begin()){
-
-    // upper bound returns first item greater than the search
-    UInt_t nextUnixTime = next5YearIt->first;
-
-    // we also want the last time less than or equal to, so decrement iterator
-    std::map<UInt_t, Int_t>::iterator last5YearIt = next5YearIt;
-    last5YearIt--;
-
-    // upper bound returns first item greater than the search
-    Int_t last5Year = last5YearIt->second;
-    UInt_t lastUnixTime = last5YearIt->first;
-
-    double fracThrough5Year = double(unixTime - lastUnixTime)/double(nextUnixTime - lastUnixTime);
-    
-    return std::pair<int, double>(last5Year, fracThrough5Year);
-    
-  }
-  else{
-    std::cerr << "Error in " << __PRETTY_FUNCTION__ << ", the laziness of a programmer in the distant past has caused you a problem... could not figure out the year from unixTime!" << std::endl;
-    return std::pair<int, double> (0, 0);
-  }  
-}
-
-
 
 void testIGRF(){
-
-
-  std::vector<UInt_t> unixTimes {1418869215, 1480520956, 1482518716, 1480687576, 1420170374, 1893456000-1};  
-
-  for(auto& unixTime : unixTimes){
-
-    std::pair<int, double> fracYear2 = unixTimeToFractionalYear2(unixTime);    
-    std::cout << fracYear2.first << "\t" << fracYear2.second << std::endl;
-  }
-  
-  
-  // return;
-
-  // GeoMagnetic::setDebug(true);
-  
+  GeoMagnetic::setDebug(true);  
   GeoMagnetic::plotAtmosphere();
 
   Adu5Pat pat;

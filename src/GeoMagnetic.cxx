@@ -28,9 +28,12 @@ const int numPoly = 14; // there are only 13 polynomial coeffients, but I'm goin
 std::vector<double> factorials(2*numPoly, 0);
 std::map<int, std::vector<double> > g_vs_time; // Gauss coefficients (needed to calc potential)
 std::map<int, std::vector<double> > h_vs_time; // Gauss coefficients (needed to calc potential)
+std::vector<double> final_g_dot; // SV (predictive linear change in g post 2015)
+std::vector<double> final_h_dot; // SV (predictive linear change in h post 2015)
 const double earth_radius = 6371.2e3; // earth radius in meters for the magnetic model
 TF1* fAssocLegendre[numPoly][numPoly] = {{NULL}}; // Associated Legendre polynomials
 bool debug = false;
+int finalYearIGRF = 0;
 
 // for "differentiating" the potential (really it's a difference with small delta values)
 // I suppose I could differentiate the expression by hand and evaluate that... but that's work
@@ -81,7 +84,7 @@ void getGaussCoefficients(){
     std::cerr << "Error in " << __FILE__ << " unable to find " << fileName.Data() << std::endl;
   }
 
-  const int expectedTokens = 28;  
+  const int expectedTokens = 28;
   std::vector<std::vector<TString> > igrfDataTableStrings;
   while(!coeffs.eof()){
     std::string line;
@@ -93,6 +96,8 @@ void getGaussCoefficients(){
 
       // remove windows style newline prefix (for \r\n vs. \n)
       s.ReplaceAll("\r", "");
+
+      // std::cout << s << std::endl;
 
       TObjArray* tokens = s.Tokenize(' ');
       int numTokens = tokens->GetEntries();
@@ -106,14 +111,14 @@ void getGaussCoefficients(){
         }
 
         for(int i=0; i < numTokens; i++){
-          TString thisS = ((TObjString*)tokens->At(i))->GetString();          
+          TString thisS = ((TObjString*)tokens->At(i))->GetString();
           igrfDataTableStrings.back().push_back(thisS);
         }
       }
     }
   }
-
   
+
   // now extract data from strings...
   const int numRows = igrfDataTableStrings.size();
 
@@ -126,8 +131,18 @@ void getGaussCoefficients(){
   for(unsigned col=3; col < headerRow2.size() - 1; col++){
     int year = atoi(headerRow2[col].Data());
     colToYear[col] = year;
+    if(col == headerRow2.size() - 2){
+      finalYearIGRF = year;
+    }
     // std::cout << col << "\t" << year << std::endl;
   }
+
+  if(debug){
+    std::cout << "finalYearIGRF = " << finalYearIGRF << std::endl;
+  }
+
+  final_g_dot.resize(numPoly*numPoly, 0);
+  final_h_dot.resize(numPoly*numPoly, 0);
 
   //  loop over rows and extract Gauss coefficents
   for(int row=2; row < numRows; row++){
@@ -145,7 +160,7 @@ void getGaussCoefficients(){
     for(unsigned col=3; col < thisRow.size() - 1; col++){
       int year = colToYear[col];
 
-      std::map<int, std::vector<double> >::iterator it;      
+      std::map<int, std::vector<double> >::iterator it;
 
       // put data into Gauss coeffient maps
       if(g_or_h == "g"){
@@ -172,6 +187,38 @@ void getGaussCoefficients(){
       }
       else{
         std::cerr << "Warning! Unknown coefficient " << g_or_h << "[" << n << "][" << m << "]" << std::endl;
+      }
+    }
+    unsigned finalCol = thisRow.size() - 1;
+    if(g_or_h == "g"){
+      final_g_dot.at(index) = atof(thisRow.at(finalCol).Data());
+      // std::cout << g_or_h << "\t" << n << "\t" << m << "\t" << final_g_dot.at(index) << std::endl;
+    }
+    else if(g_or_h == "h"){
+      final_h_dot.at(index) = atof(thisRow.at(finalCol).Data());
+      // std::cout << g_or_h << "\t" << n << "\t" << m << "\t" << final_h_dot.at(index) << std::endl;
+    }
+  }
+
+
+  if(debug){
+    const int deltaYear= 5;
+    for(int n=1;  n < numPoly; n++){
+      for(int m=0;  m <= n;  m++){
+        int i = getIndex(n, m);
+
+        std::cout << "g\t" << n << "\t" << m << "\t";
+        for(int year = 1900; year <= finalYearIGRF; year+=deltaYear){
+          std::cout << g_vs_time[year].at(i) <<  "\t";
+        }
+        std::cout << final_g_dot.at(i) << std::endl;
+
+
+        std::cout << "h\t" << n << "\t" << m << " ";
+        for(int year = 1900; year <= finalYearIGRF; year+=deltaYear){
+          std::cout << h_vs_time[year].at(i) <<  " ";
+        }
+        std::cout << final_h_dot.at(i) << std::endl;
       }
     }
   }
@@ -289,7 +336,7 @@ std::pair<int, double> unixTimeToTimeCoefficientsOfIGRF(UInt_t unixTime){
     last5YearIt--;
     Int_t last5Year = last5YearIt->second;
     UInt_t lastUnixTime = last5YearIt->first;
-
+    
     double fracThrough5YearPeriod = double(unixTime - lastUnixTime)/double(nextUnixTime - lastUnixTime);
     
     return std::pair<int, double>(last5Year, fracThrough5YearPeriod);
@@ -444,12 +491,29 @@ double GeoMagnetic::g(UInt_t unixTime, int n, int m){
   prepareGeoMagnetics();
 
   std::pair<int, double> yearInterp = unixTimeToTimeCoefficientsOfIGRF(unixTime);
-  int startEpoch = yearInterp.first;
-  int fracEpoch = yearInterp.second;
+  int year = yearInterp.first;
+  double fracEpoch = yearInterp.second;
   
   int index = getIndex(n, m);
-  return (g_vs_time[startEpoch + 5].at(index) * fracEpoch + g_vs_time[startEpoch].at(index) * (1 - fracEpoch));
-//  return g_vs_time[year].at(index);
+  const int deltaYears = 5;
+
+  double g = 0;
+  double g_t0 = 0;
+  double g_dot = 0;
+  if(year >= finalYearIGRF){
+    g_t0 = g_vs_time[finalYearIGRF].at(index);
+    g_dot = final_g_dot.at(index); // deltaG per year
+    fracEpoch += (year - finalYearIGRF)/deltaYears;
+    std::cout << year << "\t" << finalYearIGRF << std::endl;
+  }
+  else{
+    g_t0 = g_vs_time[year].at(index);
+    double g_t1 = g_vs_time[year + deltaYears].at(index);
+    g_dot = (g_t1 - g_t0)/deltaYears;
+  }
+  g = g_t0 + fracEpoch*g_dot*deltaYears;
+
+  return g;
 }
 
 
@@ -471,12 +535,28 @@ double GeoMagnetic::h(UInt_t unixTime, int n, int m){
   prepareGeoMagnetics();
 
   std::pair<int, double> yearInterp = unixTimeToTimeCoefficientsOfIGRF(unixTime);
-  int startEpoch = yearInterp.first;
-  int fracEpoch = yearInterp.second;  
+  int year = yearInterp.first;
+  double fracEpoch = yearInterp.second;
 
   int index = getIndex(n, m);
-  return (h_vs_time[startEpoch + 5].at(index) * fracEpoch + h_vs_time[startEpoch].at(index) * (1 - fracEpoch));
-//  return h_vs_time[year].at(index);
+  const int deltaYears = 5;
+
+  double h = 0;
+  double h_t0 = 0;
+  double h_dot = 0;
+  if(year >= finalYearIGRF){
+    h_t0 = h_vs_time[finalYearIGRF].at(index);
+    h_dot = final_h_dot.at(index); // deltaH per year
+    fracEpoch += (year - finalYearIGRF)/deltaYears;
+  }
+  else{
+    h_t0 = h_vs_time[year].at(index);
+    double h_t1 = h_vs_time[year + deltaYears].at(index);
+    h_dot = (h_t1 - h_t0)/deltaYears;
+  }
+  h = h_t0 + fracEpoch*h_dot*deltaYears;
+
+  return h;
 }
 
 
