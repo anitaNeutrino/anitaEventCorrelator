@@ -278,12 +278,10 @@ double unixTimeToFractionalYear(UInt_t unixTime){
  * 
  * @param unixTime is the seconds since 1970
  * 
- * @return startEpoch is the epoch in which the unixTime coincides
+ * @return The epoch at which unixTime started
  */
 int getStartEpochFromUnixTime(UInt_t unixTime){
-  int startEpoch = unixTime / 432000 + 394;
-  startEpoch *= 5;
-  return startEpoch;
+  return (5 * int (unixTime / 432000) + 1970);
 }
 
 
@@ -295,14 +293,10 @@ int getStartEpochFromUnixTime(UInt_t unixTime){
  * 
  * @param unixTime is the seconds since 1970
  * 
- * @return fracEpoch is the elapsed fractional epoch from when
- * the unixTime epoch began
+ * @return Elapsed fractional epoch relative to the epoch in which unixTime started
  */
 double getFracEpochFromUnixTime(UInt_t unixTime){
-  int startEpoch = getStartEpochFromUnixTime(unixTime);
-  double fracEpoch = unixTime / 86400 + 1970;
-  fracEpoch = (fracEpoch - startEpoch) / 5;
-  return fracEpoch;
+  return (unixTime / 432000 - int (unixTime / 432000));
 }
 
 
@@ -448,7 +442,7 @@ double GeoMagnetic::g(UInt_t unixTime, int n, int m){
   double fracEpoch = getFracEpochFromUnixTime(unixTime);
 //  int year = 2015;
   int index = getIndex(n, m);
-  return g_vs_time[startEpoch + 5].at(index) * fracEpoch + g_vs_time[startEpoch].at(index) * (1 - fracEpoch);
+  return (g_vs_time[startEpoch + 5].at(index) * fracEpoch + g_vs_time[startEpoch].at(index) * (1 - fracEpoch));
 //  return g_vs_time[year].at(index);
 }
 
@@ -473,7 +467,7 @@ double GeoMagnetic::h(UInt_t unixTime, int n, int m){
   double fracEpoch = getFracEpochFromUnixTime(unixTime);
 //  int year = 2015;
   int index = getIndex(n, m);
-  return h_vs_time[startEpoch + 5].at(index) * fracEpoch + h_vs_time[startEpoch].at(index) * (1 - fracEpoch);
+  return (h_vs_time[startEpoch + 5].at(index) * fracEpoch + h_vs_time[startEpoch].at(index) * (1 - fracEpoch));
 //  return h_vs_time[year].at(index);
 }
 
