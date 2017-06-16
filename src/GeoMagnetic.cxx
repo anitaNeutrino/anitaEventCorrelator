@@ -305,7 +305,6 @@ std::pair<int, double> unixTimeToTimeCoefficientsOfIGRF(UInt_t unixTime){
 
 
 
-
 /** 
  * Convert from longitude, latitude, altitude (above geoid) to spherical polar coordinates
  *
@@ -449,7 +448,7 @@ double GeoMagnetic::g(UInt_t unixTime, int n, int m){
   int fracEpoch = yearInterp.second;
   
   int index = getIndex(n, m);
-  return g_vs_time[startEpoch + 5].at(index) * fracEpoch + g_vs_time[startEpoch].at(index) * (1 - fracEpoch);
+  return (g_vs_time[startEpoch + 5].at(index) * fracEpoch + g_vs_time[startEpoch].at(index) * (1 - fracEpoch));
 //  return g_vs_time[year].at(index);
 }
 
@@ -476,7 +475,7 @@ double GeoMagnetic::h(UInt_t unixTime, int n, int m){
   int fracEpoch = yearInterp.second;  
 
   int index = getIndex(n, m);
-  return h_vs_time[startEpoch + 5].at(index) * fracEpoch + h_vs_time[startEpoch].at(index) * (1 - fracEpoch);
+  return (h_vs_time[startEpoch + 5].at(index) * fracEpoch + h_vs_time[startEpoch].at(index) * (1 - fracEpoch));
 //  return h_vs_time[year].at(index);
 }
 
