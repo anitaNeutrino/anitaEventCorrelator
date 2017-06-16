@@ -272,6 +272,42 @@ double unixTimeToFractionalYear(UInt_t unixTime){
 
 
 /** 
+ * Acquire starting epoch from unixTime.
+ * IGRF lookup table is printed at years of 1900, 1905, ..., 2020
+ * TDatime.h usage isn't immediately apparent since it seems to start from 1995 epoch.
+ * 
+ * @param unixTime is the seconds since 1970
+ * 
+ * @return startEpoch is the epoch in which the unixTime coincides
+ */
+int getStartEpochFromUnixTime(UInt_t unixTime){
+  int startEpoch = unixTime / 432000 + 394;
+  startEpoch *= 5;
+  return startEpoch;
+}
+
+
+
+/** 
+ * Acquire fractional epoch from elapsed start epoch from unixTime.
+ * IGRF lookup table is printed at years of 1900, 1905, ..., 2020
+ * Hopefully unixTime accounts for leap years and other anomolies
+ * 
+ * @param unixTime is the seconds since 1970
+ * 
+ * @return fracEpoch is the elapsed fractional epoch from when
+ * the unixTime epoch began
+ */
+double getFracEpochFromUnixTime(UInt_t unixTime){
+  int startEpoch = getStartEpochFromUnixTime(unixTime);
+  double fracEpoch = unixTime / 86400 + 1970;
+  fracEpoch = (fracEpoch - startEpoch) / 5;
+  return fracEpoch;
+}
+
+
+
+/** 
  * Convert from longitude, latitude, altitude (above geoid) to spherical polar coordinates
  *
  * Finishes the job started in AnitaGeomTool
@@ -408,9 +444,12 @@ void GeoMagnetic::setDebug(bool db){
  */
 double GeoMagnetic::g(UInt_t unixTime, int n, int m){
   prepareGeoMagnetics();
-  int year = 2015;
+  int startEpoch = getStartEpochFromUnixTime(unixTime);
+  double fracEpoch = getFracEpochFromUnixTime(unixTime);
+//  int year = 2015;
   int index = getIndex(n, m);
-  return g_vs_time[year].at(index);
+  return g_vs_time[startEpoch + 5].at(index) * fracEpoch + g_vs_time[startEpoch].at(index) * (1 - fracEpoch);
+//  return g_vs_time[year].at(index);
 }
 
 
@@ -429,10 +468,13 @@ double GeoMagnetic::g(UInt_t unixTime, int n, int m){
  * @return the time interpolated IGRF h coefficient
  */
 double GeoMagnetic::h(UInt_t unixTime, int n, int m){
-  prepareGeoMagnetics();  
-  int year = 2015;
-  int index = getIndex(n, m);  
-  return h_vs_time[year].at(index);
+  prepareGeoMagnetics();
+  int startEpoch = getStartEpochFromUnixTime(unixTime);
+  double fracEpoch = getFracEpochFromUnixTime(unixTime);
+//  int year = 2015;
+  int index = getIndex(n, m);
+  return h_vs_time[startEpoch + 5].at(index) * fracEpoch + h_vs_time[startEpoch].at(index) * (1 - fracEpoch);
+//  return h_vs_time[year].at(index);
 }
 
 
