@@ -343,7 +343,7 @@ void sphericalToLatLonAlt(double& lon, double& lat, double& alt, double r, doubl
   double z = r*TMath::Cos(theta);
   double cartesian[3] = {x, y, z};
 
-  auto g = AnitaGeomTool::Instance();
+  AnitaGeomTool* g = AnitaGeomTool::Instance();
   g->getLatLonAltFromCartesian(cartesian, lat, lon, alt);
 
   // fml... 
@@ -659,7 +659,7 @@ double GeoMagnetic::Z_atLonLatAlt(UInt_t unixTime, double lon, double lat, doubl
  */
 TCanvas* GeoMagnetic::plotFieldAtAltitude(UInt_t unixTime, double altitude){
 
-  auto c = new TCanvas();
+  TCanvas* c = new TCanvas();
   AntarcticaBackground* bg = new AntarcticaBackground();
 
   int nx = bg->GetNbinsX();
