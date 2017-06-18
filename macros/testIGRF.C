@@ -4,12 +4,13 @@
 #include "TGraph.h"
 #include "TCanvas.h"
 #include "AntarcticaBackground.h"
+#include "TDatime.h"
+
+
 
 
 void testIGRF(){
-
-  // GeoMagnetic::setDebug(true);
-  
+  GeoMagnetic::setDebug(true);  
   GeoMagnetic::plotAtmosphere();
 
   Adu5Pat pat;
@@ -66,7 +67,7 @@ void testIGRF(){
       // hZ->SetBinContent(bx, by, f.fField.Mag());
       // hY->SetBinContent(bx, by, f.fField.Phi());
       // hX->SetBinContent(bx, by, f.fField.Theta());
-      double Z_lla = GeoMagnetic::Z_atLonLatAlt(0, lon, lat, 40e3);
+      double Z_lla = GeoMagnetic::Z_atLonLatAlt(1893456000, lon, lat, 40e3);
       // std::cout << Z_lla << std::endl;
       hL->SetBinContent(bx, by, Z_lla);
     }
