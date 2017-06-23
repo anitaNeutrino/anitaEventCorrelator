@@ -67,6 +67,9 @@ inline double getIndex(int n, int m){
   return n*numPoly + m;
 }
 
+
+
+
 /** 
  * Reads in the Gauss coefficients for the associated Legendre polynomials
  * 
@@ -227,9 +230,6 @@ void getGaussCoefficients(){
 
 
 
-
-
-
 /** 
  * Do all the precalculation and initialisation needed to make the namespace useable
  *
@@ -288,6 +288,8 @@ void prepareGeoMagnetics(){
     doneInit = true;
   }
 }
+
+
 
 
 /** 
@@ -351,7 +353,6 @@ std::pair<int, double> unixTimeToTimeCoefficientsOfIGRF(UInt_t unixTime){
 
 
 
-
 /** 
  * Convert from longitude, latitude, altitude (above geoid) to spherical polar coordinates
  *
@@ -406,7 +407,6 @@ TVector3 lonLatAltToVector(double lon, double lat, double alt){
 
 
 
-
 /** 
  * Convert from spherical polar (r, theta, phi) to lon, lat, alt
  * 
@@ -430,6 +430,7 @@ void sphericalToLatLonAlt(double& lon, double& lat, double& alt, double r, doubl
   // fml... 
   lat = theta*TMath::RadToDeg() <= 90 ? -lat : lat;
 }
+
 
 
 
@@ -457,9 +458,6 @@ void vectorToLonLatAlt(double& lon, double& lat, double& alt, const TVector3& v)
 // --------------------------------------------------------------------------------------------------------------------------------------
 // Namespace functions, for public consumption
 // --------------------------------------------------------------------------------------------------------------------------------------
-
-
-
 
 /** 
  * @brief 3D geometry is hard, set this true to get more info.
@@ -519,7 +517,6 @@ double GeoMagnetic::g(UInt_t unixTime, int n, int m){
 
 
 
-
 /** 
  * Get the h Gauss coefficient in the IGRF/DGRF model
  *
@@ -562,14 +559,8 @@ double GeoMagnetic::h(UInt_t unixTime, int n, int m){
 
 
 
-
-
-
-
-
-
 /** 
- * Evaluate the Schmidt Quazi normalized asssociated Legendre polynomal at x
+ * Evaluate the Schmidt Quasi normalized asssociated Legendre polynomal at x
  *
  * Thankfully the Associated Legendre Polynomials are implemented inside ROOT
  * (actually ROOT just wraps the GSL implementation)
@@ -645,11 +636,6 @@ double GeoMagnetic::getPotentialAtSpherical(UInt_t unixTime, double r, double th
 
 
 
-
-
-
-
-
 /** 
  * @brief Get the geomagnetic potential at a particular time,  longitude, latitude, and altitude
  * 
@@ -690,6 +676,9 @@ double GeoMagnetic::X_atLonLatAlt(UInt_t unixTime, double lon, double lat, doubl
   return X_atSpherical(unixTime, r, theta, phi);
 }
 
+
+
+
 /** 
  * Get the northwards component of the geo-magnetic field,
  * 
@@ -701,7 +690,6 @@ double GeoMagnetic::X_atLonLatAlt(UInt_t unixTime, double lon, double lat, doubl
  * 
  * @return 
  */
-
 double GeoMagnetic::X_atSpherical(UInt_t unixTime, double r, double theta, double phi){  
   prepareGeoMagnetics();
   double V0 = getPotentialAtSpherical(unixTime, r, theta, phi);
@@ -729,6 +717,8 @@ double GeoMagnetic::Y_atLonLatAlt(UInt_t unixTime, double lon,  double lat, doub
   lonLatAltToSpherical(lon, lat, alt, r, theta, phi);
   return Y_atSpherical(unixTime, lon, lat, alt);
 }
+
+
 
 
 /** 
@@ -760,7 +750,7 @@ double GeoMagnetic::Y_atSpherical(UInt_t unixTime, double r,  double theta, doub
  * @param lat is latitude, +ve is north, -ve is south
  * @param alt is altitude above geoid surface
  * 
- * @return Downwards component of geom-magnetic field
+ * @return Downwards component of geo-magnetic field
  */
 double GeoMagnetic::Z_atLonLatAlt(UInt_t unixTime, double lon, double lat, double alt){  
   prepareGeoMagnetics();
@@ -768,6 +758,30 @@ double GeoMagnetic::Z_atLonLatAlt(UInt_t unixTime, double lon, double lat, doubl
   lonLatAltToSpherical(lon, lat, alt, r, theta,  phi);
   return Z_atSpherical(unixTime, r, theta, phi);
 }
+
+
+
+
+/** 
+ * Get the downwards facing component of the geomagnetic field
+ * 
+ * @param unixTime 
+ * @param r 
+ * @param theta 
+ * @param phi 
+ * @param double 
+ * 
+ * @return Downwards component of geomagnetic field
+ */
+double GeoMagnetic::Z_atSpherical(UInt_t unixTime, double r,  double theta, double phi){
+  prepareGeoMagnetics();
+  
+  double V0 = getPotentialAtSpherical(unixTime, r, theta, phi);
+  double V1 = getPotentialAtSpherical(unixTime, r+dr, theta, phi);
+  double BZ = (V1-V0)/dr; // negative of the gradient of the potential
+  return BZ;
+}
+
 
 
 
@@ -810,33 +824,6 @@ TCanvas* GeoMagnetic::plotFieldAtAltitude(UInt_t unixTime, double altitude){
 
 
 
-
-
-
-
-/** 
- * Get the downwards facing component of the geomagnetic field
- * 
- * @param unixTime 
- * @param r 
- * @param theta 
- * @param phi 
- * @param double 
- * 
- * @return Downwards component of geomagnetic field
- */
-double GeoMagnetic::Z_atSpherical(UInt_t unixTime, double r,  double theta, double phi){
-  prepareGeoMagnetics();
-  
-  double V0 = getPotentialAtSpherical(unixTime, r, theta, phi);
-  double V1 = getPotentialAtSpherical(unixTime, r+dr, theta, phi);
-  double BZ = (V1-V0)/dr; // negative of the gradient of the potential
-  return BZ;
-}
-
-
-
-
 /** 
  * Handles conversion to easting/northing for use with AntarcticaBackground
  * 
@@ -860,7 +847,6 @@ void GeoMagnetic::FieldPoint::Draw(Option_t* opt){
   
   TArrow::Draw(opt);
 }
-
 
 
 
@@ -1284,7 +1270,7 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
   // use the silly UsefulAdu5Pat convention that -ve theta is down...
   // phiWave is in radians relative to ADU5 Aft Fore line
 
-  double reflectionLon=0, reflectionLat=0, reflectionAlt=0, deltaTheta=100; // need non-zero deltaTheta when testing whether things intersectg, as theta < 0 returns instantly
+  double reflectionLon=0, reflectionLat=0, reflectionAlt=0, deltaTheta=100; // need non-zero deltaTheta when testing whether things intersect, as theta < 0 returns instantly
   usefulPat.traceBackToContinent(phiWave, thetaWave, &reflectionLat, &reflectionLon, &reflectionAlt, &deltaTheta);
 
   TVector3 destination; // ANITA position if direct cosmic ray or surface position if reflected cosmic ray
@@ -1344,7 +1330,7 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
   
   if(!directCosmicRay){
     // Modifies EVec by applying the Fresnel coefficients during the reflection
-    TVector3 reflectionToAnita2 = fresnelReflection(cosmicRayDirection, surfaceNormal, EVec);
+    TVector3 reflectionToAnita2 = fresnelReflection(cosmicRayDirection, surfaceNormal, EVec).Unit();
 
     if(debug){
       double shouldBeZero = reflectionToAnita.Angle(reflectionToAnita2);
