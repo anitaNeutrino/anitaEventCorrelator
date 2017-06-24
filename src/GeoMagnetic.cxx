@@ -692,8 +692,8 @@ double GeoMagnetic::X_atLonLatAlt(UInt_t unixTime, double lon, double lat, doubl
  */
 double GeoMagnetic::X_atSpherical(UInt_t unixTime, double r, double theta, double phi){  
   prepareGeoMagnetics();
-  double V0 = getPotentialAtSpherical(unixTime, r, theta-)-0.5*dTheta, phi);
-  double V1 = getPotentialAtSpherical(unixTime, r, theta+)+0.5*dTheta, phi);
+  double V0 = getPotentialAtSpherical(unixTime, r, theta-0.5*dTheta, phi);
+  double V1 = getPotentialAtSpherical(unixTime, r, theta+0.5*dTheta, phi);
   double BX = (V1-V0)/(dTheta*r);
   return BX;
 }
