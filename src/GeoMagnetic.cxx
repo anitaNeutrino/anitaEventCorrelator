@@ -692,9 +692,9 @@ double GeoMagnetic::X_atLonLatAlt(UInt_t unixTime, double lon, double lat, doubl
  */
 double GeoMagnetic::X_atSpherical(UInt_t unixTime, double r, double theta, double phi){  
   prepareGeoMagnetics();
-  double V0 = getPotentialAtSpherical(unixTime, r, theta, phi);
+  double V0 = getPotentialAtSpherical(unixTime, r, theta-dTheta, phi);
   double V1 = getPotentialAtSpherical(unixTime, r, theta+dTheta, phi);
-  double BX = (V1-V0)/(dTheta*r);
+  double BX = (V1-V0)/(2*dTheta*r);
   return BX;
 }
 
@@ -733,9 +733,9 @@ double GeoMagnetic::Y_atLonLatAlt(UInt_t unixTime, double lon,  double lat, doub
  */
 double GeoMagnetic::Y_atSpherical(UInt_t unixTime, double r,  double theta, double phi){
   prepareGeoMagnetics();
-  double V0 = getPotentialAtSpherical(unixTime, r, theta, phi);
+  double V0 = getPotentialAtSpherical(unixTime, r, theta, phi-dPhi);
   double V1 = getPotentialAtSpherical(unixTime, r, theta, phi+dPhi);
-  double BY = -(V1-V0)/(dPhi*r*TMath::Sin(theta));
+  double BY = -(V1-V0)/(2*dPhi*r*TMath::Sin(theta));
   return BY;
 }
 
@@ -776,9 +776,9 @@ double GeoMagnetic::Z_atLonLatAlt(UInt_t unixTime, double lon, double lat, doubl
 double GeoMagnetic::Z_atSpherical(UInt_t unixTime, double r,  double theta, double phi){
   prepareGeoMagnetics();
   
-  double V0 = getPotentialAtSpherical(unixTime, r, theta, phi);
+  double V0 = getPotentialAtSpherical(unixTime, r-dr, theta, phi);
   double V1 = getPotentialAtSpherical(unixTime, r+dr, theta, phi);
-  double BZ = (V1-V0)/dr; // negative of the gradient of the potential
+  double BZ = (V1-V0)/(2*dr); // negative of the gradient of the potential
   return BZ;
 }
 
