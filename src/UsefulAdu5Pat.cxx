@@ -1184,8 +1184,8 @@ void UsefulAdu5Pat::getSunPosition(Double_t& phiDeg, Double_t& thetaDeg){
   // therefore
 
   phiDeg = heading - dAzimuth;
-  while(phiDeg < 0) phiDeg += 360;
-  while(phiDeg >= 0) phiDeg -= 360;
+  while(phiDeg < -180) phiDeg += 360;
+  while(phiDeg >= 180) phiDeg -= 360;
 
   // and theta for these guys runs from
   thetaDeg = dZenithAngle - 90;
