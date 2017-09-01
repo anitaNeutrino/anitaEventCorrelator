@@ -3,6 +3,7 @@
 
 #include "TString.h"
 #include <vector>
+#include "RampdemReader.h" 
 
 namespace BaseList{
 
@@ -14,12 +15,15 @@ namespace BaseList{
       latitude = lat;
       longitude = lon;
       altitude = alt;
+      RampdemReader::LonLatToEastingNorthing(lon,lat,Easting,Northing); 
+
     }
     base(const TString& theName, double lat, double lon, double alt=0){
       name = theName;
       latitude = lat;
       longitude = lon;
       altitude = alt;
+      RampdemReader::LonLatToEastingNorthing(lon,lat,Easting,Northing); 
     }
 
     TString name;
@@ -27,11 +31,11 @@ namespace BaseList{
     double latitude;
     double longitude;
     double altitude;
+    double Easting; 
+    double Northing; 
   };
 
   const base& getBase(UInt_t i);
-  void makeBaseList();
-  void makeEmptyBaseList();
   size_t getNumBases();
 
 };

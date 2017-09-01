@@ -1,11 +1,13 @@
 #include "BaseList.h"
 
-static std::vector<BaseList::base> baseList;
-static bool initializedBaseList = false;
+/** Use magic static for thread-safety */ 
 
-void BaseList::makeBaseList(){
-  baseList.clear();
+using namespace BaseList;
+static std::vector<base> & bases()
+{
+  static std::vector<base> baseList; 
   baseList.reserve(150); // approx
+
   // baseList.push_back(base("BelgranoII",				-77.8744444,	-34.6269444,	250));
   // baseList.push_back(base("Brown",				-64.89536982,	-62.87045109,	10));
   // baseList.push_back(base("Cámara",				-62.59385833,	-59.91934444,	22));
@@ -480,31 +482,17 @@ void BaseList::makeBaseList(){
   // 				    -79.467, -112.085, 1766));
 
 
-  initializedBaseList = true;
+  return baseList; 
 }
 
-
-void BaseList::makeEmptyBaseList(){
-  baseList.clear();
-  baseList.reserve(150); // approx
-  initializedBaseList = true;
-}
 
 const BaseList::base& BaseList::getBase(UInt_t index){
-  if(!initializedBaseList){
-    makeBaseList();
-    initializedBaseList = true;
-  }
 
-  index = index < baseList.size() ? index : 0;
-  return baseList.at(index);
+  index = index < bases().size() ? index : 0;
+  return bases().at(index);
 }
 
 
 size_t BaseList::getNumBases(){
-  if(!initializedBaseList){
-    makeBaseList();
-    initializedBaseList = true;
-  }
-  return baseList.size();
+  return bases().size();
 }
