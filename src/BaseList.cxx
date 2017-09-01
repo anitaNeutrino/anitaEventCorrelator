@@ -3,11 +3,10 @@
 /** Use magic static for thread-safety */ 
 
 using namespace BaseList;
-static std::vector<base> & bases()
-{
-  static std::vector<base> baseList; 
-  baseList.reserve(150); // approx
 
+
+static void fillBases(std::vector<base> & baseList) 
+{
   // baseList.push_back(base("BelgranoII",				-77.8744444,	-34.6269444,	250));
   // baseList.push_back(base("Brown",				-64.89536982,	-62.87045109,	10));
   // baseList.push_back(base("Cámara",				-62.59385833,	-59.91934444,	22));
@@ -482,9 +481,16 @@ static std::vector<base> & bases()
   // 				    -79.467, -112.085, 1766));
 
 
-  return baseList; 
 }
 
+static std::vector<base> & bases()
+{
+  static std::vector<base> baseList; 
+  baseList.reserve(150); // approx
+
+  fillBases(baseList); 
+  return baseList; 
+}
 
 const BaseList::base& BaseList::getBase(UInt_t index){
 
@@ -495,4 +501,15 @@ const BaseList::base& BaseList::getBase(UInt_t index){
 
 size_t BaseList::getNumBases(){
   return bases().size();
+}
+
+void BaseList::makeBaseList()
+{
+  fillBases(bases()); 
+}
+
+
+void BaseList::makeEmptyBaseList()
+{
+  bases().clear(); //DESTROY ALL THE BASES FOR SOME REASON  
 }
