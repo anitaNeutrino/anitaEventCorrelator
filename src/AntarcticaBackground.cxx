@@ -60,6 +60,7 @@ void AntarcticaBackground::init(RampdemReader::dataSet dataSet, Int_t coarseness
   palettes[RampdemReader::icemask_grounded_and_shelves] = kLightTerrain;
   palettes[RampdemReader::surface] = kLightTerrain;
   palettes[RampdemReader::thickness] = kRedBlue;
+  opacity = 1; 
 #endif
 }
 
@@ -73,7 +74,7 @@ void AntarcticaBackground::setPalette(){
   // here I define the color palettes tbat I want the different data sets to use when they're drawn on the background.
   std::map<RampdemReader::dataSet, EColorPalette>::iterator it = palettes.find(fDataSet);
   if(it != palettes.end()){
-    gStyle->SetPalette(it->second);
+    gStyle->SetPalette(it->second,0,opacity);
     gStyle->SetNdivisions(254);
   }
 #else

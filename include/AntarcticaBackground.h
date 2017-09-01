@@ -30,7 +30,6 @@ public:
 
   void Draw(Option_t* opt = "colz");
 
-
   // Interactive plotting fun
   // Enable for extra info on mouse over...
 
@@ -79,6 +78,7 @@ public:
   // at some point, supporting ROOT versions < 6 is gonna be impossible...
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
   std::map<RampdemReader::dataSet, EColorPalette> palettes;
+  float opacity; 
 #endif
 
 
