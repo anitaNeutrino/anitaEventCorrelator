@@ -180,9 +180,9 @@ void AntarcticSegmentationScheme::DrawI(const char * opt, const int * idata) con
   {
     data = new double[N]; 
     for (int i = 0; i < N; i++) { data[i] = idata[i]; } 
+    Draw(opt,data); 
+    delete []  data; 
   }
-  Draw(opt,data); 
-  delete data; 
 }
 
 void AntarcticSegmentationScheme::Draw(const char * opt, const double * data) const 
@@ -301,6 +301,7 @@ void StereographicGrid::Draw(const char * opt, const double * data) const
       h.SetBinContent(i,j,  data ? data[idx] : idx); 
     }
   }
+  h.SetStats(0); 
   h.DrawCopy(opt); 
 }
 
