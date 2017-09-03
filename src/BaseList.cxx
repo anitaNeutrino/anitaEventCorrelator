@@ -1,495 +1,229 @@
 #include "BaseList.h"
+#include "AnitaVersion.h" 
+#include "TFile.h" 
+#include "TMath.h" 
+#include "TTree.h" 
+#include <unistd.h> 
+#include "TROOT.h" 
+#include "TKey.h" 
 
-/** Use magic static for thread-safety */ 
 
 using namespace BaseList;
 
 
-static void fillBases(std::vector<base> & baseList) 
+static void fillBases(std::vector<base> & baseList, int anita) 
 {
-  // baseList.push_back(base("BelgranoII",				-77.8744444,	-34.6269444,	250));
-  // baseList.push_back(base("Brown",				-64.89536982,	-62.87045109,	10));
-  // baseList.push_back(base("Cámara",				-62.59385833,	-59.91934444,	22));
-  // baseList.push_back(base("Decepcíon",				-62.97676018,	-60.70069463,	7));
-  // baseList.push_back(base("Esperanza",				-63.39695938,	-56.99805434,	25));
-  // baseList.push_back(base("Carlini(formallyknownasJubany)",	-62.2379,	-58.66684167,	10));
-  // baseList.push_back(base("Marambio",				-64.24176895,	-56.62322459,	200));
-  // baseList.push_back(base("Matienzo",				-64.97586484,	-60.07094839,	32));
-  // baseList.push_back(base("Melchior",				-64.3257045,	-62.97632863));
-  // baseList.push_back(base("Orcadas",				-60.7375919,	-44.73738674,	4));
-  // baseList.push_back(base("Petrel",				-63.47830316,	-56.23099341,	18));
-  // baseList.push_back(base("Primavera",				-64.1558536,	-60.95425641,	50));
-  // baseList.push_back(base("SanMartín",				-68.13030011,	-67.10293129,	5));
-  // baseList.push_back(base("EdgeworthDavid",			-66.24993451,	100.6042134,	15));
-  // baseList.push_back(base("WilkinsAerodrome",			-66.68966697,	111.4845668,	740));
-  // baseList.push_back(base("Casey",				-66.28234266,	110.5267924,	30));
-  // baseList.push_back(base("Davis",				-68.57593768,	77.96951603,	15));
-  // baseList.push_back(base("Mawson",				-67.60264444,	62.87302778,	5));
-  // baseList.push_back(base("BeaverLake",				-70.803,	68.17983333));
-  // baseList.push_back(base("Law-Racovita-Negoita",		-69.3882965,	76.38069645,	65));
-  // baseList.push_back(base("PrincessElisabeth",			-71.9498578,	23.34689116));
-  // baseList.push_back(base("ComandanteFerraz",			-62.08462076,	-58.39256957,	8));
-  // baseList.push_back(base("Ohridski",				-62.64072307,	-60.36523384,	10));
-  // baseList.push_back(base("LieutenantArturoParodi",		-80.31193304,	-81.36657271,	880));
-  // baseList.push_back(base("LieutenantRodolfoMarshM.Aerodrome",	-62.19373488,	-58.9799737,	45));
-  // baseList.push_back(base("ArturoPrat",				-62.47933555,	-59.66351347,	10));
-  // baseList.push_back(base("LieutenantLuisCarvajalVillarroel",	-67.76132249,	-68.91481561));
-  // baseList.push_back(base("JulioEscudero",			-62.20137307,	-58.96267648,	10));
-  // baseList.push_back(base("EduardoFreiMontalva",		-62.20023174,	-58.96262712,	10));
-  // baseList.push_back(base("BernardoO'HigginsRiquelme",		-63.32095118,	-57.89978113,	12));
-  // baseList.push_back(base("Ripamonti",				-62.21015169,	-58.93474027,	50));
-  // baseList.push_back(base("Risopatrón",				-62.37853344,	-59.70072429,	40));
-  // baseList.push_back(base("PresidentGabrielGonzalezVidela",	-64.82386172,	-62.85749916));
-  // baseList.push_back(base("GuillermoMann",			-62.46668333,	-60.76668333));
-  // baseList.push_back(base("SubBaseYelcho",			-64.87585799,	-63.58380638,	10));
-  // baseList.push_back(base("GreatWall",				-62.21638889,	-58.9644444,	10));
-  // baseList.push_back(base("Kunlun",				-80.41694444,	77.1161111,	4087));
-  // baseList.push_back(base("Taishan",				-73.86388333,	76.97471666,	2620));
-  // baseList.push_back(base("Zhongshan",				-69.37333333,	76.37777778,	10));
-  // baseList.push_back(base("JohannGregorMendel",			-63.80062531,	-57.8825918,	10));
-  // baseList.push_back(base("RefugioEcuador",			-62.12099018,	-58.3951612,	10));
-  // baseList.push_back(base("Maldonado",				-62.44932928,	-59.74096859,	10));
-  // baseList.push_back(base("Aboa",				-73.04228194,	-13.40735764,	400));
-  // baseList.push_back(base("CapPrud'homme",			-66.68760751,	139.9071699,	10));
-  // baseList.push_back(base("Dumontd'Urville",			-66.66283333,	140.0013333,	42));
-  // baseList.push_back(base("Concordia",				-75.0999745,	123.3326053,	3220));
-  // baseList.push_back(base("DallmanLabatBaseCarlini",		-62.23760854,	-58.66671638));
-  // baseList.push_back(base("AntarcticReceivingStation(GARS)",	-63.32109182,	-57.90094008));
-  // baseList.push_back(base("Gondwana",				-74.63550051,	164.2212145));
-  // baseList.push_back(base("Kohnen",				-75.00191485,	0.066733305,	2900));
-  // baseList.push_back(base("NeumayerIII",			-70.67725032,	-8.271599716,	40));
-  // baseList.push_back(base("Bharati",				-69.4,		76.183));
-  // baseList.push_back(base("DakshinGangotri",			-70.08333333,	12.0));
-  // baseList.push_back(base("Maitri",				-70.76683367,	11.73078318,	130));
-  // baseList.push_back(base("BrowningPass",			-74.62290575,	163.9151708,	170));
-  // baseList.push_back(base("EnigmaLake",				-74.719164,	164.027711,	170));
-  // baseList.push_back(base("MidPoint",				-75.54170266,	145.8203993,	2520));
-  // baseList.push_back(base("Sitry",				-71.65173817,	148.654737,	1600));
-  // baseList.push_back(base("MarioZucchelli",			-74.69480668,	164.1132678,	15));
-  // baseList.push_back(base("S17",				-69.02807608,	40.09244947,	620));
-  // baseList.push_back(base("Asuka",				-71.52627263,	24.11251621));
-  // baseList.push_back(base("DomeFuji",				-77.31707524,	39.69877019,	3810));
-  // baseList.push_back(base("Mizuho",				-70.6990456,	44.27781168));
-  // baseList.push_back(base("Syowa",				-69.00412231,	39.58183616,	29));
-  // baseList.push_back(base("KingSejong",				-62.2232395,	-58.7865044,	10));
-  // baseList.push_back(base("JangBogo",				-74.61666667,	164.2));
-  // baseList.push_back(base("DirckGerritszLaboratory",		-67.56863642,	-68.124377,	16));
-  // baseList.push_back(base("ScottBase",				-77.849437,	166.767281,	10));
-  // baseList.push_back(base("Tor",				-71.88951483,	5.159892622,	1625));
-  // baseList.push_back(base("Troll",				-72.01194552,	2.533070031,	1300));
-  // baseList.push_back(base("MachuPicchu",			-62.09159252,	-58.47055896,	10));
-  // baseList.push_back(base("Arctowski",				-62.15977292,	-58.47332175,	2));
-  // baseList.push_back(base("MolodezhnayaAirfield",		-67.66974075,	45.82860961,	225));
-  // baseList.push_back(base("NovolazarevskayaAirfield",		-70.8217966,	11.63987117,	550));
-  // baseList.push_back(base("Bellingshausen",			-62.19818377,	-58.96060891,	16));
-  // baseList.push_back(base("Druzhnaya-4",			-69.74782719,	73.70921376,	20));
-  // baseList.push_back(base("Leningradskaya",			-69.50149558,	159.3911476));
-  // baseList.push_back(base("Mirny",				-66.55823444,	93.0003795,	40));
-  // baseList.push_back(base("Molodezhnaya",			-67.66544285,	45.84203764,	42));
-  // baseList.push_back(base("Novolazarevskaya",			-70.77692572,	11.82366729,	102));
-  // baseList.push_back(base("Progress",				-69.37812036,	76.38779398,	15));
-  // baseList.push_back(base("Russkaya",				-74.76572579,	-136.8000722));
-  // baseList.push_back(base("Soyuz",				-70.5765771,	68.79493694,	336));
-  // baseList.push_back(base("Vostok",				-78.46415952,	106.8379632,	3500));
-  // baseList.push_back(base("SANAEIV",				-71.67287313,	-2.840324047,	850));
-  // baseList.push_back(base("GabrieldeCastilla",			-62.97719656,	-60.67574545,	15));
-  // baseList.push_back(base("JuanCarlosI",			-62.66340863,	-60.38814603,	12));
-  // baseList.push_back(base("Svea",				-74.57606102,	-11.22487242));
-  // baseList.push_back(base("Wasa",				-73.04279886,	-13.41290971,	400));
-  // baseList.push_back(base("Vernadsky",				-65.24574295,	-64.25748123,	7));
-  // baseList.push_back(base("FossilBluff",			-71.32341152,	-68.28906406,	92));
-  // baseList.push_back(base("RotheraSkiway",			-67.56758573,	-68.12717991,	250));
-  // baseList.push_back(base("SkyBlu",				-74.856351,	-71.58519987,	1370-1500));
-  // baseList.push_back(base("Halley",				-75.57982394,	-26.72862432,	37));
-  // baseList.push_back(base("Rothera",				-67.56863642,	-68.124377,	16));
-  // baseList.push_back(base("Signy",				-60.70828739,	-45.59538916,	5));
-  // baseList.push_back(base("Artigas",				-62.18455071,	-58.90244173,	17));
-  // baseList.push_back(base("RupertoElichiribehety",		-63.40237211,	-56.9909068));
-  // baseList.push_back(base("MarblePointHeliport",		-77.41366667,	163.6791667));
-  // baseList.push_back(base("OdellGlacierCamp",			-76.6601162,	159.953156,	1600));
-  // baseList.push_back(base("SipleDome",				-81.65430285,	-149.0051336));
-  // baseList.push_back(base("Amundsen-ScottSouthPoleStation",	-89.9975,	139.2728,	2830));
-  // baseList.push_back(base("McMurdoStation",			-77.8482091,	166.668422,	10));
-  // baseList.push_back(base("PalmerStation",			-64.77426073,	-64.05333352,	10));
+
+  TString fname; 
+  fname.Form("%s/share/anitaCalib/baseListA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
+
+  TFile fbase(fname.Data()); 
+
+  if (!fbase.IsOpen())
+  {
+    fprintf(stderr,"Couldn't load base list for ANITA %d. Sorry :(\n", anita); 
+    return;
+  }
+
+  //now load each tree 
 
 
-  baseList.push_back(base("McMurdo[USA]",			-77.85,		166.67,		65));
-  baseList.push_back(base("Taylor_Dome",			-77.8803,	158.459,	2260));
-  baseList.push_back(base("South_Pole",				-90,		158.,		2746));
-  baseList.push_back(base("Siple_Station[USA]",			-75.9,		-83.92,		1019));
-  baseList.push_back(base("Siple_Dome",				-81.656,	-149.02,	618));
-  baseList.push_back(base("Mount_Siple",			-73.198,	-127.052,	-41));
-  baseList.push_back(base("WAIS",				-79.467,	-112.085,	1761));
-  baseList.push_back(base("Patriot_Hills[ANI]",			-80.27,		-81.27,		925));
-  baseList.push_back(base("Fossil_Bluff_(Skiway)[BAS]",		-71.395,	-68.267,	42));
-  baseList.push_back(base("Halley[BAS]",			-75.583,	-26.541,	27));
-  baseList.push_back(base("Rothera[BAS]",			-67.567,	-68.133,	7));
-  baseList.push_back(base("Signy[BAS]",				-60.717,	-45.6,		22));
-  baseList.push_back(base("Sky_Blu[BAS]",			-74.856,	-71.569,	1432));
-  baseList.push_back(base("Martha_I",				-78.31,		-172.3,		-11));
-  baseList.push_back(base("Martha_II",				-78.38,		-173.42,	-10));
-  baseList.push_back(base("Herbie_Alley",			-78.1,		167.67,		-22));
-  baseList.push_back(base("Noel",				-79.33,		-111.08,	1793));
-  baseList.push_back(base("Penguin_Point",			-67.617,	146.18,		-48));
-  baseList.push_back(base("Racer_Rock",				-64.07,		-61.61,		17));
-  baseList.push_back(base("Uranus_Glacier",			-71.22,		-68.48,		632));
-  baseList.push_back(base("Concordia[IAP]",			-75.1,		123.333,	3230));
-  baseList.push_back(base("Little_Mac_(Mega_A)",		-80.79,		124.434,	2858));
-  baseList.push_back(base("Odell_Glacier[USAP]",		-76.65,		159.967,	1494));
-  baseList.push_back(base("Palmer[USAP]",			-65.775,	-64.051,	107));
-  baseList.push_back(base("SANAE_IV[SANAP]",			-71.667,	-2.85,		821));
-  baseList.push_back(base("Wasa[Sweden]",			-73.05,		-13.417,	387));
-  baseList.push_back(base("Belgrano_II[Argentina]",		-77.867,	-34.617,	191));
-  baseList.push_back(base("Esperanza_Base[Argentina]",		-63.4,		-57,		34));
-  baseList.push_back(base("Jubany[Argentina]",			-62.233,	-58.667,	19));
-  baseList.push_back(base("Marambio_Base[Argentina]",		-64.233,	-56.617,	18));
-  baseList.push_back(base("Orcados[Argentina]",			-60.739,	-44.738,	21));
-  baseList.push_back(base("San_Martin[Argentina]",		-68.133,	-67.1,		7));
-  baseList.push_back(base("Casey[AGAD]",			-66.283,	110.533,	19));
-  baseList.push_back(base("Davis_Station[AGAD]",		-68.583,	77.967,		18));
-  baseList.push_back(base("Mawson[AGAD]",			-67.6,		62.883,		29));
-  baseList.push_back(base("Comandante_Ferraz[Brazil]",		-62.083,	-58.395,	30));
-  baseList.push_back(base("Ohridiski[Bulgaria]",		-62.641,	-60.365,	18));
-  baseList.push_back(base("Bernardo_O'Higgins[Chile]",		-63.317,	-57.9,		21));
-  baseList.push_back(base("Arturo_Prat[Chile]",			-62.5,		-59.683,	19));
-  baseList.push_back(base("Great_Wall[China]",			-62.216,	-58.962,	19));
-  baseList.push_back(base("Zhongshan[China]",			-69.367,	76.367,		16));
-  baseList.push_back(base("Maldonado[Ecuador]",			-62.449,	-59.742,	18));
-  baseList.push_back(base("Refugio_Ecuador[Ecuador]",		-62.133,	-58.367,	19));
-  baseList.push_back(base("Dumont_d'Urville[France]",		-66.667,	140,		-41));
-  baseList.push_back(base("Neumayer[AWI(Germany)]",		-70.65,		-8.25,		39));
-  baseList.push_back(base("Kohnen_Base[AWI(Germany)]",		-75,		0.067,		2891));
-  baseList.push_back(base("Maitri[India]",			-70.766,	11.736,		384));
-  baseList.push_back(base("Browning_Pass[IAP]",			-74.623,	163.914,	10));
-  baseList.push_back(base("Enigma_Lake[IAP]",			-74.714,	164.042,	161));
-  baseList.push_back(base("Midpoint[IAP]",			-75.541,	145.819,	2458));
-  baseList.push_back(base("Sitry[IAP]",				-71.655,	148.653,	1998));
-  baseList.push_back(base("Dome_Fuji[NIPR(Japan)]",		-77.317,	39.717,		3798));
-  baseList.push_back(base("Syowa[NIPR(Japan)]",			-69.006,	39.583,		22));
-  baseList.push_back(base("S17[NIPR(Japan)]",			-69.025,	40.108,		649));
-  baseList.push_back(base("King_Sejong[Korea]",			-62.223,	-58.789,	19));
-  baseList.push_back(base("Tor[Norway]",			-71.883,	5.15,		1587));
-  baseList.push_back(base("Arctowski[Poland]",			-62.16,		-58.471,	19));
-  baseList.push_back(base("Mirny[Russia]",			-66.552,	93.015,		6));
-  baseList.push_back(base("Novolazarevskaya[Russia]",		-70.774,	11.865,		139));
-  baseList.push_back(base("Vostok[Russia]",			-78.467,	106.8,		3474));
-  baseList.push_back(base("Gabriel_de_Castilla[Spain]",		-62.983,	-60.683,	68));
-  baseList.push_back(base("Verdansky[Ukraine]",			-65.245,	-64.257,	14));
-  baseList.push_back(base("Jinnah_Antarctic[Pakistan]",		-70.4,		25.75,		74));
-  baseList.push_back(base("CommonSource",			-78.58,		158.42,		1294));
-  baseList.push_back(base("CommonSource",			-81.6,		-148.8,		596));
-  baseList.push_back(base("Maud_Land[Norway]",			-73.45,		-14.45,		913));
-  baseList.push_back(base("Camp_Gould[USA]",			-78.52,		-85.62,		4326));
-  baseList.push_back(base("Mt._Vinson",				-78.46,		-85.72,		3810));
-  baseList.push_back(base("Hercules",				-80.083,	-78.5,		86));
-  baseList.push_back(base("Almirante_Brown[Argentina]",		-64.8833,	-62.883,	17));
-  baseList.push_back(base("A._de_Navajo_Sobral[Argentina]",	-81.0833,	-40,		65));
-  baseList.push_back(base("Beys_Bay[Argentina]",		-62.6167,	-61.1333,	17));
-  baseList.push_back(base("Base_Deception[Argentina]",		-62.8667,	-60.7167,	18));
-  baseList.push_back(base("Des._Navy_Melchior[Argentina]",	-64.3333,	-62.9833,	16));
-  baseList.push_back(base("Ellsworth_(ex_USA)*[Argentina]",	-77.75,		-41,		-13));
-  baseList.push_back(base("General_Belgrano[Argentina]",	-77.8667,	-39,		-13));
-  baseList.push_back(base("General_Belgrano_III[Argentina]",	-77.95,		-45,		7));
-  baseList.push_back(base("Petrel_Air_Station[Argentina]",	-63.4667,	-56.2833,	21));
-  baseList.push_back(base("Primavera[Argentina]",		-64.15,		-60.95,		18));
-  baseList.push_back(base("Refugeo_Naval_Groussac[Argentina]",	-65.1833,	-64.1667,	14));
-  baseList.push_back(base("Teniente_Camara[Argentina]",		-62.0333,	-58.7,		19));
-  baseList.push_back(base("T._Camara_Bahia_Luna[Argentina]",	-62.583,	-59.9167,	19));
-  baseList.push_back(base("Isla_25_de_Mayo[Argentina]",		-62.7333,	-58.616,	19));
-  baseList.push_back(base("Teniente_Matienzo[Argentina]",	-64.966,	-60.066,	36));
-  baseList.push_back(base("Amery[Australia]",			-70,		71,		84));
-  baseList.push_back(base("Ardery[Australia]",			-66.3667,	110.467,	-16));
-  baseList.push_back(base("Blue_1[Australia]",			-71.316,	8.467,		981));
-  baseList.push_back(base("Dovers[Australia]",			-70.217,	65.8667,	1069));
-  baseList.push_back(base("Edgeworth_David[Australia]",		-66.25,		100.6,		102));
-  baseList.push_back(base("Law_Dome[Australia]",		-66.883,	113.25,		1174));
-  baseList.push_back(base("Moore_Pyramid[Australia]",		-70,		65,		1572));
-  baseList.push_back(base("Scullin_Monolithe[Australia]",	-67.783,	66.7,		27));
-  baseList.push_back(base("Roi_Baudouin[Belgium]",		-70.4333,	24.317,		64));
-  baseList.push_back(base("Commodoro_Gueslaga[Chile]",		-67.77,		-68.75,		5));
-  baseList.push_back(base("Los_Jemelos_(Gemelos)[Chile]",	-63.367,	-57.567,	561));
-  baseList.push_back(base("Spring_Inach[Chile]",		-64.3,		-61.05,		127));
-  baseList.push_back(base("Ten._Luis_Carvajal[Chile]",		-67.767,	-69.92,		4));
-  baseList.push_back(base("Yelcho_Bugue_Ags[Chile]",		-64.9,		-63.7333,	16));
-  baseList.push_back(base("Charcot[France]",			-69.4167,	139.033,	2370));
-  baseList.push_back(base("Drescher[Germany]",			-72.88,		-19.167,	2));
-  baseList.push_back(base("Filchner_Station*[Germany]",		-77.1,		-50.4,		27));
-  baseList.push_back(base("Gondwana_Station/TerraNovaBay",	-74.633,	164.217,	-54));
-  baseList.push_back(base("Lillie_Marleen_Hut[Germany]",	-71.2,		164.517,	473));
-  baseList.push_back(base("Adelaide_[T][GB]",			-67.7667,	-68.9167,	5));
-  baseList.push_back(base("Anvers_Island_[N][GB]",		-64.7667,	-64.0833,	14));
-  baseList.push_back(base("Blaiklock_Island[GB]",		-67.5333,	-67.2,		8));
-  baseList.push_back(base("Brabant[GB]",			-64.5,		-64.35,		14));
-  baseList.push_back(base("Cape_Reclus[GB]",			-64.5,		-61.7667,	17));
-  baseList.push_back(base("Damoy_Point[GB]",			-64.8167,	-63.5167,	16));
-  baseList.push_back(base("Danco_Island_[O][GB]",		-64.7333,	-62.6,		17));
-  baseList.push_back(base("Detaille_Island_[W][GB]",		-66.8667,	-66.8,		9));
-  baseList.push_back(base("Horsehoe_Island_[Y][GB]",		-67.8167,	-67.3,		188));
-  baseList.push_back(base("Orford_Cliff_(refuge)[GB]",		-66.9167,	-66.5,		9));
-  baseList.push_back(base("Prospect_Point_[J][GB]",		-66,		-65.35,		12));
-  baseList.push_back(base("Shackleton*[GB]",			-78,		-37,		-12));
-  baseList.push_back(base("Snowdome[GB]",			-67.8833,	-67,		9));
-  baseList.push_back(base("South_Ice[GB]",			-82.0833,	-30,		1436));
-  baseList.push_back(base("Stonington_Isl._[E][GB]",		-68.1833,	-67,		7));
-  baseList.push_back(base("View_Point_[V][GB]",			-63.5333,	-57.3833,	22));
-  baseList.push_back(base("Dakshin_Gangotri[India]",		-70.0833,	12,		51));
-  baseList.push_back(base("Indian_Bay_Camp[India]",		-69.9333,	11.9,		16));
-  baseList.push_back(base("Terra_Nova_Bay[Italy]",		-74.7,		163.1,		-8));
-  baseList.push_back(base("Asuka_Camp[Japan]",			-71.533,	24.1333,	925));
-  baseList.push_back(base("Cape_Hallett_(+US)[New_Zealand]",	-72.317,	170.183,	-55));
-  baseList.push_back(base("Lake_Vanda[New_Zealand]",		-77.5167,	161.667,	180));
-  baseList.push_back(base("Worldpark_Base[New_Zealand]",	-77.633,	166.417,	-19));
-  baseList.push_back(base("Blue_Fields_Camp[Norway]",		-77.5,		-34.167,	254));
-  baseList.push_back(base("Ellsworth_Mountains[Norway]",	-80,		-82,		1155));
-  baseList.push_back(base("Norway_1[Norway]",			-80,		-80,		211));
-  baseList.push_back(base("Norway_5[Norway]",			-72.25,		-0.167,		1182));
-  baseList.push_back(base("Norway_6[Norway]",			-75.5,		-10,		2314));
-  baseList.push_back(base("Norway_Station[Norway]",		-70.5,		-2.5333,	65));
-  baseList.push_back(base("Terra_Nova_Bay[Norway]",		-75,		164,		-56));
-  baseList.push_back(base("Troll[Norway]",			-72.0167,	2.883,		1453));
-  baseList.push_back(base("Druzhnaya_I*[Russia]",		-71.1,		-10.8167,	51));
-  baseList.push_back(base("Druzhnaya_II[Russia]",		-74.5,		-62,		27));
-  baseList.push_back(base("Druzhnaya_IV[Russia]",		-69.65,		73.9867,	16));
-  baseList.push_back(base("Komsomolskaya[Russia]",		-74,		97.8333,	3481));
-  baseList.push_back(base("Lazarev[Russia]",			-70.0167,	12.95,		19));
-  baseList.push_back(base("Leningradskaya[Russia]",		-69.5,		159.387,	188));
-  baseList.push_back(base("Molodezhnaya[Russia]",		-67.6833,	45.85,		148));
-  baseList.push_back(base("Pionerskaya[Russia]",		-69.8333,	95.7867,	2765));
-  baseList.push_back(base("Polyus_Nedostopnosti[Russia]",	-82,		54,		3721));
-  baseList.push_back(base("Russkaya[Russia]",			-74.767,	-136.817,	-38));
-  baseList.push_back(base("Sovetskaya[Russia]",			-78.5,		88.333,		3669));
-  baseList.push_back(base("Soyuz[Russia]",			-70.583,	68.7867,	122));
-  baseList.push_back(base("Vostok_I[Russia]",			-72,		96.33,		3222));
-  baseList.push_back(base("Borga_Camp[South_Africa]",		-72.967,	-3.8,		2363));
-  baseList.push_back(base("SANAE_3_(evacuated)[South_Africa]",	-70.3,		-2.4,		59));
-  baseList.push_back(base("Sarie_Marais[South_Africa]",		-72.0167,	-2.8,		1026));
-  baseList.push_back(base("Kirvanveggen_Camp[Sweden]",		-74.0867,	-6.2833,	2345));
-  baseList.push_back(base("Maudheim[Sweden]",			-71.01,		-11,		20));
-  baseList.push_back(base("Amundsen_Glacier_Camp[USA]",		-86.3,		-160.917,	1688));
-  baseList.push_back(base("Breadmore_I_+_II[USA]",		-83.7867,	174.333,	13));
-  baseList.push_back(base("Beardmore_(temporary)[USA]",		-84.9367,	166,		1484));
-  baseList.push_back(base("Beardmore_South_Camp[USA]",		-84.05,		164.267,	1617));
-  baseList.push_back(base("Beardmore_South_Camp[USA]",		-85.0333,	164.25,		1853));
-  baseList.push_back(base("Beardmore_Glacier",			-84,		164.5,		1665));
-  baseList.push_back(base("Brockton[USA]",			-84,		179.833,	15));
-  baseList.push_back(base("Brockton_Station[USA]",		-80.0167,	-178.033,	0));
-  baseList.push_back(base("Byrd_Aurora_Substation[USA]",	-79.4333,	-118.066,	1615));
-  baseList.push_back(base("Byrd_Coast_Camp[USA]",		-76.9167,	-144,		691));
-  baseList.push_back(base("Byrd_Station_[subs][USA]",		-80,		-120,		1484));
-  baseList.push_back(base("Byrd_VLF_Substation[USA]",		-79.9,		-120.5,		1484));
-  baseList.push_back(base("Byrd_Surface_Camp[USA]",		-80.0167,	-119.533,	1504));
-  baseList.push_back(base("Camp_Michigan[USA]",			-79,		-165,		-9));
-  baseList.push_back(base("Camp_Minnesota[USA]",		-74,		-94,		1199));
-  baseList.push_back(base("Camp_Minnesota[USA]",		-73.5,		-94.5,		661));
-  baseList.push_back(base("Camp_Neptune[USA]",			-83.5167,	-57.25,		620));
-  baseList.push_back(base("Camp_Ohio[USA]",			-85,		-112,		2071));
-  baseList.push_back(base("Camp_Ohio[USA]",			-84.533,	-114.333,	1543));
-  baseList.push_back(base("Camp_Ohio_II[USA]",			-86,		-127,		1725));
-  baseList.push_back(base("Camp_Patuxent[USA]",			-84.9,		-63,		1637));
-  baseList.push_back(base("Camp_Wisconsin[USA]",		-79.333,	-162,		403));
-  baseList.push_back(base("Central_Western_Camp[USA]",		-82.6,		-118,		1071));
-  baseList.push_back(base("Concerts_Station[USA]",		-82.8333,	-118,		1092));
-  baseList.push_back(base("Crary_Ice_Rise[USA]",		-83.75,		-166.083,	40));
-  baseList.push_back(base("Dome_C_(Charlie)[USA]",		-74.5,		123.167,	3204));
-  baseList.push_back(base("Dome_C_Camp[USA]",			-74.65,		124.167,	3213));
-  baseList.push_back(base("Down_Stream_Bravo[USA]",		-84.0167,	-115.85,	1277));
-  baseList.push_back(base("East_Base[USA]",			-68.25,		-66.9167,	7));
-  baseList.push_back(base("Eights_Station[USA]",		-75.167,	-77.167,	395));
-  baseList.push_back(base("Eights/Sky_High[USA]",		-75,		-78,		443));
-  baseList.push_back(base("Ellsworth_Mt._Camp[USA]",		-79.133,	-85.65,		1366));
-  baseList.push_back(base("Fosdick_Mountains[USA]",		-76.5,		-144,		769));
-  baseList.push_back(base("Fuchs_Sound_Camp[USA]",		-67.367,	-68.6,		639));
-  baseList.push_back(base("Little_America_I[USA]",		-78,		-165,		-55));
-  baseList.push_back(base("Little_America_III[USA]",		-78,		-164,		-55));
-  baseList.push_back(base("Little_America_V[USA]",		-78.183,	-162.167,	-55));
-  baseList.push_back(base("Little_Jeana[USA]",			-81.817,	169.167,	3));
-  baseList.push_back(base("Little_Rockford[USA]",		-79,		-148,		517));
-  baseList.push_back(base("Little_Rockford[USA]",		-79.5833,	-156.767,	19));
-  baseList.push_back(base("Little_Rockford[USA]",		-79.5,		-147.313,	500));
-  baseList.push_back(base("Marie_Byrd_Land_Camp[USA]",		-74.75,		-135,		157));
-  baseList.push_back(base("McGregor_Glacier_Hut[USA]",		-85.133,	174.833,	2714));
-  baseList.push_back(base("North_Victoria_Land[USA]",		-73.2167,	163.867,	1438));
-  baseList.push_back(base("Plateau_Station[USA]",		-79.25,		40.5,		3668));
-  baseList.push_back(base("Prebble_Glacier_Camp[USA]",		-84.25,		164.167,	1875));
-  baseList.push_back(base("Roosevelt_Island_Hut[USA]",		-80.183,	-161.65,	28));
-  baseList.push_back(base("Rupert_Coast[USA]",			-75.75,		-140,		796));
-  baseList.push_back(base("Upstream_B[USA]",			-83.45,		-139.65,	308));
-  baseList.push_back(base("Upstream_Bravo[USA]",		-83.467,	-138.4,		348));
-  baseList.push_back(base("Upstream_C[USA]",			-83.45,		-137.783,	318));
-  baseList.push_back(base("UWS_Camp_67[USA]",			-82.183,	-111.3,		1564));
-  baseList.push_back(base("Wave_Camp[USA]",			-76.5,		-126,		2427));
-  // baseList.push_back(base("AGAP_SOUTH[USA]",			-84.5,		77.35,		3499));
-  // baseList.push_back(base("AGAP_NORTH[USA]",			-77.31,		76.93,		2995));
-  baseList.push_back(base("Davis-Ward_Nunataks",		-85.67,		167,		2573));
-  baseList.push_back(base("Tango_1",				-86.21,		-136.57,	2563));
-  baseList.push_back(base("AGO_1",				-83.86,		129.59,		2785));
-  baseList.push_back(base("AGO_2",				-85.67,		-46.38,		1770));
-  baseList.push_back(base("AGO_2_Matt",				-85.67,		-45.62,		1775));
-  baseList.push_back(base("AGO_3",				-82.75,		28.59,		2867));
-  baseList.push_back(base("AGO_4",				-82.01,		96.76,		3527));
-  baseList.push_back(base("AGO_5",				-77.24,		123.52,		3082));
-  baseList.push_back(base("AGO_6",				-69.51,		130.03,		2355));
-  baseList.push_back(base("Brianna",				-83.889,	-134.154,	469));
-  baseList.push_back(base("Butler_Island",			-72.206,	-60.17,		2));
-  baseList.push_back(base("Cape_Bird",				-77.217,	166.439,	21));
-  baseList.push_back(base("Cape_Denison",			-67.009,	142.664,	-41));
-  baseList.push_back(base("Carolyn",				-79.964,	175.842,	0));
-  baseList.push_back(base("D-10",				-66.71,		139.83,		196));
-  baseList.push_back(base("D-47",				-67.397,	138.726,	1508));
-  baseList.push_back(base("Dismal_Island",			-68.087,	-68.825,	5));
-  baseList.push_back(base("Doug",				-82.315,	-113.24,	1389));
-  baseList.push_back(base("Elaine",				-83.111,	174.316,	13));
-  baseList.push_back(base("Elizabeth",				-82.607,	-137.078,	475));
-  baseList.push_back(base("Emilia",				-78.502,	173.121,	-2));
-  baseList.push_back(base("Eric",				-81.504,	163.94,		-3));
-  baseList.push_back(base("Erin",				-84.904,	-128.828,	933));
-  baseList.push_back(base("Ferrell",				-77.871,	170.819,	-10));
-  baseList.push_back(base("Fountain_(Drygalski)",		-75.54,		165.6,		-57));
-  baseList.push_back(base("Gill",				-79.922,	-178.586,	0));
-  baseList.push_back(base("Harry",				-83.003,	-121.393,	894));
-  baseList.push_back(base("Henry",				-89.011,	-1.025,		2670));
-  baseList.push_back(base("Kirkwood_Island",			-68.34,		-69.007,	4));
-  baseList.push_back(base("Larsen_Ice_Shelf",			-67.012,	-61.55,		49));
-  baseList.push_back(base("Laurie_II",				-77.517,	170.801,	-19));
-  baseList.push_back(base("Lettau",				-82.518,	-174.452,	1));
-  baseList.push_back(base("Limbert",				-75.914,	-59.264,	44));
-  baseList.push_back(base("Linda",				-78.451,	168.394,	-13));
-  baseList.push_back(base("Lorne",				-78.25,		170,		-9));
-  baseList.push_back(base("Manuela",				-74.946,	163.687,	-54));
-  baseList.push_back(base("Marble_Point",			-77.439,	163.754,	41));
-  baseList.push_back(base("Marilyn",				-79.935,	165.378,	10));
-  baseList.push_back(base("Mark_II_(C-16)",			-73.947,	169.354,	-57));
-  baseList.push_back(base("Mary",				-79.303,	162.968,	5));
-  baseList.push_back(base("Minna_Bluff",			-78.554,	166.691,	866));
-  baseList.push_back(base("Mizuho",				-70.7,		44.29,		2266));
-  baseList.push_back(base("Mother_2_(B15-J)",			-76.668,	167.903,	-55));
-  baseList.push_back(base("Mount_Friis",			-77.53,		160.28,		1722));
-  baseList.push_back(base("Mullock",				-78.917,	159,		788));
-  baseList.push_back(base("Nascent",				-78.122,	-178.492,	-13));
-  baseList.push_back(base("Nico",				-89,		89.669,		2975));
-  baseList.push_back(base("Peter_I",				-68.77,		-90.505,	-17));
-  baseList.push_back(base("Port_Martin",			-66.82,		141.4,		-36));
-  baseList.push_back(base("Possession_Island",			-71.891,	171.21,		-57));
-  baseList.push_back(base("Relay_Station",			-74.017,	43.062,		3344));
-  baseList.push_back(base("Schwerdtfeger",			-79.867,	170.142,	3));
-  baseList.push_back(base("Swithinbank",			-81.201,	-126.177,	953));
-  baseList.push_back(base("Theresa",				-84.599,	-115.811,	1491));
-  baseList.push_back(base("Vito",				-78.501,	177.753,	0));
-  baseList.push_back(base("Wanderer_(B15-A)",			-67.775,	152.046,	-53));
-  baseList.push_back(base("Whitlock",				-76.144,	168.392,	-56));
-  baseList.push_back(base("Windless_Bight",			-77.728,	167.703,	-12));
-  baseList.push_back(base("Alessandra(IT)",			-73.58,		166.62,		76));
-  baseList.push_back(base("Arelis(IT)",				-76.72,		162.97,		-56));
-  baseList.push_back(base("Lola(IT)",				-74.13,		163.43,		1556));
-  baseList.push_back(base("Modesta(IT)",			-73.63,		160.65,		1724));
-  baseList.push_back(base("Paola(IT)",				-72.767,	159.039,	2308));
-  baseList.push_back(base("Penguin(IT)",			-74.333,	165.133,	-8));
-  baseList.push_back(base("Silvia(IT)",				-73.05,		169.6,		848));
-  baseList.push_back(base("Sofia-B(IT)",			-73.58,		158.32,		2172));
-  baseList.push_back(base("Zoraida(IT)",			-74.25,		163.17,		456));
-  baseList.push_back(base("Berkner_Island",			-79.566,	-45.782,	782));
-  baseList.push_back(base("Biscoe_Islands_(BR)",		-66,		-66.133,	10));
-  baseList.push_back(base("Dome_A_(China/Aust)",		-80.368,	77.374,		4090));
-  baseList.push_back(base("Eagle_(China/Aust)",			-76.418,	77.03,		2838));
-  baseList.push_back(base("Iceberg_(B15-K)",			-68.201,	155.372,	-51));
-  baseList.push_back(base("Joinville_Is_(BR)",			-63.183,	-55.4,		21));
-  baseList.push_back(base("Svea_Cross",				-74.482,	-11.517,	1185));
-  baseList.push_back(base("WASA_Fosilryggen",			-73.105,	-13.165,	304));
-  baseList.push_back(base("Beaufort_Island",			-76.9306,	166.972,	-54));
-  baseList.push_back(base("Bennett_Nunatak",			-84.7792,	-116.5,		1620));
-  baseList.push_back(base("Bruce_Pleateau",			-66,		-64,		1601));
-  baseList.push_back(base("Camp_Winter",			-86.8017,	54.4168,	3094));
-  baseList.push_back(base("Cape_Colbeck",			-77.0833,	157.617,	2193));
-  baseList.push_back(base("Cape_Reynolds",			-75.47,		162.45,		88));
-  baseList.push_back(base("Cape_Selborne",			-80.43,		160.62,		582));
-  baseList.push_back(base("Cape_Surprise",			-84.3383,	178.047,	959));
-  baseList.push_back(base("Cape_Washington",			-74.65,		165.417,	49));
-  baseList.push_back(base("Clarke_Mountains",			-77.3402,	-141.874,	1104));
-  baseList.push_back(base("Cordiner_Peak",			-82.6,		-52.5,		1537));
-  baseList.push_back(base("Coulman_Island",			-73.19,		169.47,		-56));
-  baseList.push_back(base("Cox_Peak",				-86.5,		-153.5,		1921));
-  baseList.push_back(base("Darwin_Glacier",			-79.8943,	158.687,	555));
-  baseList.push_back(base("Deverall_Island",			-81.48,		161.98,		46));
-  baseList.push_back(base("DownWis",				-84.467,	-152.5,		77));
-  baseList.push_back(base("Executive_Committee_Range",		-77.2458,	-127.08,	1930));
-  baseList.push_back(base("Ford_Ranges_Skiway",			-77.2162,	-142.74,	1000));
-  baseList.push_back(base("Fork(SPTraverse)",			-84.3299,	169.403,	1500));
-  baseList.push_back(base("Franklin_Island",			-76.083,	168.317,	200));
-  baseList.push_back(base("Haag_Nunatak",			-77,		-78.3,		883));
-  baseList.push_back(base("Hatherton_Glacier",			-79.9464,	157.196,	772));
-  baseList.push_back(base("Howard_Nunatak",			-77.528,	-77.528,	480));
-  baseList.push_back(base("Ice_Stream_B",			-84.2,		-152,		102));
-  baseList.push_back(base("AWS_IggyRidge",			-83.3072,	156.25,		1955));
-  baseList.push_back(base("AWS_LaGorceMountains",		-86.55,		-148.083,	1908));
-  baseList.push_back(base("AWS_LaPaz03",			-86.21,		-70.374,	1529));
-  baseList.push_back(base("AWS_LaPaz04",			-86.2912,	-69.6542,	1658));
-  baseList.push_back(base("AWS_Larkman_Nunatak",		-85.77,		179,		2622));
-  baseList.push_back(base("AWS_Larkman_Nunatak_FuelCache",	-85.6913,	177.694,	2662));
-  baseList.push_back(base("AWS_LDBBessCutdown",			-83.8538,	-73.0912,	1026));
-  baseList.push_back(base("AWS_Lepley_Nunatak",			-73.11,		-90.3,		33));
-  baseList.push_back(base("AWS_Lonewolf_Nunatak",		-81.3459,	152.732,	1553));
-  baseList.push_back(base("AWS_Lower_Thwaites_Glacier",		-76.4695,	-108.558,	1020));
-  baseList.push_back(base("AWS_Marilyn",			-79.954,	165.13,		11));
-  baseList.push_back(base("AWS_Meyers_Nunatak",			-74.9051,	-98.7547,	432));
-  baseList.push_back(base("AWS_Middle_Shackleton_Glacier",	-85.2065,	-175.616,	1464));
-  baseList.push_back(base("AWS_Mt_Carbone",			-76.32,		-144.32,	907));
-  baseList.push_back(base("AWS_Mt_Durham",			-85.56,		-151.2,		693));
-  baseList.push_back(base("AWS_Mt_Howe",			-85.37,		-149.503,	69));
-  baseList.push_back(base("AWS_Mt_Paterson",			-78.03,		-155.023,	507));
-  baseList.push_back(base("AWS_Mt_Takahe",			-76.3,		-112.37,	2559));
-  baseList.push_back(base("AWS_Mt_Verlautz",			-86.77,		-153,		2345));
-  baseList.push_back(base("AWS_Pecora_Excarpment",		-85.6119,	-68.5564,	1580));
-  baseList.push_back(base("AWS_PIG_AWS_Site",			-75.1933,	-101.766,	53));
-  baseList.push_back(base("AWS_PIG_Shelf",			-76,		-100,		808));
-  baseList.push_back(base("AWS_Roadend_Nunatak",		-79.7851,	157.876,	858));
-  baseList.push_back(base("AWS_Roosevelt_Island",		-79.35,		-160.32,	41));
-  baseList.push_back(base("AWS_Scott_Glacier_Fuel_Cache",	-85.5628,	-154.958,	571));
-  baseList.push_back(base("AWS_Seismic_Up",			-77.5831,	-109.045,	1310));
-  baseList.push_back(base("AWS_Theil_Mountains",		-85.25,		-91,		2251));
-  baseList.push_back(base("AWS_Thurston_Island",		-72.53,		-97.56,		1));
-  baseList.push_back(base("AWS_Thwaites/Cresis_Camp",		-75.845,	-108.522,	619));
-  baseList.push_back(base("AWS_Toney_Mountain",			-75.8021,	-114.665,	1146));
-  baseList.push_back(base("AWS_Whichaway_Nunataks",		-81.55,		-28.5,		1067));
-  baseList.push_back(base("AWS_Whitmore_Mtns",			-82.58,		-104.5,		2119));
-  baseList.push_back(base("AWS_Wilson_Nunatak",			-80.0398,	-80.5579,	2003));
-  baseList.push_back(base("AWS_Lake_Hoare",			-77.3,		162,		1100));
-  baseList.push_back(base("AWS_D85_Skiway",			-70.425,	134.146,	2616));
-  baseList.push_back(base("AWS_AWS_Baldrick",			-82.774,	-13.054,	1963));
-  baseList.push_back(base("AWS_AWS_E-66",			-68.912,	134.655,	2447));
-  baseList.push_back(base("AWS_JASE_2007",			-75.888,	25.834,		3661));
-  baseList.push_back(base("AWS_Margaret",			-80,		-165,		14));
-  baseList.push_back(base("AWS_panda_south",			-82.325,	75.989,		3913));
-  baseList.push_back(base("AWS_Sabrina",			-84.25,		-169.987,	41));
-  baseList.push_back(base("AWS_plateau-station-b",		-78.646,	35.641,		3614));
-  baseList.push_back(base("AWS_aws_6_netherlands",		-74.4314,	-11.518,	1134));
-  baseList.push_back(base("AWS_aws_10_netherlands",		-71.16,		-6.699,		321));
-  baseList.push_back(base("AWS_pole_of_inaccessibility",	-82.111,	55.034,		3730));
-  baseList.push_back(base("AWS_larsen_c_north",			-67.012,	61.5,		28));
-  baseList.push_back(base("AWS_larsen_c_south",			-67.571,	62.152,		43));
-  baseList.push_back(base("AWS_princess_elizabeth_station",	-71.57,		23.2,		849));
-  baseList.push_back(base("AWS_amery_g3",			-70.892,	69.873,		97));
-  baseList.push_back(base("AWS_lgb00",				-68.655,	61.113,		1858));
-  baseList.push_back(base("AWS_mt_brown",			-69.131,	85.998,		2077));
-  baseList.push_back(base("AWS_panda",				-73.689,	76.967,		2606));
-  baseList.push_back(base("AWS_itase",				-72.81,		159.3,		2273));
-  baseList.push_back(base("AWS_lucia",				-74.95,		161.77,		1079));
-  baseList.push_back(base("AWS_backer_island",			-74.43,		-102.48,	-27));
-  baseList.push_back(base("AWS_bear_peninsula",			-74.6,		-110.83,	387));
+  TIter iter(fbase.GetListOfKeys()); 
+  TKey *k; 
+
+  while ((k = (TKey *) iter()))
+  {
+
+    //only read in TTrees 
+    TClass * cl = gROOT->GetClass(k->GetClassName()); 
+    if (!cl->InheritsFrom("TTree")) continue; 
+
+    TTree * t = (TTree*) k->ReadObj(); 
+    TString source = t->GetName(); 
+
+    std::string * str_name = 0; 
+    double lon; 
+    double lat; 
+    double alt; 
+
+    t->SetBranchAddress("name",&str_name); 
+    t->SetBranchAddress("fullLat",&lat); 
+    t->SetBranchAddress("fullLong",&lon); 
+    t->SetBranchAddress("alt",&alt); 
+
+    for (int i = 0; i < t->GetEntries(); i++) 
+    {
+      t->GetEntry(i); 
+      baseList.push_back(base(TString(*str_name), source, lat,lon,alt)); 
+    }
+  }
+}
+
+static void fillPaths(std::vector<path> & pathList, int anita) 
+{
+
+  TString fname; 
+  fname.Form("%s/share/anitaCalib/transientListRestrictedA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
+
+  //see if we have the restricted list
+
+  if (access(fname.Data(),R_OK))
+  {
+    fprintf(stderr,"Couldn't find restricted list for ANITA %d (%s).  Will try to load unrestricted list. \n", anita, fname.Data()); 
+    fname.Form("%s/share/anitaCalib/transientListUnrestrictedA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
+  }
+
+  TFile fpath(fname.Data()); 
+
+  if (!fpath.IsOpen())
+  {
+    fprintf(stderr,"Couldn't find unrestricted list for ANITA %d (%s).  Sorry :( \n", anita,  fname.Data()); 
+    return; 
+  }
+
+  TIter iter(fpath.GetListOfKeys()); 
+  TKey *k; 
+  while ((k = (TKey *) iter()))
+  {
+  
+    //only read in TTrees 
+    TClass * cl = gROOT->GetClass(k->GetClassName()); 
+    if (!cl->InheritsFrom("TTree")) continue; 
+
+    TTree * t = (TTree*) k->ReadObj(); 
+
+    TString source = t->GetName(); 
+    std::string last_callsign = ""; 
+    char callsign_buf[1024]; // 
+    double lon; 
+    double lat; 
+    int alt = -1000; 
+    int time; 
+
+    // well,  I guess these trees are not as nicely normalized as the others. 
 
 
-  // baseList.push_back(BaseList;;base("WAIS divide", "http;//waisdivide.unh.edu/about/site.shtml#selection")),
-  // 				    -79.467, -112.085, 1766));
+    t->SetBranchAddress("callSign",callsign_buf); 
+    if (!t->GetBranch("fullLong")) //this tree has no position data. ignore it
+    {
+      continue ; 
+    }
 
+
+    t->SetBranchAddress("fullLong",&lon); 
+    t->SetBranchAddress("fullLat",&lat); 
+    t->SetBranchAddress("timeUTC",&time); 
+
+    if (t->GetBranch("altitude")) // the traverse has no altitude data. Have no fear, we can fill it in ourselves. 
+    {
+      t->SetBranchAddress("altitude",&alt); 
+    }
+
+    std::vector<double> v_lat; 
+    std::vector<double> v_lon; 
+    std::vector<double> v_alt; 
+    std::vector<unsigned> v_t; 
+
+    for (int i = 0; i < t->GetEntries(); i++) 
+    {
+      t->GetEntry(i); 
+      std::string callsign = callsign_buf; 
+
+      if (last_callsign != callsign && v_lat.size()  )
+      {
+        pathList.push_back(path(TString(callsign.c_str()), source, (int) v_lat.size(), &v_lat[0], &v_lon[0], &v_alt[0], &v_t[0])); 
+        v_lat.clear(); 
+        v_lon.clear(); 
+        v_alt.clear(); 
+        v_t.clear(); 
+      }
+
+      last_callsign = callsign; 
+      v_lat.push_back(lat); 
+      v_lon.push_back(lon); 
+      v_alt.push_back(alt); 
+      v_t.push_back(time); 
+
+    }
+
+    //last iteration 
+    if (v_lat.size()) 
+    {
+      pathList.push_back(path(TString(last_callsign.c_str()), source, v_lat.size(), &v_lat[0], &v_lon[0], &v_alt[0], &v_t[0])); 
+    }
+  }
 
 }
 
+// some annoying intermediate classes to be able to use magic statics 
+
+static std::vector<base> no_bases; 
+static std::vector<path> no_paths; 
+
+struct baselist_impl 
+{
+  baselist_impl(int anita) 
+  {
+    fillBases(bases, anita); 
+  }
+  std::vector<base> bases; 
+
+}; 
+
+struct pathlist_impl 
+{
+  pathlist_impl(int anita) 
+  {
+    fillPaths(paths, anita); 
+  }
+  std::vector<path> paths; 
+
+}; 
+
+
+
 static std::vector<base> & bases()
 {
-  static std::vector<base> baseList; 
-  baseList.reserve(150); // approx
+  if (AnitaVersion::get() == 2) 
+  {
+    static baselist_impl bl(2); 
+    return bl.bases; 
+  }
 
-  fillBases(baseList); 
-  return baseList; 
+  else if (AnitaVersion::get() == 3) 
+  {
+    static baselist_impl bl(3); 
+    return bl.bases; 
+
+  }
+  else if (AnitaVersion::get() == 4) 
+  {
+    static baselist_impl bl(4); 
+    return bl.bases; 
+  }
+
+
+  fprintf(stderr,"Don't have bases for %d\n", AnitaVersion::get()); 
+  return no_bases; 
+}
+
+static std::vector<path> & paths()
+{
+
+  if (AnitaVersion::get() == 3) 
+  {
+    static pathlist_impl pl(3); 
+    return pl.paths; 
+
+  }
+  else if (AnitaVersion::get() == 4) 
+  {
+    static pathlist_impl pl(4); 
+    return pl.paths; 
+  }
+
+  fprintf(stderr,"Don't have paths for %d\n", AnitaVersion::get()); 
+  return no_paths; 
 }
 
 const BaseList::base& BaseList::getBase(UInt_t index){
@@ -498,18 +232,92 @@ const BaseList::base& BaseList::getBase(UInt_t index){
   return bases().at(index);
 }
 
+const BaseList::path& BaseList::getPath(UInt_t index){
+
+  index = index < paths().size() ? index : 0;
+  return paths().at(index);
+}
+
+const BaseList::abstract_base& BaseList::getAbstractBase(UInt_t index){
+
+  if (index > bases().size() + paths().size()) index = 0; 
+  return index < bases().size() ? (const BaseList::abstract_base &)  bases().at(index) : (const BaseList::abstract_base &) paths().at(index-bases().size()); 
+}
+
 
 size_t BaseList::getNumBases(){
   return bases().size();
 }
 
+size_t BaseList::getNumPaths() {
+  return paths().size();
+}
+
+size_t BaseList::getNumAbstractBases(){
+  return bases().size() + paths().size();
+}
+
+
+
 void BaseList::makeBaseList()
 {
-  fillBases(bases()); 
+  makeEmptyBaseList(); 
+  fillBases(bases(), AnitaVersion::get()); 
+  fillPaths(paths(), AnitaVersion::get()); 
 }
 
 
 void BaseList::makeEmptyBaseList()
 {
   bases().clear(); //DESTROY ALL THE BASES FOR SOME REASON  
+}
+
+
+BaseList::path::path(const TString & name, TString & source, 
+                 int npoints, const double  * lat, const double * lon,
+                 const double * alt,  const unsigned  * time)  
+
+
+  : name(name) , dataSource(source), ts(time, time + npoints) 
+{
+
+  ps.reserve(npoints); 
+  for (int i = 0; i < npoints; i++) 
+  {
+    ps.push_back(AntarcticCoord(AntarcticCoord::WGS84, lat[i], lon[i], alt[i]));
+    ps[i].to(AntarcticCoord::CARTESIAN);  //save as cartesian
+  }
+
+
+}
+
+ 
+AntarcticCoord BaseList::path::getPosition(unsigned t) const 
+{ 
+  if (!isValid(t)) 
+  {
+    return AntarcticCoord(AntarcticCoord::WGS84, 90, 0, 0); // north pole is about as far as we can get! 
+  }
+ 
+  int l= TMath::BinarySearch(ts.size(), &ts[0], t); 
+  int u = l+1; 
+
+  double low_frac = double(t-ts[l]) / double(ts[u] -ts[l]); 
+
+  AntarcticCoord cl = ps[l].as(AntarcticCoord::CARTESIAN); 
+  AntarcticCoord cu = ps[u].as(AntarcticCoord::CARTESIAN); 
+  double x =  low_frac * cl.x  + (1-low_frac) * cu.x; 
+  double y =  low_frac * cl.y  + (1-low_frac) * cu.y; 
+  double z =  low_frac * cl.z  + (1-low_frac) * cu.z; 
+
+  if (z < 0) //this means the altitude was not actually filled in (e.g for eample a traverse), so we need to retrieve it ourselves... 
+  {
+    AntarcticCoord c(AntarcticCoord::CARTESIAN,x,y,0); 
+    c.to(AntarcticCoord::STEREOGRAPHIC); 
+    c.z  = RampdemReader::SurfaceAboveGeoidEN(c.x,c.y); 
+    return c; 
+  }
+
+  return AntarcticCoord(AntarcticCoord::CARTESIAN,x,y,z); 
+
 }
