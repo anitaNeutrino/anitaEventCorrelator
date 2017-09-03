@@ -201,6 +201,9 @@ class PayloadParameters
     double payload_el;  // the elevation of the payload from the source (deg) . positive is UP
     double payload_az; // the azimuth of the payload from the source (deg). 
     double distance; //distance between source and payload
+
+    /* Checks for collision with the ground */
+    bool checkForCollision(double dx = 100, AntarcticCoord * where = 0, RampdemReader::dataSet d = RampdemReader::surface) const;
     AntarcticCoord payload; 
     AntarcticCoord source; 
   private: 

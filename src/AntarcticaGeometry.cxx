@@ -112,7 +112,7 @@ void AntarcticCoord::convert(CoordType t)
 
     else if (t == CARTESIAN) 
     {
-     //be lazy 
+     //be lazy. This could probably be made fastier though 
       convert(WGS84); 
       convert(CARTESIAN); 
     }
@@ -343,3 +343,38 @@ int StereographicGrid::getNeighbors(int segment, std::vector<int> * neighbors) c
 
 
 
+
+bool PayloadParameters::checkForCollision(double dx, AntarcticCoord * w, RampdemReader::dataSet d) const
+{
+
+  AntarcticCoord x = source.as(AntarcticCoord::CARTESIAN); 
+  TVector3 v = (payload.v() - source.v()).Unit() * dx;  
+
+  while(true)
+  {
+    x.x+= v.x();
+    x.y+= v.y();
+    x.z+= v.z(); 
+ 
+    AntarcticCoord s = x.as(AntarcticCoord::STEREOGRAPHIC); 
+
+    //break if higher than Mt. Vinson 
+    if ( s.z > 5000)
+      break; 
+
+    if (RampdemReader::SurfaceAboveGeoidEN( s.x, s.y, d) > s.z)
+    {
+      if (w) 
+      {
+        *w  = x; 
+      }
+      return true; 
+    }
+    
+  }
+
+
+  return false; 
+
+
+}
