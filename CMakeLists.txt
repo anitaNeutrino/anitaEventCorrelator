@@ -124,12 +124,12 @@ install (DIRECTORY data/ DESTINATION ${UTIL_SHARE_DIR}/anitaCalib)
 message (" Adding new build type")
 
 set(CMAKE_CXX_FLAGS_DEFAULT
-  "-Os -g -Wall"
+  "-Os -g -Wall -march=native"
   CACHE STRING "c++ Flags used during default eventReaderRoot builds"
   FORCE )
 
 set(CMAKE_C_FLAGS_DEFAULT
-  "-Os -g -Wall"
+  "-Os -g -Wall -march=native"
   CACHE STRING "c Flags used during default eventReaderRoot builds"
   FORCE )
 
@@ -159,3 +159,15 @@ option ( FORCE_OLD_GPP_ABI " Force old g++ ABI; this might be necessary if using
 if (FORCE_OLD_GPP_ABI)
   add_definitions( -D_GLIBCXX_USE_CXX11_ABI=0 )
 endif()
+
+option (USE_HEALPIX "Enable Healpix Segmentation, requires healpix to be
+installed on your system in a place that can be found easily." OFF)
+
+if (USE_HEALPIX)
+  add_definitions  (-DUSE_HEALPIX )
+  # Are these really necessary?!?? 
+  target_link_libraries ( healpix_cxx cxxsupport sharp fftpack c_utils cfitsio)
+endif()
+
+
+
