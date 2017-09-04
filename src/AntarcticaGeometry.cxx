@@ -175,9 +175,62 @@ void AntarcticCoord::convert(CoordType t)
     }
     else if ( t== STEREOGRAPHIC)
     {
-      //be lazy 
-      convert(WGS84); 
-      convert(STEREOGRAPHIC); 
+
+//      convert(WGS84); 
+//      convert(STEREOGRAPHIC); 
+
+
+      //Turns out this is an important conversion for performance. Will hackily put it in right here.
+      //I'm using a slightly different conversion from cartesian to WGS84, and also avoiding all trig functions, which just cause havoc. 
+      // This is based on  http://www.microem.ru/pages/u_blox/tech/dataconvert/GPS.G1-X-00006.pdf
+
+      const double a = 6378137; 
+      const double b = 6356752.31424518; 
+      const double e = sqrt((a*a-b*b)/(a*a)); 
+      const double ep = e * a/b; 
+
+      double X = y; //silly 
+      double Y = x; //silly 
+      double Z = z;  
+
+      double H = sqrt(X*X+Y*Y); 
+
+      double sin_lon = Y/H; 
+      double cos_lon = Y!=0 ? (X/Y * sin_lon) : ( (X > 0) - (X < 0));  
+
+      double tan_theta =  (Z*a) / (H*b); 
+      double sin_theta = tan_theta / sqrt(1+tan_theta*tan_theta); 
+      double cos_theta = 1./sqrt(1+ tan_theta* tan_theta); 
+      
+      //this might be able to be simplified 
+      double num = Z + (ep *ep*b) * (sin_theta * sin_theta * sin_theta); 
+      double denom = H - (e *e*a) * (cos_theta * cos_theta * cos_theta); 
+
+      double H2 = sqrt(num*num + denom*denom); 
+      double sin_lat =  num / H2 * ( (denom > 0) - ( denom < 0) ); 
+      double cos_lat =  denom / num * sin_lat; 
+
+
+      double N = a / sqrt(1. - (e*e) * sin_lat * sin_lat); 
+
+      z = H / cos_lat - N; 
+
+      ///ok now, we have to go to stereographic. We already reversed the sign of lattitude
+
+      //these are copied and pasted from RampdemReader, there may be some redundancy with other constants but oh well 
+      const double scale_factor=0.97276901289;
+      const double ellipsoid_inv_f = 298.257223563; //of Earth
+      const double eccentricity = sqrt((1/ellipsoid_inv_f)*(2-(1/ellipsoid_inv_f)));
+      const double c_0 = (2*R_EARTH / sqrt(1-pow(eccentricity,2))) * pow(( (1-eccentricity) / (1+eccentricity) ),eccentricity/2);
+
+      double R = scale_factor * c_0 * pow( (1 + eccentricity * sin_lat ) / (1 - eccentricity * sin_lat), eccentricity/2) ; 
+      
+      //use some trig identities here... 
+      double tan_lat_over_2 = sin_lat / (1 + cos_lat); 
+      R *= (1 - tan_lat_over_2) / (1 + tan_lat_over_2); 
+
+      x = R * sin_lon; 
+      y = R * cos_lon; 
     }
   }
 
