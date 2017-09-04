@@ -172,7 +172,7 @@ AntarcticSegmentationScheme * AntarcticSegmentationScheme::factory(const char * 
 
 const int nsamples = 64; 
 
-void AntarcticSegmentationScheme::DrawI(const char * opt, const int * idata) const 
+void AntarcticSegmentationScheme::DrawI(const char * opt, const int * idata, const double * range) const 
 {
   int N = NSegments(); 
   double * data = 0;
@@ -180,12 +180,12 @@ void AntarcticSegmentationScheme::DrawI(const char * opt, const int * idata) con
   {
     data = new double[N]; 
     for (int i = 0; i < N; i++) { data[i] = idata[i]; } 
-    Draw(opt,data); 
+    Draw(opt,data,range); 
     delete []  data; 
   }
 }
 
-void AntarcticSegmentationScheme::Draw(const char * opt, const double * data) const 
+void AntarcticSegmentationScheme::Draw(const char * opt, const double * data, const double * range) const 
 {
   int N = NSegments(); 
 
@@ -204,6 +204,12 @@ void AntarcticSegmentationScheme::Draw(const char * opt, const double * data) co
       samples[j].to(AntarcticCoord::STEREOGRAPHIC); 
       g->SetPoint(nsamples*i+j,samples[j].x,samples[j].y,data ? data[i] : i); 
     }
+  }
+
+  if (range) 
+  {
+    g->GetXaxis()->SetRangeUser(range[0],range[1]); 
+    g->GetYaxis()->SetRangeUser(range[2],range[3]); 
   }
 
   g->Draw(opt); 
@@ -285,7 +291,7 @@ AntarcticCoord * StereographicGrid::sampleSegment(int idx, int N, AntarcticCoord
 
 
 
-void StereographicGrid::Draw(const char * opt, const double * data) const
+void StereographicGrid::Draw(const char * opt, const double * data, const double * range) const
 {
   TH2D h("tmp","Stereographic Grid", nx, -max_E, max_E, ny, -max_N, max_N); 
   for (int i = 1; i <= nx; i++) 
@@ -302,6 +308,13 @@ void StereographicGrid::Draw(const char * opt, const double * data) const
     }
   }
   h.SetStats(0); 
+  if (range) 
+  {
+
+    h.GetXaxis()->SetRangeUser(range[0], range[1]); 
+    h.GetYaxis()->SetRangeUser(range[2], range[3]); 
+
+  }
   h.DrawCopy(opt); 
 }
 
