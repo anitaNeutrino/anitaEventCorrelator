@@ -151,7 +151,7 @@ class AntarcticSegmentationScheme {
     virtual void setRampdemDataset( RampdemReader::dataSet d)  { dataset = d; } 
 
   protected: 
-    AntarcticSegmentationScheme() :  dataset (RampdemReader::rampdem) { ;} 
+    AntarcticSegmentationScheme() :  dataset (RampdemReader::surface) { ;} 
     RampdemReader::dataSet dataset; 
 
     ClassDef(AntarcticSegmentationScheme,1); 
@@ -205,7 +205,7 @@ class PayloadParameters
     double distance; //distance between source and payload
 
     /* Checks for collision with the ground */
-    bool checkForCollision(double dx = 100, AntarcticCoord * where = 0, RampdemReader::dataSet d = RampdemReader::surface) const;
+    bool checkForCollision(double dx = 100, AntarcticCoord * where = 0, RampdemReader::dataSet d = RampdemReader::surface, double grace = 1) const;
     AntarcticCoord payload; 
     AntarcticCoord source; 
   private: 

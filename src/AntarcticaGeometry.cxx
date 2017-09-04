@@ -14,6 +14,49 @@ ClassImp(PayloadParameters);
 ClassImp(StereographicGrid); 
 
 
+
+
+
+
+
+
+class SurfaceWrapper
+{
+
+  public:
+    double compute(double E, double N) 
+    {
+      return map->Interpolate(E,N); 
+    }
+
+    TProfile2D *map; 
+    SurfaceWrapper(RampdemReader::dataSet set) 
+    {
+      map = RampdemReader::getMap(set, 1); 
+    }
+
+    ~SurfaceWrapper()
+    {
+      delete map; 
+
+    }
+}; 
+
+static SurfaceWrapper & getSurface(RampdemReader::dataSet set) 
+{
+  if (set == RampdemReader::surface)
+  {
+    static SurfaceWrapper w(set); 
+    return w; 
+  }
+
+  //the only other thing that makes sense is rampdem
+  static SurfaceWrapper w(RampdemReader::rampdem); 
+  return w; 
+}
+
+
+
 void AntarcticCoord::asString(TString * s) const
 {
 
@@ -246,7 +289,7 @@ void StereographicGrid::getSegmentCenter(int idx, AntarcticCoord * fillme, bool 
   int ybin = idx / nx; 
   double x = (xbin +0.5) *dx - max_E; 
   double y = max_N - (ybin +0.5) *dy ; 
-  double z = fillalt ? RampdemReader::SurfaceAboveGeoidEN(x,y,dataset): 0; 
+  double z = fillalt ? getSurface(dataset).compute(x,y): 0; 
   fillme->set(AntarcticCoord::STEREOGRAPHIC,x,y,z); 
 }
 
@@ -268,7 +311,7 @@ AntarcticCoord * StereographicGrid::sampleSegment(int idx, int N, AntarcticCoord
     {
       double x = gRandom->Uniform(lx, lx+dx); 
       double y = gRandom->Uniform(ly, ly-dy); 
-      double z = fillalt ? RampdemReader::SurfaceAboveGeoidEN(x,y,dataset): 0; 
+      double z = fillalt ? getSurface(dataset).compute(x,y): 0; 
       fill[i].set(AntarcticCoord::STEREOGRAPHIC,x,y,z); 
     }
   }
@@ -281,7 +324,7 @@ AntarcticCoord * StereographicGrid::sampleSegment(int idx, int N, AntarcticCoord
       //TODO check if this is what i want! 
       double x = lx + (dx / (grid-1)) * ((i % grid)); 
       double y = ly - (dy / (grid-1)) * ((i / grid)); 
-      double z = fillalt ? RampdemReader::SurfaceAboveGeoidEN(x,y,dataset): 0; 
+      double z = fillalt ? getSurface(dataset).compute(x,y): 0; 
       fill[i].set(AntarcticCoord::STEREOGRAPHIC,x,y,z); 
     }
   }
@@ -357,7 +400,7 @@ int StereographicGrid::getNeighbors(int segment, std::vector<int> * neighbors) c
 
 
 
-bool PayloadParameters::checkForCollision(double dx, AntarcticCoord * w, RampdemReader::dataSet d) const
+bool PayloadParameters::checkForCollision(double dx, AntarcticCoord * w, RampdemReader::dataSet d, double grace) const
 {
 
   AntarcticCoord x = source.as(AntarcticCoord::CARTESIAN); 
@@ -375,7 +418,7 @@ bool PayloadParameters::checkForCollision(double dx, AntarcticCoord * w, Rampdem
     if ( s.z > 5000)
       break; 
 
-    if (RampdemReader::SurfaceAboveGeoidEN( s.x, s.y, d) > s.z)
+    if (getSurface(d).compute(s.x,s.y) > s.z+grace)
     {
       if (w) 
       {
