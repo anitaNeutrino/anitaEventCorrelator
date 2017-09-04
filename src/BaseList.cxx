@@ -314,10 +314,34 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const
   {
     AntarcticCoord c(AntarcticCoord::CARTESIAN,x,y,0); 
     c.to(AntarcticCoord::STEREOGRAPHIC); 
-    c.z  = RampdemReader::SurfaceAboveGeoidEN(c.x,c.y); 
+    c.z  = RampdemReader::SurfaceAboveGeoidEN(c.x,c.y, RampdemReader::surface); 
     return c; 
   }
 
   return AntarcticCoord(AntarcticCoord::CARTESIAN,x,y,z); 
 
 }
+
+
+
+int BaseList::findBases(const char * query, std::vector<int> * matches, bool include_paths) 
+{
+
+  int first_found = -1; 
+  for (unsigned i = 0; i < include_paths ? getNumAbstractBases() : getNumBases(); i++)
+  {
+    const abstract_base & a = getAbstractBase(i); 
+
+    if (strcasestr(a.getName(), query))
+    {
+      if (first_found < 0) first_found = i; 
+      if (matches)
+      {
+        matches->push_back(i); 
+      }
+      else break; 
+    }
+  }
+  return first_found; 
+
+} 
