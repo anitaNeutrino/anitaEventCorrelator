@@ -122,18 +122,33 @@ PayloadParameters::PayloadParameters(const Adu5Pat * gps, const AntarcticCoord &
 }
 
 static void cart2stereo(double*,double*,double*) __attribute__((optimize("fast-math"),optimize("O3"))); 
+static void stereo2cart(double*,double*,double*) __attribute__((optimize("fast-math"),optimize("O3"))); 
+
+
+
+// for ECE -> lat/lon 
+static const double a = 6378137; 
+static const double b = 6356752.31424518; 
+static const double binv = 1./6356752.31424518; 
+static const double e = sqrt((a*a-b*b)/(a*a)); 
+static const double ep = e * a/b; 
+
+   //these are copied and pasted from RampdemReader, there may be some redundancy with other constants but oh well 
+static const double scale_factor=0.97276901289;
+static const double ellipsoid_inv_f = 298.257223563; 
+static const double eccentricity = sqrt((1/ellipsoid_inv_f)*(2-(1/ellipsoid_inv_f)));
+static const double c_0 = (2*R_EARTH / sqrt(1-pow(eccentricity,2))) * pow(( (1-eccentricity) / (1+eccentricity) ),eccentricity/2);
+static const double a_bar = pow(eccentricity,2)/2 + 5*pow(eccentricity,4)/24 + pow(eccentricity,6)/12 + 13*pow(eccentricity,8)/360;
+static const double b_bar = 7*pow(eccentricity,4)/48 + 29*pow(eccentricity,6)/240 + 811*pow(eccentricity,8)/11520;
+static const double c_bar = 7*pow(eccentricity,6)/120 + 81*pow(eccentricity,8)/1120;
+static const double d_bar = 4279*pow(eccentricity,8)/161280;
+
 
 static void cart2stereo(double *x, double * y, double *z)
 {
    //Turns out this is an important conversion for performance. Will hackily put it in right here.
    //I'm using a slightly different conversion from cartesian to WGS84, and also avoiding all trig functions, which just cause havoc. 
    // This is based on  http://www.microem.ru/pages/u_blox/tech/dataconvert/GPS.G1-X-00006.pdf
-
-   const double a = 6378137; 
-   const double b = 6356752.31424518; 
-   const double binv = 1./6356752.31424518; 
-   const double e = sqrt((a*a-b*b)/(a*a)); 
-   const double ep = e * a/b; 
 
    double X = *y; //silly 
    double Y = *x; //silly 
@@ -164,12 +179,6 @@ static void cart2stereo(double *x, double * y, double *z)
 
    ///ok now, we have to go to stereographic. We already reversed the sign of lattitude
 
-   //these are copied and pasted from RampdemReader, there may be some redundancy with other constants but oh well 
-   const double scale_factor=0.97276901289;
-   const double ellipsoid_inv_f = 298.257223563; //of Earth
-   const double eccentricity = sqrt((1/ellipsoid_inv_f)*(2-(1/ellipsoid_inv_f)));
-   const double c_0 = (2*R_EARTH / sqrt(1-pow(eccentricity,2))) * pow(( (1-eccentricity) / (1+eccentricity) ),eccentricity/2);
-
    double R = scale_factor * c_0 * pow( (1 + eccentricity * sin_lat ) / (1 - eccentricity * sin_lat), eccentricity/2) ; 
       
    //use some trig identities here... 
@@ -179,6 +188,78 @@ static void cart2stereo(double *x, double * y, double *z)
    *x = R * sin_lon; 
    *y = R * cos_lon; 
 
+}
+
+
+static void stereo2cart(double *x, double *y, double *z) 
+{
+  double E = *x; 
+  double N = *y; 
+
+  if (!E && !N) //special case the south pole
+  {
+    *z +=b; 
+    return; 
+  }
+
+  double alt = *z; 
+
+  double H2 = E*E + N *N; 
+  double H = sqrt(H2); 
+  double Hinv =  1./H; 
+  double sin_lon = E*Hinv;
+  double cos_lon = (E!=0.) ? (N/E * sin_lon) : ((E > 0) - (E < 0)); 
+
+
+  // Here I'm just taking the equations from EastingNorthingToLonLat and avoiding trig using
+  // identities:  
+  // sin(pi/2-x) = cos(x) ,
+  // cos(pi/2-x) = sin(x)  , 
+  // cos(2x) = (1 - tan^2 x) / (1 + tan^2 x) ,
+  // sin(2x) = 2 tan x / ( 1 + tan^2 x) 
+ 
+  double tan2_factor = H2 /(scale_factor * scale_factor * c_0 * c_0);  
+  double sin_iso_lat = (1 - tan2_factor) / (1 + tan2_factor);  
+  double cos_iso_lat = 2 * H/(scale_factor * c_0) / (1 + tan2_factor); 
+
+  // and now the fun begins
+  double s2 = sin_iso_lat * sin_iso_lat;
+  double sc = sin_iso_lat * cos_iso_lat; 
+  double s3c = s2 * sc; 
+  double s5c = s2 * s3c; 
+  double s7c = s2 * s5c; 
+
+  double sin2_iso_lat = 2 * sc; 
+  double sin4_iso_lat = 4 * sc - 8 * s3c; 
+  double sin6_iso_lat = 6 * sc - 32 * s3c + 32 *s5c; 
+  double sin8_iso_lat = 8 * sc - 80 * s3c + 192* s5c - 128* s7c; 
+
+  //Well, I guess I will use trig functions here... since otherwise I'll have a very very nasty sum 
+  //There is probably a better way to do this calculation, but it's quite tricky 
+
+  double correction =  a_bar * sin2_iso_lat + b_bar * sin4_iso_lat + c_bar * sin6_iso_lat + d_bar * sin8_iso_lat; 
+
+  // sadly, one trig call 
+  double sin_corr = sin(correction); 
+  double cos_corr = cos(correction); 
+  double sin_lat = -(sin_iso_lat * cos_corr + cos_iso_lat * sin_corr);  //throw in a minus sign for good measure 
+  double cos_lat = cos_iso_lat * cos_corr - sin_iso_lat * sin_corr; 
+
+  //printf("    lat: %g lon: %g\n", atan2(sin_lat, cos_lat) * TMath::RadToDeg(), atan2(sin_lon,cos_lon) * TMath::RadToDeg());  
+
+  //copied and pasted from getCartesianCoords, with a few intermediate values stored
+  
+  const double C1 = (1-FLATTENING_FACTOR) * (1-FLATTENING_FACTOR); 
+  
+  double C2 = pow(cos_lat * cos_lat + C1 * sin_lat*sin_lat,-0.5);
+  double Q2 = C1* C2; 
+
+  double C3 = R_EARTH * C2 + alt; 
+
+  //same silly convention as before here 
+  *x = C3 * cos_lat * sin_lon; 
+  *y = C3 * cos_lat * cos_lon; 
+  *z = (R_EARTH * Q2 + alt) * sin_lat; 
 }
 
 
@@ -214,11 +295,10 @@ void AntarcticCoord::convert(CoordType t)
 
     else if (t == CARTESIAN) 
     {
-     //be lazy. This could probably be made fastier though 
-      convert(WGS84); 
-      convert(CARTESIAN); 
+//      convert(WGS84); 
+//      convert(CARTESIAN); 
+      stereo2cart(&x,&y,&z); 
     }
-
   }
 
   else if (type == CARTESIAN) 
