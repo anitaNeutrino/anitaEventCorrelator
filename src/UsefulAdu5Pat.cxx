@@ -1209,6 +1209,9 @@ int UsefulAdu5Pat::traceBackToContinent(Double_t phiWave, Double_t thetaWave,
 
   Double_t altitude = 5000; // Mt. Vinson is 4897
 
+  double last_good_lat = -9999; 
+  double last_good_lon = -9990; 
+  double last_good_alt = -9999; 
   Int_t iter = 0;
 
   while(iter++ < max_iter)
@@ -1251,6 +1254,9 @@ int UsefulAdu5Pat::traceBackToContinent(Double_t phiWave, Double_t thetaWave,
           return 1;
         }
 
+        last_good_lat = lat; 
+        last_good_lon = lon; 
+        last_good_alt = altitude; 
         last_successful_theta = theta_try;
         break;
       }
@@ -1265,9 +1271,9 @@ int UsefulAdu5Pat::traceBackToContinent(Double_t phiWave, Double_t thetaWave,
     }
   }
 
-  if (lat_ptr) *lat_ptr = lat;
-  if (lon_ptr) *lon_ptr = lon;
-  if (alt_ptr) *alt_ptr = altitude;
+  if (lat_ptr) *lat_ptr = last_good_lat;
+  if (lon_ptr) *lon_ptr = last_good_lon;
+  if (alt_ptr) *alt_ptr = last_good_alt;
   if (adj_ptr) *adj_ptr = last_successful_theta - thetaWave;
 
   return 2;
