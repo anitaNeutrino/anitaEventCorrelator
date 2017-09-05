@@ -1330,7 +1330,7 @@ int UsefulAdu5Pat::astronomicalCoordinates(Double_t phiWave, Double_t thetaWave,
   double h  = atan2 ( sin(Az) , -cos(Az)* sin(lat)  + tan(el) * cos(lat));
 
 //  printf("%f\n", h * 12 / M_PI);
-  TTimeStamp ts ( realTime, (timeOfDay % 1000)  * 1e6);
+  TTimeStamp ts ( (time_t) realTime, (timeOfDay % 1000)  * 1e6);
 
   //should this be AsLAST or AsLMST? Need to find a real astronomer
   // Also, the UT1 offset seems like a royal pain
