@@ -1161,7 +1161,7 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
   // phiWave is in radians relative to ADU5 Aft Fore line
 
   double reflectionLon=0, reflectionLat=0, reflectionAlt=0, deltaTheta=100; // need non-zero deltaTheta when testing whether things intersectg, as theta < 0 returns instantly
-  usefulPat.traceBackToContinent(phiWave, thetaWave, &reflectionLat, &reflectionLon, &reflectionAlt, &deltaTheta);
+  usefulPat.traceBackToContinent(phiWave, thetaWave, &reflectionLon, &reflectionLat, &reflectionAlt, &deltaTheta);
 
   TVector3 destination; // ANITA position if direct cosmic ray or surface position if reflected cosmic ray
   TVector3 destinationToSource; // unit vector from ANITA (if direct) or reflection position (if indirect) which points in the direction the cosmic ray signal came from
@@ -1294,9 +1294,9 @@ double GeoMagnetic::getAtmosphericDensity(double altitude){
 TVector3 GeoMagnetic::getInitialPosition(const TVector3& destination, const TVector3& destinationToSource){
   prepareGeoMagnetics();
 
-  if(destinationToSource.Mag() != 1){
+  if(destinationToSource.Mag() -1 > 1e-14){
     std::cerr  << "Warning in " << __PRETTY_FUNCTION__ << ", was expecting a unit vector, didn't get one. "
-               << "This calculation might be wonky... " << std::endl;
+               << "Got " << 1.0-destinationToSource.Mag() << " away from mag==1... This calculation might be wonky... " << std::endl;
   }
   
   
