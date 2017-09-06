@@ -90,6 +90,7 @@ class AntarcticSegmentationScheme {
 
   public: 
 
+
   /** Factory for AntarcticSegmentationScheme . Will create one based on a
    * string key. 
    *
@@ -112,18 +113,18 @@ class AntarcticSegmentationScheme {
 
     virtual int NSegments() const = 0;  
 
-    /* Gets the center of the segment at this position.
+    /** Gets the center of the segment at this position.
      * 
      * If fillalt, will also fill altitude using RampdemReader (which will be somewhat slower) , otherwise sets it to equivalent of 0 
      *
-     * */
+     **/
     virtual void getSegmentCenter(int idx, AntarcticCoord * fillme, bool fillalt = true) const = 0; 
 
     /** convenience method */ 
     virtual AntarcticCoord getSegmentCenter(int idx, bool fillalt = true) const { AntarcticCoord c; getSegmentCenter(idx,&c,fillalt); return c; } 
 
     /** Return the number of neighbhors. 
-     * if neighbhors not null, appends to the vector the  neighbors. 
+     * if neighbors not null, appends to the vector the  neighbors. 
      *
      */ 
     virtual int getNeighbors(int segment, std::vector<int> * neighbors = NULL) const = 0; 
@@ -135,12 +136,14 @@ class AntarcticSegmentationScheme {
     virtual AntarcticCoord * sampleSegment(int idx, int N, AntarcticCoord * fillus = 0, bool random = true, bool fillalt = true ) const = 0; 
 
     /** Draw the segmentation scheme in Stereographic Coords. Default implementation samples each segment 64 times  and draws as a TGraph2D with z = segment numbe
-     *
-     *
      * if data is 0, draws the index of each segment, otherwise draws the value in data[i] for each segment.
+     * if range is non-zero, the histogram is zoomed with x in range[0] - range[1] nd y in range[2] - range[3]. 
+     * 
      * */
-    virtual void Draw(const char * opt = "colz", const double * data = 0 ) const; 
-    virtual void DrawI(const char * opt = "colz", const int * data = 0) const; 
+    virtual void Draw(const char * opt = "colz", const double * data = 0, const double * range = 0 ) const; 
+
+    /* Draw integer data... just implemented in terms of Draw() */
+    virtual void DrawI(const char * opt = "colz", const int * data = 0, const double * range = 0) const; 
 
 
 
@@ -148,7 +151,7 @@ class AntarcticSegmentationScheme {
     virtual void setRampdemDataset( RampdemReader::dataSet d)  { dataset = d; } 
 
   protected: 
-    AntarcticSegmentationScheme() :  dataset (RampdemReader::rampdem) { ;} 
+    AntarcticSegmentationScheme() :  dataset (RampdemReader::surface) { ;} 
     RampdemReader::dataSet dataset; 
 
     ClassDef(AntarcticSegmentationScheme,1); 
@@ -169,7 +172,7 @@ class StereographicGrid : public AntarcticSegmentationScheme
     virtual int NSegments() const { return nx * ny; } 
     virtual void getSegmentCenter(int idx, AntarcticCoord * fill, bool fillalt=true) const; 
     virtual AntarcticCoord * sampleSegment(int idx, int N, AntarcticCoord * fillus = 0, bool random = true, bool fillalt = true) const; 
-    virtual void Draw(const char * opt = "colz", const double * data = 0) const; 
+    virtual void Draw(const char * opt = "colz", const double * data = 0, const double * range = 0) const; 
 
     virtual void asString(TString * str) const; 
   private:
@@ -200,6 +203,9 @@ class PayloadParameters
     double payload_el;  // the elevation of the payload from the source (deg) . positive is UP
     double payload_az; // the azimuth of the payload from the source (deg). 
     double distance; //distance between source and payload
+
+    /* Checks for collision with the ground */
+    bool checkForCollision(double dx = 100, AntarcticCoord * where = 0, RampdemReader::dataSet d = RampdemReader::surface, double grace = 1) const;
     AntarcticCoord payload; 
     AntarcticCoord source; 
   private: 
