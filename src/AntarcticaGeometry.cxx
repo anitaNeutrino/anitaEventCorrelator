@@ -13,19 +13,13 @@ ClassImp(AntarcticSegmentationScheme);
 ClassImp(PayloadParameters); 
 ClassImp(StereographicGrid); 
 
-
-
-
-
-
-
-
 class SurfaceWrapper
 {
 
   public:
     double compute(double E, double N) 
     {
+//      printf("%g,%g\n", E,N); 
       return map->Interpolate(E,N); 
     }
 
@@ -37,7 +31,7 @@ class SurfaceWrapper
 
     ~SurfaceWrapper()
     {
-      delete map; 
+//      delete map; 
 
     }
 }; 
@@ -99,7 +93,7 @@ PayloadParameters::PayloadParameters(const Adu5Pat * gps, const AntarcticCoord &
   // wihch would probably be a more efficient way to do this without trig functions 
   sprime.RotateZ(-1 * p.Phi()); 
   sprime.RotateY(-1 * p.Theta()); 
-  sprime[2]=p.Mag()-sprime.z(); 
+  sprime[2]=p.Mag()-fabs(sprime.z()); 
 
   sprime.RotateZ(gps->heading*TMath::DegToRad()); 
 
@@ -114,8 +108,8 @@ PayloadParameters::PayloadParameters(const Adu5Pat * gps, const AntarcticCoord &
   TVector3 pprime = p;
   pprime.RotateZ(-1*s.Phi()); 
   pprime.RotateY(-1*s.Theta()); 
-  pprime[2] = pprime.z()-s.Mag(); 
-  payload_el = 90-pprime.Theta() * TMath::RadToDeg(); 
+  pprime[2] = s.Mag() - fabs(pprime.z()); 
+  payload_el = -FFTtools::wrap( 90 - pprime.Theta() * TMath::RadToDeg(), 180, 0); 
   payload_az = pprime.Phi() * TMath::RadToDeg(); 
 
   distance = (source.v() - payload.v()).Mag(); 
@@ -133,7 +127,7 @@ static const double binv = 1./6356752.31424518;
 static const double e = sqrt((a*a-b*b)/(a*a)); 
 static const double ep = e * a/b; 
 
-   //these are copied and pasted from RampdemReader, there may be some redundancy with other constants but oh well 
+//these are copied and pasted from RampdemReader, there may be some redundancy with other constants but oh well 
 static const double scale_factor=0.97276901289;
 static const double ellipsoid_inv_f = 298.257223563; 
 static const double eccentricity = sqrt((1/ellipsoid_inv_f)*(2-(1/ellipsoid_inv_f)));
@@ -242,7 +236,7 @@ static void stereo2cart(double *x, double *y, double *z)
   // sadly, one trig call 
   double sin_corr = sin(correction); 
   double cos_corr = cos(correction); 
-  double sin_lat = -(sin_iso_lat * cos_corr + cos_iso_lat * sin_corr);  //throw in a minus sign for good measure 
+  double sin_lat = fabs(sin_iso_lat * cos_corr + cos_iso_lat * sin_corr);  //force positivity 
   double cos_lat = cos_iso_lat * cos_corr - sin_iso_lat * sin_corr; 
 
   //printf("    lat: %g lon: %g\n", atan2(sin_lat, cos_lat) * TMath::RadToDeg(), atan2(sin_lon,cos_lon) * TMath::RadToDeg());  
@@ -318,7 +312,7 @@ void AntarcticCoord::convert(CoordType t)
 //      convert(WGS84); 
 //      convert(STEREOGRAPHIC); 
 
-      cart2stereo(&x,&y,&z); 
+     cart2stereo(&x,&y,&z); 
 
      }
   }
@@ -403,7 +397,7 @@ void AntarcticSegmentationScheme::Draw(const char * opt, const double * data, co
 
 
 StereographicGrid::StereographicGrid(int NX, int NY, double MAX_E, double MAX_N)
-  : nx(NX), ny(NY), max_E(MAX_E), max_N(MAX_N) 
+  : AntarcticSegmentationScheme(), nx(NX), ny(NY), max_E(MAX_E), max_N(MAX_N) 
 {
 
   dx = (2*max_E)/nx; 
@@ -550,6 +544,7 @@ bool PayloadParameters::checkForCollision(double dx, AntarcticCoord * w, Rampdem
 
   while(true)
   {
+    x.to(AntarcticCoord::CARTESIAN); 
     x.x+= v.x();
     x.y+= v.y();
     x.z+= v.z(); 

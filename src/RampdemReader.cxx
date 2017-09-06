@@ -1024,6 +1024,7 @@ TProfile2D* RampdemReader::getMap(RampdemReader::dataSet dataSet, int coarseness
 					yBins/coarseness, yMin, yMax+cellSize);
 
   fillThisHist(theHist, dataSet);
+  theHist->SetDirectory(0); 
   return theHist;
 
 }
