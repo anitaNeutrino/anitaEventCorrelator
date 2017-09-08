@@ -317,9 +317,16 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const
     c.z  = RampdemReader::SurfaceAboveGeoidEN(c.x,c.y, RampdemReader::surface); 
     return c; 
   }
+  
 
-  return AntarcticCoord(AntarcticCoord::CARTESIAN,x,y,z); 
+  //otherwise, we need to fix the altitude 
 
+  double alt = low_frac * ps[l].as(AntarcticCoord::WGS84).z + (1-low_frac)*ps[u].as(AntarcticCoord::WGS84).z; 
+
+  AntarcticCoord c(AntarcticCoord::CARTESIAN,x,y,z); 
+  c.to(AntarcticCoord::STEREOGRAPHIC); //this is usually what we'll need
+  c.z = alt; //fix altitude 
+  return c; 
 }
 
 
