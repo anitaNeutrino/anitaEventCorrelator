@@ -1200,14 +1200,11 @@ int UsefulAdu5Pat::traceBackToContinent(Double_t phiWave, Double_t thetaWave,
                                         Double_t * adj_ptr, Double_t max_adjust, Int_t max_iter)
 {
 
-  if (thetaWave < 0) return 0;  // above horizon
 
-  Double_t lon,lat;
+  Double_t lon,lat,alt;
   Double_t last_theta_tried =0;
   Double_t last_successful_theta = 0;
   Double_t last_failed_theta = 0;
-
-  Double_t altitude = 5000; // Mt. Vinson is 4897
 
   double last_good_lat = -9999; 
   double last_good_lon = -9990; 
@@ -1224,50 +1221,35 @@ int UsefulAdu5Pat::traceBackToContinent(Double_t phiWave, Double_t thetaWave,
 //    printf("%f\n",theta_try);
     last_theta_tried = theta_try;
 
-    while (altitude > -200)
+    int success = getSourceLonAndLatAtAlt(phiWave, theta_try, lon, lat, alt); 
+
+    if (success == 1) 
     {
-      Int_t points= getSourceLonAndLatAtDesiredAlt(phiWave,theta_try, lon,lat,altitude);
-
-      if (points!=1)//oh shoot, we missed
+      if (iter == 1) //this was the first try and it was a success
       {
-        last_failed_theta = theta_try;
-        if (theta_try == thetaWave + max_adjust)  //it's hopeless, abandon all hope
-        {
-          return 0;
-        }
-        break;
-      }
-
-      Double_t altitude_here = RampdemReader::SurfaceAboveGeoid(lon,lat);
-      if (altitude_here > altitude)  //yay we did it!!
-      {
-        // if this is the original theta, we should  celebrate and return,
-        // otherwise, we should keep bisecting until we run out of iterations
-
-        if (iter == 1)
-        {
-          if (lat_ptr) *lat_ptr = lat;
-          if (lon_ptr) *lon_ptr = lon;
-          if (alt_ptr) *alt_ptr = altitude;
-          if (adj_ptr) *adj_ptr = 0;
-
-          return 1;
-        }
-
-        last_good_lat = lat; 
-        last_good_lon = lon; 
-        last_good_alt = altitude; 
-        last_successful_theta = theta_try;
-        break;
+        if (lon_ptr) *lon_ptr = lon; 
+        if (lat_ptr) *lat_ptr = lat; 
+        if (alt_ptr) *alt_ptr = alt; 
+        if (adj_ptr) *adj_ptr = 0; 
+        return 1; 
       }
 
 
-      Double_t distance_to_ground = altitude - altitude_here;
+      last_good_lat = lat; 
+      last_good_lon = lon; 
+      last_good_alt = alt; 
+      last_successful_theta = theta_try; 
 
-      if (distance_to_ground > 1000) altitude -= 100;
-      else if (distance_to_ground > 500 ) altitude -= 50;
-      else if (distance_to_ground > 100) altitude -= 10;
-      else altitude -=1;
+    }
+    else 
+    {
+      if (theta_try == thetaWave + max_adjust)
+      {
+        //it's hopeless. 
+        return 0; 
+      }
+
+      last_failed_theta = theta_try; 
     }
   }
 
@@ -1277,8 +1259,8 @@ int UsefulAdu5Pat::traceBackToContinent(Double_t phiWave, Double_t thetaWave,
   if (adj_ptr) *adj_ptr = last_successful_theta - thetaWave;
 
   return 2;
-
 }
+
 
 Double_t UsefulAdu5Pat::getReflectionAngle(Double_t plAlt, Double_t el, Double_t imAlt) {
 //float reflectionAngle(float h, float el) {
