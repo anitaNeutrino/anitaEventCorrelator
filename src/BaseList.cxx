@@ -304,29 +304,44 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const
 
   double low_frac = double(t-ts[l]) / double(ts[u] -ts[l]); 
 
-  AntarcticCoord cl = ps[l].as(AntarcticCoord::CARTESIAN); 
-  AntarcticCoord cu = ps[u].as(AntarcticCoord::CARTESIAN); 
-  double x =  low_frac * cl.x  + (1-low_frac) * cu.x; 
-  double y =  low_frac * cl.y  + (1-low_frac) * cu.y; 
-  double z =  low_frac * cl.z  + (1-low_frac) * cu.z; 
+  double AntarcticCoord cl = ps[l].as(AntarcticCoord::WGS84);
+  double AntarcticCoord cu = ps[u].as(AntarcticCoord::WGS84);
+  //  Accounting for unwrapping in longitude.
+  if (cu.x - cl.x <= -360) cu.x += 360;
+  if (cu.x - cl.x >= 360) cu.x -= 360;
+  double lon = low_frac * cl.x + (1 - low_frac) * cu.x;
+  //  Rewrapping longitude. Perhaps unneccessary if going into stereographic projection anyway?
+  lon = (lon + 180) % 360 - 180;
+  double lat = low_frac * cl.y + (1 - low_frac) * cu.y;
+  double alt = low_frac * cl.z + (1 - low_frac) * cu.z;
+//  AntarcticCoord cl = ps[l].as(AntarcticCoord::CARTESIAN); 
+//  AntarcticCoord cu = ps[u].as(AntarcticCoord::CARTESIAN); 
+//  double x =  low_frac * cl.x  + (1-low_frac) * cu.x; 
+//  double y =  low_frac * cl.y  + (1-low_frac) * cu.y; 
+//  double z =  low_frac * cl.z  + (1-low_frac) * cu.z; 
 
-  if (z < 0) //this means the altitude was not actually filled in (e.g for eample a traverse), so we need to retrieve it ourselves... 
-  {
-    AntarcticCoord c(AntarcticCoord::CARTESIAN,x,y,0); 
-    c.to(AntarcticCoord::STEREOGRAPHIC); 
-    c.z  = RampdemReader::SurfaceAboveGeoidEN(c.x,c.y, RampdemReader::surface); 
-    return c; 
+    if (alt < 0) {
+//  if (z < 0) {  //this means the altitude was not actually filled in (e.g for eample a traverse), so we need to retrieve it ourselves... 
+    AntarcticCoord c(AntarcticCoord::WGS84, lon, lat, 0);
+//    AntarcticCoord c(AntarcticCoord::CARTESIAN,x,y,0); 
+    c.to(AntarcticCoord::STEREOGRAPHIC);
+    c.z  = RampdemReader::SurfaceAboveGeoid(c.x, c.y, RampdemReader::surface); 
+//    c.z  = RampdemReader::SurfaceAboveGeoidEN(c.x,c.y, RampdemReader::surface); 
+  } else {
+    AntarcticCoord c(AntarcticCoord::WGS84, lon, lat, alt);
+    c.to(AntarcticCoord::STEROGRAPHIC);
   }
   
-
+  return c;
   //otherwise, we need to fix the altitude 
 
-  double alt = low_frac * ps[l].as(AntarcticCoord::WGS84).z + (1-low_frac)*ps[u].as(AntarcticCoord::WGS84).z; 
+//  double alt = low_frac * ps[l].as(AntarcticCoord::WGS84).z + (1-low_frac)*ps[u].as(AntarcticCoord::WGS84).z; 
 
-  AntarcticCoord c(AntarcticCoord::CARTESIAN,x,y,z); 
-  c.to(AntarcticCoord::STEREOGRAPHIC); //this is usually what we'll need
-  c.z = alt; //fix altitude 
-  return c; 
+//  AntarcticCoord c(AntarcticCoord::WGS84, lon, lat, alt); 
+//  AntarcticCoord c(AntarcticCoord::CARTESIAN,x,y,z); 
+//  c.to(AntarcticCoord::STEREOGRAPHIC); //this is usually what we'll need
+//  c.z = alt; //fix altitude 
+//  return c; 
 }
 
 
