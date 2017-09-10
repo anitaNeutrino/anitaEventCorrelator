@@ -322,17 +322,18 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const
 
     if (alt < 0) {
 //  if (z < 0) {  //this means the altitude was not actually filled in (e.g for eample a traverse), so we need to retrieve it ourselves... 
-    AntarcticCoord c(AntarcticCoord::WGS84, lon, lat, 0);
+      AntarcticCoord c(AntarcticCoord::WGS84, lon, lat, 0);
 //    AntarcticCoord c(AntarcticCoord::CARTESIAN,x,y,0); 
-    c.to(AntarcticCoord::STEREOGRAPHIC);
-    c.z  = RampdemReader::SurfaceAboveGeoid(c.x, c.y, RampdemReader::surface); 
+      c.to(AntarcticCoord::STEREOGRAPHIC);
+      c.z  = RampdemReader::SurfaceAboveGeoid(c.x, c.y, RampdemReader::surface); 
 //    c.z  = RampdemReader::SurfaceAboveGeoidEN(c.x,c.y, RampdemReader::surface); 
-  } else {
-    AntarcticCoord c(AntarcticCoord::WGS84, lon, lat, alt);
-    c.to(AntarcticCoord::STEROGRAPHIC);
-  }
+      return c;
+    } else {
+      AntarcticCoord c(AntarcticCoord::WGS84, lon, lat, alt);
+      c.to(AntarcticCoord::STEROGRAPHIC);
+      return c;
+    }
   
-  return c;
   //otherwise, we need to fix the altitude 
 
 //  double alt = low_frac * ps[l].as(AntarcticCoord::WGS84).z + (1-low_frac)*ps[u].as(AntarcticCoord::WGS84).z; 
