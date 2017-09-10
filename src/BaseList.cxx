@@ -326,7 +326,7 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const
     AntarcticCoord c(AntarcticCoord::WGS84, lat, lon, 0);
 //    AntarcticCoord c(AntarcticCoord::CARTESIAN,x,y,0); 
     c.to(AntarcticCoord::STEREOGRAPHIC);
-    c.z  = RampdemReader::SurfaceAboveGeoid(c.x, c.y, RampdemReader::surface); 
+    c.z  = RampdemReader::SurfaceAboveGeoid(c.y, c.x, RampdemReader::surface); 
 //    c.z  = RampdemReader::SurfaceAboveGeoidEN(c.x,c.y, RampdemReader::surface); 
     return c;
   } else {
