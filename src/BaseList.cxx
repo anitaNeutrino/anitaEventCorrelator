@@ -305,8 +305,8 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const
 
   double low_frac = double(t-ts[l]) / double(ts[u] -ts[l]); 
 
-  double AntarcticCoord cl = ps[l].as(AntarcticCoord::WGS84);
-  double AntarcticCoord cu = ps[u].as(AntarcticCoord::WGS84);
+  AntarcticCoord cl = ps[l].as(AntarcticCoord::WGS84);
+  AntarcticCoord cu = ps[u].as(AntarcticCoord::WGS84);
   //  Accounting for unwrapping in longitude.
   if (cu.x - cl.x <= -360) cu.x += 360;
   if (cu.x - cl.x >= 360) cu.x -= 360;
