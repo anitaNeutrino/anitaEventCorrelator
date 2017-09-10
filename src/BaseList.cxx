@@ -2,6 +2,7 @@
 #include "AnitaVersion.h" 
 #include "TFile.h" 
 #include "TMath.h" 
+#include <math.h>
 #include "TTree.h" 
 #include <unistd.h> 
 #include "TROOT.h" 
@@ -311,7 +312,7 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const
   if (cu.x - cl.x >= 360) cu.x -= 360;
   double lon = low_frac * cl.x + (1 - low_frac) * cu.x;
   //  Rewrapping longitude. Perhaps unneccessary if going into stereographic projection anyway?
-  lon = (lon + 180) % 360 - 180;
+  lon = fmod(lon + 180, 360) - 180;
   double lat = low_frac * cl.y + (1 - low_frac) * cu.y;
   double alt = low_frac * cl.z + (1 - low_frac) * cu.z;
 //  AntarcticCoord cl = ps[l].as(AntarcticCoord::CARTESIAN); 
@@ -320,19 +321,19 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const
 //  double y =  low_frac * cl.y  + (1-low_frac) * cu.y; 
 //  double z =  low_frac * cl.z  + (1-low_frac) * cu.z; 
 
-    if (alt < 0) {
+  if (alt < 0) {
 //  if (z < 0) {  //this means the altitude was not actually filled in (e.g for eample a traverse), so we need to retrieve it ourselves... 
-      AntarcticCoord c(AntarcticCoord::WGS84, lon, lat, 0);
+    AntarcticCoord c(AntarcticCoord::WGS84, lon, lat, 0);
 //    AntarcticCoord c(AntarcticCoord::CARTESIAN,x,y,0); 
-      c.to(AntarcticCoord::STEREOGRAPHIC);
-      c.z  = RampdemReader::SurfaceAboveGeoid(c.x, c.y, RampdemReader::surface); 
+    c.to(AntarcticCoord::STEREOGRAPHIC);
+    c.z  = RampdemReader::SurfaceAboveGeoid(c.x, c.y, RampdemReader::surface); 
 //    c.z  = RampdemReader::SurfaceAboveGeoidEN(c.x,c.y, RampdemReader::surface); 
-      return c;
-    } else {
-      AntarcticCoord c(AntarcticCoord::WGS84, lon, lat, alt);
-      c.to(AntarcticCoord::STEROGRAPHIC);
-      return c;
-    }
+    return c;
+  } else {
+    AntarcticCoord c(AntarcticCoord::WGS84, lon, lat, alt);
+    c.to(AntarcticCoord::STEREOGRAPHIC);
+    return c;
+  }
   
   //otherwise, we need to fix the altitude 
 
