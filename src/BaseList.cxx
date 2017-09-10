@@ -308,8 +308,8 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const
   AntarcticCoord cl = ps[l].as(AntarcticCoord::WGS84);
   AntarcticCoord cu = ps[u].as(AntarcticCoord::WGS84);
   //  Accounting for unwrapping in longitude.
-  if (cu.x - cl.x <= -360) cu.x += 360;
-  if (cu.x - cl.x >= 360) cu.x -= 360;
+  if (cu.x - cl.x < -180) cu.x += 360;
+  if (cu.x - cl.x > 180) cu.x -= 360;
   double lon = low_frac * cl.x + (1 - low_frac) * cu.x;
   //  Rewrapping longitude. Perhaps unneccessary if going into stereographic projection anyway?
   lon = fmod(lon + 180, 360) - 180;
