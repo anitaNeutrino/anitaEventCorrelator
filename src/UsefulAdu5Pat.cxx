@@ -1286,7 +1286,7 @@ Double_t UsefulAdu5Pat::getReflectionAngle(Double_t el, Double_t imAlt) {
 }
 
 
-int UsefulAdu5Pat::astronomicalCoordinates(Double_t phiWave, Double_t thetaWave, Double_t * RA_ptr, Double_t * dec_ptr, Double_t * l_ptr, Double_t * b_ptr)
+int UsefulAdu5Pat::astronomicalCoordinates(Double_t phiWave, Double_t thetaWave, Double_t * RA_ptr, Double_t * dec_ptr, Double_t * l_ptr, Double_t * b_ptr) const
 {
 #if ROOT_VERSION_CODE < ROOT_VERSION(6,0,0)
   std::cerr << "Your  version of ROOT does not support all the features of eventReaderRoot\n";
@@ -1383,6 +1383,33 @@ int UsefulAdu5Pat::astronomicalCoordinates(Double_t phiWave, Double_t thetaWave,
   }
 
   return 0;
+#endif
+
+}
+
+int UsefulAdu5Pat::fromRADec(Double_t RA, Double_t dec, Double_t * phi, Double_t *theta) const
+{
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,0,0)
+  std::cerr << "Your  version of ROOT does not support all the features of eventReaderRoot\n";
+  return 0;
+#else
+
+  TTimeStamp ts ( (time_t) realTime, (timeOfDay % 1000)  * 1e6);
+
+  //should this be AsLAST or AsLMST? Need to find a real astronomer
+  // Also, the UT1 offset seems like a royal pain
+  double lst = ts.AsLMST(longitude);
+  double h = lst - RA; //hour angle 
+  h*= ( M_PI / 12);  //hour -> radians
+  dec *= (M_PI/180);  //deg to radians
+
+  double lat = latitude * (M_PI /180); 
+  double Az = atan2( cos(dec) * sin(h), -cos(h) * sin(lat)* cos(dec) + sin(dec) * cos(lat)); 
+  double el = asin(sin(lat) * sin(dec) + cos(lat) * cos(dec) * cos(h)); 
+
+  if (phi) *phi = heading + Az * (180/M_PI); 
+  if (theta) *theta = - el * (180/M_PI); 
+  return 0; 
 #endif
 
 }
