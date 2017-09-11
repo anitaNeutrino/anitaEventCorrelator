@@ -26,7 +26,7 @@ class SurfaceWrapper
     TProfile2D *map; 
     SurfaceWrapper(RampdemReader::dataSet set) 
     {
-      map = RampdemReader::getMap(set, 1); 
+      map = RampdemReader::getMap(set, 4); 
     }
 
     ~SurfaceWrapper()
@@ -48,8 +48,6 @@ static SurfaceWrapper & getSurface(RampdemReader::dataSet set)
   static SurfaceWrapper w(RampdemReader::rampdem); 
   return w; 
 }
-
-
 
 void AntarcticCoord::asString(TString * s) const
 {
@@ -74,7 +72,6 @@ void AntarcticCoord::asString(TString * s) const
 PayloadParameters::PayloadParameters() 
 {
   memset(this,0,sizeof(PayloadParameters)); 
-
 }
 
 PayloadParameters::PayloadParameters(const Adu5Pat * gps, const AntarcticCoord & source_pos) 
@@ -117,8 +114,6 @@ PayloadParameters::PayloadParameters(const Adu5Pat * gps, const AntarcticCoord &
 
 static void cart2stereo(double*,double*,double*) __attribute__((optimize("fast-math"),optimize("O3"))); 
 static void stereo2cart(double*,double*,double*) __attribute__((optimize("fast-math"),optimize("O3"))); 
-
-
 
 // for ECE -> lat/lon 
 static const double a = 6378137; 
@@ -292,6 +287,7 @@ void AntarcticCoord::convert(CoordType t)
 //      convert(WGS84); 
 //      convert(CARTESIAN); 
       stereo2cart(&x,&y,&z); 
+      
     }
   }
 
@@ -555,15 +551,16 @@ bool PayloadParameters::checkForCollision(double dx, AntarcticCoord * w, Rampdem
     if ( s.z > 5000)
       break; 
 
-    if (getSurface(d).compute(s.x,s.y) > s.z+grace)
+    double surface = getSurface(d).compute(s.x,s.y); 
+    if (surface > s.z+grace)
     {
+//      printf("BOOM! alt(%g,%g,%g)= %g\n", s.x, s.y, s.z, surface); 
       if (w) 
       {
-        *w  = x; 
+        *w  = s; 
       }
       return true; 
     }
-    
   }
 
 

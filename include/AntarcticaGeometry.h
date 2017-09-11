@@ -24,7 +24,7 @@ class AntarcticCoord
     {
       WGS84,  // (lat lon alt)  [deg, deg, m] 
       STEREOGRAPHIC,  // (Easting Northing alt) [m,m,m]  
-      CARTESIAN  // (x y z)  [m,m,m] 
+      CARTESIAN  // (x y z)  [m,m,m] ( in the very strange ANITA "convention") 
     }; 
 
 
@@ -151,7 +151,7 @@ class AntarcticSegmentationScheme {
     virtual void setRampdemDataset( RampdemReader::dataSet d)  { dataset = d; } 
 
   protected: 
-    AntarcticSegmentationScheme() :  dataset (RampdemReader::surface) { ;} 
+    AntarcticSegmentationScheme() :  dataset (RampdemReader::rampdem) { ;} 
     RampdemReader::dataSet dataset; 
 
     ClassDef(AntarcticSegmentationScheme,1); 
@@ -173,6 +173,7 @@ class StereographicGrid : public AntarcticSegmentationScheme
     virtual void getSegmentCenter(int idx, AntarcticCoord * fill, bool fillalt=true) const; 
     virtual AntarcticCoord * sampleSegment(int idx, int N, AntarcticCoord * fillus = 0, bool random = true, bool fillalt = true) const; 
     virtual void Draw(const char * opt = "colz", const double * data = 0, const double * range = 0) const; 
+    
 
     virtual void asString(TString * str) const; 
   private:
@@ -205,7 +206,7 @@ class PayloadParameters
     double distance; //distance between source and payload
 
     /* Checks for collision with the ground */
-    bool checkForCollision(double dx = 100, AntarcticCoord * where = 0, RampdemReader::dataSet d = RampdemReader::surface, double grace = 1) const;
+    bool checkForCollision(double dx = 100, AntarcticCoord * where = 0, RampdemReader::dataSet d = RampdemReader::rampdem, double grace = 20) const;
     AntarcticCoord payload; 
     AntarcticCoord source; 
   private: 
