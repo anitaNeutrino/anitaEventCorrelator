@@ -12,21 +12,23 @@
 
 #include "TProfile2D.h"
 #include "RampdemReader.h"
-#include "TGToolTip.h"
-#include "TExec.h"
-#include "TColor.h"
 #include "RVersion.h"
+#include "TColor.h"
 
+class TExec;
+class TGToolTip;
 class TGraphAntarctica;
+class TPad;
 const int defaultCoarseness = 10; // 1 is v slow on my laptop but you might want to do that when you zoom in.
+
 
 class AntarcticaBackground : public TProfile2D {
 
-public:
+ public:
 
   AntarcticaBackground(RampdemReader::dataSet dataSet = RampdemReader::thickness,
 		       Int_t coarseness = defaultCoarseness);
-  ~AntarcticaBackground();
+  virtual ~AntarcticaBackground();
 
   void Draw(Option_t* opt = "colz");
 
@@ -74,15 +76,16 @@ public:
   static const char* getDefaultName(){return "fAntarctica";}
 
   void setPalette();
+  void unsetPalette();
 
   // at some point, supporting ROOT versions < 6 is gonna be impossible...
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
-  std::map<RampdemReader::dataSet, EColorPalette> palettes;
-  float opacity; 
+  std::map<RampdemReader::dataSet, EColorPalette> palettes; //! Does not persist in ROOT!
+  float opacity; //! Does not persist in ROOT!
 #endif
 
 
-private:
+ private:
 
   Int_t fCoarseness; // map coarseness factor
   RampdemReader::dataSet fDataSet; // rampdem data set
@@ -116,9 +119,10 @@ private:
   void updateGPadPrims(std::vector<TGraphAntarctica*>& grs, Bool_t drawThem, Option_t* opt);
   ClassDef(AntarcticaBackground, 0)
 
-  TExec* fExec;
-
-
+  std::vector<Int_t> fOldPalette; //! Don't persist
+  TExec* fPalSetter; //! Don't persist
+  TExec* fPalUnsetter; //! Don't persist
+  std::vector<TPad*> fPads; //! Don't persist
 };
 
 
