@@ -21,8 +21,8 @@ TProfile2DAntarctica::TProfile2DAntarctica(Int_t nx, Int_t ny)
 
   nx = nx <= 0 ? b->GetNbinsX() : nx;
   ny = ny <= 0 ? b->GetNbinsY() : ny;
-  SetBins(nx, b->GetXaxis()->GetBinLowEdge(1), b->GetXaxis()->GetBinUpEdge(nx),
-          ny, b->GetYaxis()->GetBinLowEdge(1), b->GetYaxis()->GetBinUpEdge(ny));
+  SetBins(nx, b->GetXaxis()->GetBinLowEdge(1), b->GetXaxis()->GetBinUpEdge(b->GetNbinsX()),
+          ny, b->GetYaxis()->GetBinLowEdge(1), b->GetYaxis()->GetBinUpEdge(b->GetNbinsY()));
 }
 
 
@@ -34,8 +34,8 @@ TProfile2DAntarctica::TProfile2DAntarctica(const char* name, const char* title, 
 
   nx = nx <= 0 ? b->GetNbinsX() : nx;
   ny = ny <= 0 ? b->GetNbinsY() : ny;
-  SetBins(nx, b->GetXaxis()->GetBinLowEdge(1), b->GetXaxis()->GetBinUpEdge(nx),
-          ny, b->GetYaxis()->GetBinLowEdge(1), b->GetYaxis()->GetBinUpEdge(ny));
+  SetBins(nx, b->GetXaxis()->GetBinLowEdge(1), b->GetXaxis()->GetBinUpEdge(b->GetNbinsX()),
+          ny, b->GetYaxis()->GetBinLowEdge(1), b->GetYaxis()->GetBinUpEdge(b->GetNbinsY()));
 }
 
 
@@ -133,8 +133,8 @@ TH2DAntarctica::TH2DAntarctica(Int_t nx, Int_t ny)
 
   nx = nx <= 0 ? b->GetNbinsX() : nx;
   ny = ny <= 0 ? b->GetNbinsY() : ny;
-  SetBins(nx, b->GetXaxis()->GetBinLowEdge(1), b->GetXaxis()->GetBinUpEdge(nx),
-          ny, b->GetYaxis()->GetBinLowEdge(1), b->GetYaxis()->GetBinUpEdge(ny));  
+  SetBins(nx, b->GetXaxis()->GetBinLowEdge(1), b->GetXaxis()->GetBinUpEdge(b->GetNbinsX()),
+          ny, b->GetYaxis()->GetBinLowEdge(1), b->GetYaxis()->GetBinUpEdge(b->GetNbinsY()));
 }
 
 
@@ -146,8 +146,8 @@ TH2DAntarctica::TH2DAntarctica(const char* name, const char* title, Int_t nx, In
 
   nx = nx <= 0 ? b->GetNbinsX() : nx;
   ny = ny <= 0 ? b->GetNbinsY() : ny;
-  SetBins(nx, b->GetXaxis()->GetBinLowEdge(1), b->GetXaxis()->GetBinUpEdge(nx),
-          ny, b->GetYaxis()->GetBinLowEdge(1), b->GetYaxis()->GetBinUpEdge(ny));  
+  SetBins(nx, b->GetXaxis()->GetBinLowEdge(1), b->GetXaxis()->GetBinUpEdge(b->GetNbinsX()),
+          ny, b->GetYaxis()->GetBinLowEdge(1), b->GetYaxis()->GetBinUpEdge(b->GetNbinsY()));
 }
 
 
