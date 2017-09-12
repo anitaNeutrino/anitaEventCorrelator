@@ -82,7 +82,7 @@ class UsefulAdu5Pat: public Adu5Pat
    *
    */ 
   int traceBackToContinent(Double_t phiWave, Double_t thetaWave, 
-                           Double_t * lat, Double_t * lon, Double_t *alt, Double_t * theta_adjustment_required, 
+                           Double_t * lon, Double_t * lat, Double_t *alt, Double_t * theta_adjustment_required, 
                            Double_t max_theta_adjustment = TMath::Pi()/180, Int_t max_iter = 10) ; 
 
 
