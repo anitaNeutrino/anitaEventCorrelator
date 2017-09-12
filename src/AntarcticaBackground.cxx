@@ -221,8 +221,8 @@ void AntarcticaBackground::SetCoarseness(Int_t coarseness){
   // sanity check
   if(coarseness < 1){
     std::cerr << "Warning in " << __PRETTY_FUNCTION__ << ", coarsenesss must be >= 1. Setting coareness = "
-              << defaultCoarseness << std::endl;
-    coarseness = defaultCoarseness;
+              << AntarcticaBackgroundDefaults::defaultCoarseness << std::endl;
+    coarseness = AntarcticaBackgroundDefaults::defaultCoarseness;
   }
 
   needRemakeHist = fCoarseness == coarseness ? false : true;
@@ -284,7 +284,7 @@ void AntarcticaBackground::updateGrid(){
   if(needRemakeGrid){
 
     const int minLat = -90 + fDeltaLat;
-    const int maxLat = -50;
+    const int maxLat = -60;
 
     deleteGrid();
 
@@ -529,26 +529,15 @@ void AntarcticaBackground::prettifyPalette(){
   gPad->Update();
   TPaletteAxis *palette = (TPaletteAxis*) GetListOfFunctions()->FindObject("palette");
   if(palette){
-    palette->SetX1NDC(0.01);
-    palette->SetX2NDC(0.05);
-    palette->SetY1NDC(0.01);
-    palette->SetY2NDC(0.45);
-    // palette->SetX1NDC(0.91);
-    // palette->SetX2NDC(0.95);
-    // palette->SetY1NDC(0.55);
-    // palette->SetY2NDC(0.95);
-
-    // palette->SetX1NDC(0.03);
-    // palette->SetX2NDC(0.06);
-    // palette->SetY1NDC(0.03);
-    // palette->SetY2NDC(0.16);
-    // palette->SetTitleSize(0.001);
-    // palette->SetTitleOffset(0.1);
-
+    palette->SetX1NDC(AntarcticaBackgroundDefaults::zAxisRightMargin);
+    palette->SetX2NDC(AntarcticaBackgroundDefaults::zAxisRightMargin + AntarcticaBackgroundDefaults::zAxisWidth);
+    palette->SetY1NDC(AntarcticaBackgroundDefaults::zAxisTopBottomMargin);
+    palette->SetY2NDC(AntarcticaBackgroundDefaults::zAxisTopBottomMargin + AntarcticaBackgroundDefaults::zAxisHeight);
+    
     TAxis* zAxis = GetZaxis();
     zAxis->SetTitle(RampdemReader::dataSetToAxisTitle(fDataSet));
-    zAxis->SetTitleSize(0.03);
-    zAxis->SetLabelSize(0.03);
+    zAxis->SetTitleSize(AntarcticaBackgroundDefaults::zAxisTextSize);
+    zAxis->SetLabelSize(AntarcticaBackgroundDefaults::zAxisTextSize);
     // std::cout << zAxis->GetTitleOffset() << std::endl;
     // zAxis->SetTitleOffset(0.1);
     gPad->Modified();

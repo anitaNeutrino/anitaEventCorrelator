@@ -19,15 +19,24 @@ class TExec;
 class TGToolTip;
 class TGraphAntarctica;
 class TPad;
-const int defaultCoarseness = 10; // 1 is v slow on my laptop but you might want to do that when you zoom in.
+
+namespace AntarcticaBackgroundDefaults {
+const int defaultCoarseness = 10;  /// 1 is v slow on my laptop maybe set lower to zoom in
+const double zAxisTextSize = 0.02; /// Standard size for the z-axis text
+const double zAxisWidth = 0.03; /// Standard size for z-xaxis
+const double zAxisHeight = 0.4; /// Standard size for z-xaxis
+const double zAxisRightMargin = 0.02; /// Standard position for z-xaxis
+const double zAxisTopBottomMargin = 0.02; /// Standard position for z-xaxis
+}
 
 
 class AntarcticaBackground : public TProfile2D {
 
+
  public:
 
   AntarcticaBackground(RampdemReader::dataSet dataSet = RampdemReader::thickness,
-		       Int_t coarseness = defaultCoarseness);
+                       Int_t coarseness = AntarcticaBackgroundDefaults::defaultCoarseness);
   virtual ~AntarcticaBackground();
 
   void Draw(Option_t* opt = "colz");
@@ -35,35 +44,35 @@ class AntarcticaBackground : public TProfile2D {
   // Interactive plotting fun
   // Enable for extra info on mouse over...
 
-  void SetGrayScale(bool greyScale); //*TOGGLE* *GETTER=GetGrayScale 
+  void SetGrayScale(bool greyScale); //*TOGGLE* *GETTER=GetGrayScale
   Bool_t GetGrayScale() const;
 
-  void SetToolTip(Bool_t toolTip); // *TOGGLE* *GETTER=GetToolTip 
+  void SetToolTip(Bool_t toolTip); // *TOGGLE* *GETTER=GetToolTip
   Bool_t GetToolTip() const;
 
   void SetShowBases(Bool_t showBases); // *TOGGLE* *GETTER=GetShowBases
   Bool_t GetShowBases() const;
 
-  // Click on the map to choose which RAMPDEM/BEDMAP2 data and set resolution.  
+  // Click on the map to choose which RAMPDEM/BEDMAP2 data and set resolution.
   Int_t GetCoarseness() const;
-  void SetCoarseness(Int_t coarseness); // *MENU* *ARGS={coarseness=>fCoarseness} 
+  void SetCoarseness(Int_t coarseness); // *MENU* *ARGS={coarseness=>fCoarseness}
 
-  void SetRampdem(bool useRampdem); //*TOGGLE* *GETTER=GetRampdem 
+  void SetRampdem(bool useRampdem); //*TOGGLE* *GETTER=GetRampdem
   Bool_t GetRampdem() const;
 
-  void SetBed(bool useBed); //*TOGGLE* *GETTER=GetBed 
+  void SetBed(bool useBed); //*TOGGLE* *GETTER=GetBed
   Bool_t GetBed() const;
 
-  void SetIcemask(bool useIcemask); //*TOGGLE* *GETTER=GetIcemask 
+  void SetIcemask(bool useIcemask); //*TOGGLE* *GETTER=GetIcemask
   Bool_t GetIcemask() const;
 
-  void SetSurface(bool useSurface); //*TOGGLE* *GETTER=GetSurface 
+  void SetSurface(bool useSurface); //*TOGGLE* *GETTER=GetSurface
   Bool_t GetSurface() const;
 
-  void SetThickness(bool useThickness); //*TOGGLE* *GETTER=GetThickness 
+  void SetThickness(bool useThickness); //*TOGGLE* *GETTER=GetThickness
   Bool_t GetThickness() const;
 
-  void SetGrid(Bool_t grid); //*TOGGLE* *GETTER=GetGrid 
+  void SetGrid(Bool_t grid); //*TOGGLE* *GETTER=GetGrid
   Bool_t GetGrid() const;
 
   void SetGridDivisions(Int_t deltaLon, Int_t deltaLat); // *MENU* *ARGS={deltaLat=>fDeltaLon, deltaLon=>fDeltaLat}
