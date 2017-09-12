@@ -286,7 +286,7 @@ BaseList::path::path(const TString & name, TString & source,
   for (int i = 0; i < npoints; i++) 
   {
     ps.push_back(AntarcticCoord(AntarcticCoord::WGS84, lat[i], lon[i], alt[i]));
-    ps[i].to(AntarcticCoord::CARTESIAN);  //save as cartesian
+//    ps[i].to(AntarcticCoord::CARTESIAN);  //save as cartesian
   }
 
 
