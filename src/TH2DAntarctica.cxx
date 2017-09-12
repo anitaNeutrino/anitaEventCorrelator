@@ -1,4 +1,4 @@
-#include "TProfile2DAntarctica.h"
+#include "TH2DAntarctica.h"
 #include "RampdemReader.h"
 #include "AntarcticaBackground.h"
 #include "TRandom3.h"
