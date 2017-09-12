@@ -42,6 +42,8 @@ void AntarcticaBackground::init(RampdemReader::dataSet dataSet, Int_t coarseness
   fDrawnSelf = false; // set by Draw(), needed by updateHist()
   updateHist();
 
+  fGrayScale = false;  
+
   fGridPoints = 1000;
   fDeltaLon = 30; // degrees
   fDeltaLat = 5; // degrees
@@ -85,7 +87,9 @@ void AntarcticaBackground::setPalette(){
     for(UInt_t i=0; i < fOldPalette.size(); i++){
       fOldPalette[i] = gStyle->GetColorPalette(i);
     }
-
+    fOldGrayScale = TColor::IsGrayscale();
+    
+    TColor::SetGrayscale(fGrayScale);
     gStyle->SetPalette(it->second,0,opacity);
   }
 #else
@@ -99,6 +103,7 @@ void AntarcticaBackground::unsetPalette(){
 
   // at some point, supporting ROOT versions < 6 is gonna be impossible...
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
+  TColor::SetGrayscale(fOldGrayScale);
   if(fOldPalette.size() > 0){
     gStyle->SetPalette(fOldPalette.size(), &fOldPalette[0]);
   }
@@ -185,13 +190,13 @@ void AntarcticaBackground::updateHist(){
 
 
 
-Int_t AntarcticaBackground::GetCoarseness(){
+Int_t AntarcticaBackground::GetCoarseness() const{
   return fCoarseness;
 }
 
 
 
-void AntarcticaBackground::ToolTip(Bool_t toolTip){
+void AntarcticaBackground::SetToolTip(Bool_t toolTip){
   fUseToolTip = toolTip;
 
   if(fToolTip && !fUseToolTip){
@@ -206,7 +211,7 @@ void AntarcticaBackground::ToolTip(Bool_t toolTip){
   }
 }
 
-Bool_t AntarcticaBackground::GetToolTip(){
+Bool_t AntarcticaBackground::GetToolTip() const{
   return fUseToolTip;
 }
 
@@ -226,7 +231,7 @@ void AntarcticaBackground::SetCoarseness(Int_t coarseness){
 }
 
 
-RampdemReader::dataSet AntarcticaBackground::GetDataSet(){
+RampdemReader::dataSet AntarcticaBackground::GetDataSet() const{
   return fDataSet;
 }
 
@@ -470,6 +475,10 @@ void AntarcticaBackground::Draw(Option_t* opt){
 
   fXaxis.SetAxisColor(kWhite);
   fYaxis.SetAxisColor(kWhite);
+  fXaxis.SetTitleOffset(9999);
+  fYaxis.SetTitleOffset(9999);  
+  fXaxis.SetLabelOffset(9999);
+  fYaxis.SetLabelOffset(9999);    
  
   gPad->Update();
 
@@ -478,7 +487,7 @@ void AntarcticaBackground::Draw(Option_t* opt){
   SetBit(kMustCleanup);
   SetBit(kCanDelete); // This means the TPad that we've drawn on owns this, and should delete it when the TPad is destroyed.
   updateGrid();
-  ToolTip(fToolTip);
+  SetToolTip(fToolTip);
 
   // TPad* subPad2 = new TPad("t2", "t2", 0, 0, 1, 1);
   // subPad2->Draw();
@@ -497,8 +506,8 @@ void AntarcticaBackground::Draw(Option_t* opt){
 void AntarcticaBackground::setPadMargins(){
   gPad->SetTopMargin(0.1);
   gPad->SetBottomMargin(0.02);
-  gPad->SetLeftMargin(0.02);
-  gPad->SetRightMargin(0.1);
+  gPad->SetLeftMargin(0.1);
+  gPad->SetRightMargin(0.02);
   // gPad->SetTopMargin(0.05);
   // gPad->SetBottomMargin(0.05);
   // gPad->SetLeftMargin(0.05);
@@ -520,10 +529,15 @@ void AntarcticaBackground::prettifyPalette(){
   gPad->Update();
   TPaletteAxis *palette = (TPaletteAxis*) GetListOfFunctions()->FindObject("palette");
   if(palette){
-    palette->SetX1NDC(0.91);
-    palette->SetX2NDC(0.95);
-    palette->SetY1NDC(0.55);
-    palette->SetY2NDC(0.95);
+    palette->SetX1NDC(0.01);
+    palette->SetX2NDC(0.05);
+    palette->SetY1NDC(0.01);
+    palette->SetY2NDC(0.45);
+    // palette->SetX1NDC(0.91);
+    // palette->SetX2NDC(0.95);
+    // palette->SetY1NDC(0.55);
+    // palette->SetY2NDC(0.95);
+
     // palette->SetX1NDC(0.03);
     // palette->SetX2NDC(0.06);
     // palette->SetY1NDC(0.03);
@@ -533,10 +547,10 @@ void AntarcticaBackground::prettifyPalette(){
 
     TAxis* zAxis = GetZaxis();
     zAxis->SetTitle(RampdemReader::dataSetToAxisTitle(fDataSet));
-    zAxis->SetTitleSize(0.001);
-    zAxis->SetLabelSize(0.001);
+    zAxis->SetTitleSize(0.03);
+    zAxis->SetLabelSize(0.03);
     // std::cout << zAxis->GetTitleOffset() << std::endl;
-    zAxis->SetTitleOffset(25);
+    // zAxis->SetTitleOffset(0.1);
     gPad->Modified();
     gPad->Update();
   }
@@ -547,64 +561,73 @@ void AntarcticaBackground::prettifyPalette(){
 
 // Interactive functions...
 
-void AntarcticaBackground::Rampdem(bool useRampdem){
+void AntarcticaBackground::SetRampdem(bool useRampdem){
   SetDataSet(RampdemReader::rampdem);
 }
 
-Bool_t AntarcticaBackground::GetRampdem(){
+Bool_t AntarcticaBackground::GetRampdem() const {
   return fDataSet == RampdemReader::rampdem;
 }
 
-void AntarcticaBackground::Bed(bool useBed){
+void AntarcticaBackground::SetBed(bool useBed){
   SetDataSet(RampdemReader::bed);
 };
 
-Bool_t AntarcticaBackground::GetBed(){
+Bool_t AntarcticaBackground::GetBed() const {
   return fDataSet == RampdemReader::bed;
 }
 
-void AntarcticaBackground::Icemask(bool useIcemask){
+void AntarcticaBackground::SetIcemask(bool useIcemask){
   SetDataSet(RampdemReader::icemask_grounded_and_shelves);
 }
 
-Bool_t AntarcticaBackground::GetIcemask(){
+Bool_t AntarcticaBackground::GetIcemask() const {
   return fDataSet == RampdemReader::icemask_grounded_and_shelves;
 }
 
-void AntarcticaBackground::Surface(bool useSurface){
+void AntarcticaBackground::SetSurface(bool useSurface){
   SetDataSet(RampdemReader::surface);
 }
 
-Bool_t AntarcticaBackground::GetSurface(){
+Bool_t AntarcticaBackground::GetSurface() const {
   return fDataSet == RampdemReader::surface;
 }
 
-void AntarcticaBackground::Thickness(bool useThickness){
+void AntarcticaBackground::SetThickness(bool useThickness){
   SetDataSet(RampdemReader::thickness);
 }
 
-Bool_t AntarcticaBackground::GetThickness(){
+Bool_t AntarcticaBackground::GetThickness() const {
   return fDataSet == RampdemReader::thickness;
 }
 
-void AntarcticaBackground::Grid(Bool_t grid){
+void AntarcticaBackground::SetGrid(Bool_t grid){
   fGrid = grid;
 
   updateGrid();
 }
 
-Bool_t AntarcticaBackground::GetGrid(){
+Bool_t AntarcticaBackground::GetGrid() const {
   return fGrid;
 }
 
 
-void AntarcticaBackground::ShowBases(Bool_t showBases){
+void AntarcticaBackground::SetShowBases(Bool_t showBases){
   fBases = showBases;
   updateBases();
 }
 
-Bool_t AntarcticaBackground::GetShowBases(){
+Bool_t AntarcticaBackground::GetShowBases() const {
   return fBases;
+}
+
+
+void AntarcticaBackground::SetGrayScale(bool grayScale){
+  fGrayScale = grayScale;
+}
+
+Bool_t AntarcticaBackground::GetGrayScale() const {
+  return fGrayScale;
 }
 
 

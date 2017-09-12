@@ -2,20 +2,25 @@
 #include "RampdemReader.h"
 #include "AntarcticaBackground.h"
 #include "TRandom3.h"
+#include "TClass.h"
+#include "TList.h"
+#include "TClassMenuItem.h"
+#include "TVirtualPad.h"
+
 ClassImp(TProfile2DAntarctica)
 
 
 TProfile2DAntarctica::TProfile2DAntarctica(Int_t nx, Int_t ny)
-: TProfile2D(), fAntarcticaBackground(NULL) {
+: TProfile2D(), fAntarcticaBackground(NULL){
 
-  AntarcticaBackground* b =getBackground();
+  AntarcticaBackground* b = getBackground();
 
   nx = nx <= 0 ? b->GetNbinsX() : nx;
   ny = ny <= 0 ? b->GetNbinsY() : ny;
   SetBins(nx, b->GetXaxis()->GetBinLowEdge(1), b->GetXaxis()->GetBinUpEdge(nx),
-          ny, b->GetYaxis()->GetBinLowEdge(1), b->GetYaxis()->GetBinUpEdge(ny));
-  
+          ny, b->GetYaxis()->GetBinLowEdge(1), b->GetYaxis()->GetBinUpEdge(ny));  
 }
+
 
 
 TProfile2DAntarctica::~TProfile2DAntarctica(){
@@ -26,12 +31,16 @@ TProfile2DAntarctica::~TProfile2DAntarctica(){
 }
 
 
-AntarcticaBackground* TProfile2DAntarctica::getBackground(){
+AntarcticaBackground* TProfile2DAntarctica::getBackground() const{
   if(!fAntarcticaBackground){
     fAntarcticaBackground = new AntarcticaBackground();
   }
+  
+  // std::cerr << __PRETTY_FUNCTION__ << "\t" << fAntarcticaBackground << std::endl;
   return fAntarcticaBackground;
 }
+
+
 
 
 void TProfile2DAntarctica::Draw(Option_t* opt){
@@ -40,7 +49,6 @@ void TProfile2DAntarctica::Draw(Option_t* opt){
   b->SetCoarseness(25);
   b->SetNdivisions(10);
   b->Draw("colz");
-  // should have constructed a new TPad, so can omit same...
   
   TString sameOpt = TString::Format("%s same", opt);
   TProfile2D::Draw(sameOpt); 
@@ -54,6 +62,7 @@ Int_t TProfile2DAntarctica::Fill(Double_t lon, Double_t lat, Double_t weight){
   RampdemReader::LonLatToEastingNorthing(lon, lat, easting, northing);
   return TProfile2D::Fill(easting, northing, weight);  
 }
+
 
 
 /** 
@@ -72,7 +81,12 @@ void TProfile2DAntarctica::FillRandom(Int_t nTimes){
 
     Fill(lon, lat);
   }
-  
-  
-  
+}
+
+
+void TProfile2DAntarctica::ExecuteEvent(Int_t event, int px, int py){
+
+  getBackground()->ExecuteEvent(event, px, py);
+  TProfile2D::ExecuteEvent(event, px, py);  
+
 }

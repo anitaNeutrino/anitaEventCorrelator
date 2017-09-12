@@ -35,39 +35,42 @@ class AntarcticaBackground : public TProfile2D {
   // Interactive plotting fun
   // Enable for extra info on mouse over...
 
-  void ToolTip(Bool_t toolTip); // *TOGGLE* *GETTER=GetToolTip
-  Bool_t GetToolTip();
+  void SetGrayScale(bool greyScale); //*TOGGLE* *GETTER=GetGrayScale 
+  Bool_t GetGrayScale() const;
 
-  void ShowBases(Bool_t showBases); // *TOGGLE* *GETTER=GetShowBases
-  Bool_t GetShowBases();
+  void SetToolTip(Bool_t toolTip); // *TOGGLE* *GETTER=GetToolTip 
+  Bool_t GetToolTip() const;
 
-  // Click on the map to choose which RAMPDEM/BEDMAP2 data and set resolution.
-  Int_t GetCoarseness();
-  void SetCoarseness(Int_t coarseness); // *MENU* *ARGS={coarseness=>fCoarseness}
+  void SetShowBases(Bool_t showBases); // *TOGGLE* *GETTER=GetShowBases
+  Bool_t GetShowBases() const;
 
-  void Rampdem(bool useRampdem); //*TOGGLE* *GETTER=GetRampdem
-  Bool_t GetRampdem();
+  // Click on the map to choose which RAMPDEM/BEDMAP2 data and set resolution.  
+  Int_t GetCoarseness() const;
+  void SetCoarseness(Int_t coarseness); // *MENU* *ARGS={coarseness=>fCoarseness} 
 
-  void Bed(bool useBed); //*TOGGLE* *GETTER=GetBed
-  Bool_t GetBed();
+  void SetRampdem(bool useRampdem); //*TOGGLE* *GETTER=GetRampdem 
+  Bool_t GetRampdem() const;
 
-  void Icemask(bool useIcemask); //*TOGGLE* *GETTER=GetIcemask
-  Bool_t GetIcemask();
+  void SetBed(bool useBed); //*TOGGLE* *GETTER=GetBed 
+  Bool_t GetBed() const;
 
-  void Surface(bool useSurface); //*TOGGLE* *GETTER=GetSurface
-  Bool_t GetSurface();
+  void SetIcemask(bool useIcemask); //*TOGGLE* *GETTER=GetIcemask 
+  Bool_t GetIcemask() const;
 
-  void Thickness(bool useThickness); //*TOGGLE* *GETTER=GetThickness
-  Bool_t GetThickness();
+  void SetSurface(bool useSurface); //*TOGGLE* *GETTER=GetSurface 
+  Bool_t GetSurface() const;
 
-  void Grid(Bool_t grid); //*TOGGLE* *GETTER=GetGrid
-  Bool_t GetGrid();
+  void SetThickness(bool useThickness); //*TOGGLE* *GETTER=GetThickness 
+  Bool_t GetThickness() const;
+
+  void SetGrid(Bool_t grid); //*TOGGLE* *GETTER=GetGrid 
+  Bool_t GetGrid() const;
 
   void SetGridDivisions(Int_t deltaLon, Int_t deltaLat); // *MENU* *ARGS={deltaLat=>fDeltaLon, deltaLon=>fDeltaLat}
 
   const char* getToolTipUnits(){return fToolTipUnits.Data();}
 
-  RampdemReader::dataSet GetDataSet();
+  RampdemReader::dataSet GetDataSet() const;
   void SetDataSet(RampdemReader::dataSet dataSet);
   void ExecuteEvent(Int_t event, Int_t x, Int_t y);
   void updateToolTip(Int_t event, Int_t x, Int_t y, const char* extraInfo = NULL);
@@ -87,9 +90,12 @@ class AntarcticaBackground : public TProfile2D {
 
  private:
 
+
   Int_t fCoarseness; // map coarseness factor
   RampdemReader::dataSet fDataSet; // rampdem data set
   Bool_t needRemakeHist; // if changed coarseness or data set
+  Bool_t fGrayScale;
+
 
   Bool_t fGrid;
   Int_t fDeltaLon;
@@ -120,6 +126,7 @@ class AntarcticaBackground : public TProfile2D {
   ClassDef(AntarcticaBackground, 0)
 
   std::vector<Int_t> fOldPalette; //! Don't persist
+  Bool_t fOldGrayScale; //! Don't persist
   TExec* fPalSetter; //! Don't persist
   TExec* fPalUnsetter; //! Don't persist
   std::vector<TPad*> fPads; //! Don't persist

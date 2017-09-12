@@ -39,7 +39,7 @@ class TGraphAntarctica : public TGraph {
 
 public:
 
-  // "boring" constructors
+  // boring constructors
   TGraphAntarctica() : TGraph() {init();}
   explicit TGraphAntarctica(Int_t n) : TGraph(n) {init();}
   TGraphAntarctica(Int_t n, const Int_t *x, const Int_t *y) : TGraph(n, x, y) {init();}
@@ -50,15 +50,6 @@ public:
   // interesting constructors
   TGraphAntarctica(TChain* chain, TString lonSelector, TString latSelector, TCut cut = "");
   TGraphAntarctica(TTree* tree, TString lonSelector, TString latSelector, TCut cut = "");
-
-  // TGraphAntarctica& operator=(const TGraph& gr){
-  //   TGraph::operator=(gr);
-  //   convertArrays();
-  // }
-
-  // TGraphAntarctica& operator=(const TGraphAntarctica& gr){
-  //   TGraph::operator=(gr);
-  // }
 
   explicit TGraphAntarctica(const TVectorF &vx, const TVectorF &vy) : TGraph(vx, vy) {init();}
 
