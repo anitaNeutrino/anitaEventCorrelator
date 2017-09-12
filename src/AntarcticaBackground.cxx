@@ -169,7 +169,7 @@ void AntarcticaBackground::updateHist(){
       fYaxis.SetRangeUser(lowY, highY);
 
       // and update the z-axis title if needed
-      PrettifyPalette();
+      PrettifyColorAxis();
     }
 
     setToolTipUnits();
@@ -470,7 +470,7 @@ void AntarcticaBackground::Draw(Option_t* opt){
   fPalUnsetter->Draw();
     
   setPadMargins();
-  PrettifyPalette();
+  PrettifyColorAxis();
 
   fXaxis.SetAxisColor(kWhite);
   fYaxis.SetAxisColor(kWhite);
@@ -523,7 +523,7 @@ void AntarcticaBackground::setPadMargins(){
 /**
  * Helper function which prettifies the z-axis
  */
-void AntarcticaBackground::PrettifyPalette(){
+void AntarcticaBackground::PrettifyColorAxis(){
   gPad->Modified();
   gPad->Update();
   TPaletteAxis *palette = (TPaletteAxis*) GetListOfFunctions()->FindObject("palette");

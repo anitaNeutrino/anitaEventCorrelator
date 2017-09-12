@@ -127,9 +127,9 @@ class TProfile2DAntarctica : public TProfile2D {
     getBackground()->ExecuteEvent(event, px, py);
     TProfile2D::ExecuteEvent(event, px, py);
   }
-  void FillRandomly(Int_t nTimes = 5000);                               // *MENU
-  void PrettifyPalette();                                               // *MENU
-  void PrettifyBackgroundPalette(){getBackground()->PrettifyPalette();} // *MENU
+  void FillRandomly(Int_t nTimes = 5000);                                  // *MENU
+  void PrettifyColorAxis();                                                // *MENU
+  void PrettifyBackgroundColorAxis(){getBackground()->PrettifyColorAxis();}// *MENU
 
  private:
   mutable AntarcticaBackground* fAntarcticaBackground; //! Don't persist
@@ -209,9 +209,9 @@ class TH2DAntarctica : public TH2D {
     getBackground()->ExecuteEvent(event, px, py);
     TH2D::ExecuteEvent(event, px, py);
   }
-  void FillRandomly(Int_t nTimes = 5000);                               // *MENU
-  void PrettifyPalette();                                               // *MENU
-  void PrettifyBackgroundPalette(){getBackground()->PrettifyPalette();} // *MENU
+  void FillRandomly(Int_t nTimes = 5000);                                  // *MENU
+  void PrettifyColorAxis();                                                // *MENU
+  void PrettifyBackgroundColorAxis(){getBackground()->PrettifyColorAxis();}// *MENU
 
  private:
   mutable AntarcticaBackground* fAntarcticaBackground; //! Don't persist

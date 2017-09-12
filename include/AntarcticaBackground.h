@@ -77,7 +77,7 @@ class AntarcticaBackground : public TProfile2D {
   Bool_t GetGrid() const;
 
   void SetGridDivisions(Int_t deltaLon, Int_t deltaLat); // *MENU* *ARGS={deltaLat=>fDeltaLon, deltaLon=>fDeltaLat}
-  void PrettifyPalette(); // *MENU
+  void PrettifyColorAxis(); // *MENU
 
   const char* getToolTipUnits(){return fToolTipUnits.Data();}
 
