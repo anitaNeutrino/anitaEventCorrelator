@@ -1294,7 +1294,7 @@ double GeoMagnetic::getAtmosphericDensity(double altitude){
 TVector3 GeoMagnetic::getInitialPosition(const TVector3& destination, const TVector3& destinationToSource){
   prepareGeoMagnetics();
 
-  if(destinationToSource.Mag() -1 > 1e-14){
+  if(TMath::Abs(destinationToSource.Mag() -1) > 1e-14){
     std::cerr  << "Warning in " << __PRETTY_FUNCTION__ << ", was expecting a unit vector, didn't get one. "
                << "Got " << 1.0-destinationToSource.Mag() << " away from mag==1... This calculation might be wonky... " << std::endl;
   }

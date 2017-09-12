@@ -8,6 +8,9 @@
 #include "TCanvas.h"
 #include "BaseList.h"
 #include "TStyle.h"
+#include "TExec.h"
+#include "TGToolTip.h"
+#include "TColor.h"
 
 
 ClassImp(AntarcticaBackground)
@@ -19,7 +22,7 @@ static int numAntarcticaBackgrounds = 0;
 
 
 AntarcticaBackground::AntarcticaBackground(RampdemReader::dataSet dataSet, Int_t coarseness)
-  : TProfile2D() {
+    : TProfile2D() {
   init(dataSet, coarseness);
 }
 
@@ -39,6 +42,8 @@ void AntarcticaBackground::init(RampdemReader::dataSet dataSet, Int_t coarseness
   fDrawnSelf = false; // set by Draw(), needed by updateHist()
   updateHist();
 
+  fGrayScale = false;  
+
   fGridPoints = 1000;
   fDeltaLon = 30; // degrees
   fDeltaLat = 5; // degrees
@@ -49,9 +54,10 @@ void AntarcticaBackground::init(RampdemReader::dataSet dataSet, Int_t coarseness
   fUseToolTip = true;
   fToolTip = NULL;
 
-
-  fExec = new TExec("fAntarcticaBackgroundExec",Form("%s->setPalette()", fName.Data()));
-
+  TString palSetterName = TString::Format("%sPalSetter", fName.Data());
+  fPalSetter = new TExec(palSetterName,Form("%s->setPalette()", fName.Data()));
+  TString palUnsetterName = TString::Format("%sPalSetter", fName.Data());  
+  fPalUnsetter = new TExec(palUnsetterName,Form("%s->unsetPalette()", fName.Data()));
 
   // at some point, supporting ROOT versions < 6 is gonna be impossible...
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
@@ -73,15 +79,43 @@ void AntarcticaBackground::setPalette(){
 
   // here I define the color palettes tbat I want the different data sets to use when they're drawn on the background.
   std::map<RampdemReader::dataSet, EColorPalette>::iterator it = palettes.find(fDataSet);
+
   if(it != palettes.end()){
+
+    // save the old palette
+    fOldPalette.resize(gStyle->GetNumberOfColors());
+    for(UInt_t i=0; i < fOldPalette.size(); i++){
+      fOldPalette[i] = gStyle->GetColorPalette(i);
+    }
+    fOldGrayScale = TColor::IsGrayscale();
+    
+    TColor::SetGrayscale(fGrayScale);
     gStyle->SetPalette(it->second,0,opacity);
-    gStyle->SetNdivisions(254);
   }
 #else
   std::cerr << __PRETTY_FUNCTION__ << " requires ROOT version at least 6" << std::endl;
 #endif
 
 }
+
+
+void AntarcticaBackground::unsetPalette(){
+
+  // at some point, supporting ROOT versions < 6 is gonna be impossible...
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
+  TColor::SetGrayscale(fOldGrayScale);
+  if(fOldPalette.size() > 0){
+    gStyle->SetPalette(fOldPalette.size(), &fOldPalette[0]);
+  }
+  // std::cerr << "here" << std::endl;
+    
+#else
+  std::cerr << __PRETTY_FUNCTION__ << " requires ROOT version at least 6" << std::endl;
+#endif
+}
+
+
+
 
 /**
  * Update the map of Antarctica as different options are selected
@@ -104,7 +138,6 @@ void AntarcticaBackground::updateHist(){
 
     // std::cout << firstX << "\t" << lastX << "\t" << lowX << "\t" << highX << std::endl;
 
-
     // now I get the new histogram binning
     Int_t nx, ny;
     RampdemReader::getNumXY(nx, ny, fDataSet);
@@ -120,7 +153,7 @@ void AntarcticaBackground::updateHist(){
     fBinEntries.Reset();
     for(int by=0; by <= GetNbinsY() + 1; by++){
       for(int bx=0; bx <= GetNbinsX() + 1; bx++){
-	SetBinContent(bx, by, 0);
+        SetBinContent(bx, by, 0);
       }
     }
     // change the histogram dimensions
@@ -136,7 +169,7 @@ void AntarcticaBackground::updateHist(){
       fYaxis.SetRangeUser(lowY, highY);
 
       // and update the z-axis title if needed
-      prettifyPalette();
+      PrettifyColorAxis();
     }
 
     setToolTipUnits();
@@ -156,13 +189,13 @@ void AntarcticaBackground::updateHist(){
 
 
 
-Int_t AntarcticaBackground::GetCoarseness(){
+Int_t AntarcticaBackground::GetCoarseness() const{
   return fCoarseness;
 }
 
 
 
-void AntarcticaBackground::ToolTip(Bool_t toolTip){
+void AntarcticaBackground::SetToolTip(Bool_t toolTip){
   fUseToolTip = toolTip;
 
   if(fToolTip && !fUseToolTip){
@@ -177,7 +210,7 @@ void AntarcticaBackground::ToolTip(Bool_t toolTip){
   }
 }
 
-Bool_t AntarcticaBackground::GetToolTip(){
+Bool_t AntarcticaBackground::GetToolTip() const{
   return fUseToolTip;
 }
 
@@ -187,8 +220,8 @@ void AntarcticaBackground::SetCoarseness(Int_t coarseness){
   // sanity check
   if(coarseness < 1){
     std::cerr << "Warning in " << __PRETTY_FUNCTION__ << ", coarsenesss must be >= 1. Setting coareness = "
-	      << defaultCoarseness << std::endl;
-    coarseness = defaultCoarseness;
+              << AntarcticaBackgroundDefaults::defaultCoarseness << std::endl;
+    coarseness = AntarcticaBackgroundDefaults::defaultCoarseness;
   }
 
   needRemakeHist = fCoarseness == coarseness ? false : true;
@@ -197,7 +230,7 @@ void AntarcticaBackground::SetCoarseness(Int_t coarseness){
 }
 
 
-RampdemReader::dataSet AntarcticaBackground::GetDataSet(){
+RampdemReader::dataSet AntarcticaBackground::GetDataSet() const{
   return fDataSet;
 }
 
@@ -250,7 +283,7 @@ void AntarcticaBackground::updateGrid(){
   if(needRemakeGrid){
 
     const int minLat = -90 + fDeltaLat;
-    const int maxLat = -50;
+    const int maxLat = -60;
 
     deleteGrid();
 
@@ -260,10 +293,10 @@ void AntarcticaBackground::updateGrid(){
       gr->SetLineColor(kGray);
       const Double_t deltaLon = 360./fGridPoints;
       for(int i=0; i < fGridPoints; i++){
-	Double_t theLat = lat;
-	Double_t theLon = i*deltaLon;
-	gr->SetPoint(gr->GetN(), theLon, theLat);
-	// std::cout << gr << "\t" << gr->GetN() << "\t" << easting << "\t" << northing << std::endl;
+        Double_t theLat = lat;
+        Double_t theLon = i*deltaLon;
+        gr->SetPoint(gr->GetN(), theLon, theLat);
+        // std::cout << gr << "\t" << gr->GetN() << "\t" << easting << "\t" << northing << std::endl;
       }
       gr->SetEditable(false);
       gr->SetTitle(Form("Grid: Lat %d", lat)); // descriptive title
@@ -276,9 +309,9 @@ void AntarcticaBackground::updateGrid(){
       gr->SetLineColor(kGray);
       const Double_t deltaLat = double(maxLat - -90)/fGridPoints;
       for(int i=0; i < fGridPoints; i++){
-	Double_t theLat = -90 + deltaLat*i;
-	Double_t theLon = lon;
-	gr->SetPoint(gr->GetN(), theLon, theLat);
+        Double_t theLat = -90 + deltaLat*i;
+        Double_t theLon = lon;
+        gr->SetPoint(gr->GetN(), theLon, theLat);
       }
       gr->SetEditable(false);
       gr->SetTitle(Form("Grid: Lon %d", lon)); // descriptive title
@@ -300,8 +333,11 @@ void AntarcticaBackground::updateGrid(){
 
 void AntarcticaBackground::updateGPadPrims(std::vector<TGraphAntarctica*>& grs, Bool_t drawThem, Option_t* opt){
 
-  if(gPad){
-    TList* prims = gPad->GetListOfPrimitives();
+
+  // for(UInt_t padInd = 0; padInd < fPads.size(); padInd++){
+  TVirtualPad* fPad = gPad;
+  if(fPad){
+    TList* prims = fPad->GetListOfPrimitives();
 
     if(drawThem && fDrawnSelf){
       // Manually add the grid TGraphs into the list of pad primitives...
@@ -312,13 +348,13 @@ void AntarcticaBackground::updateGPadPrims(std::vector<TGraphAntarctica*>& grs, 
       Int_t numThis = 0;
       // while(thisLink->GetObject() != this){
       while(numThis < 2){
-	thisLink = thisLink->Next();
+        thisLink = thisLink->Next();
 
-	// Complication, now we're drawing two copies of the histogram with an exec to set the palette
-	// I need to find the second instance on the canvas
-	if(thisLink->GetObject()==this){
-	  numThis++;
-	}
+        // Complication, now we're drawing two copies of the histogram with an exec to set the palette
+        // I need to find the second instance on the canvas
+        if(thisLink->GetObject()==this){
+          numThis++;
+        }
       }
 
       // so thisLink points to this.
@@ -334,39 +370,39 @@ void AntarcticaBackground::updateGPadPrims(std::vector<TGraphAntarctica*>& grs, 
       std::vector<TObject*> tempObjs;
       std::vector<TString> tempOpts;
       while(antarcticaStuff){
-	tempObjs.push_back(antarcticaStuff->GetObject());
-	tempOpts.push_back(antarcticaStuff->GetOption());
-	antarcticaStuff = antarcticaStuff->Next();
+        tempObjs.push_back(antarcticaStuff->GetObject());
+        tempOpts.push_back(antarcticaStuff->GetOption());
+        antarcticaStuff = antarcticaStuff->Next();
       }
 
       // now take the objects out
       for(UInt_t i=0; i < tempObjs.size(); i++){
-	prims->RecursiveRemove(tempObjs.at(i));
+        prims->RecursiveRemove(tempObjs.at(i));
       }
 
       // now add the TGraphs with the proper options
       for(UInt_t grInd=0; grInd < grs.size(); grInd++){
-	TGraphAntarctica* gr = grs.at(grInd);
-	prims->AddLast(gr, opt);
+        TGraphAntarctica* gr = grs.at(grInd);
+        prims->AddLast(gr, opt);
       }
 
       // and re-add the things we removed
       for(UInt_t i=0; i < tempObjs.size(); i++){
-	prims->AddLast(tempObjs.at(i), tempOpts.at(i));
+        prims->AddLast(tempObjs.at(i), tempOpts.at(i));
       }
     }
     else{
       // Remove the TGraphsAntarcticas from the list of pad primitives
       for(UInt_t grInd=0; grInd < grs.size(); grInd++){
-	TGraph* gr = grs.at(grInd);
-	prims->RecursiveRemove(gr);
+        TGraph* gr = grs.at(grInd);
+        prims->RecursiveRemove(gr);
       }
     }
-    gPad->Modified();
-    gPad->Update();
+    fPad->Modified();
+    fPad->Update();
   }
+  // }
 }
-
 
 
 
@@ -377,7 +413,9 @@ void AntarcticaBackground::deleteGrid(){
   while(grGrids.size() > 0){
 
     TGraph* gr = grGrids.back();
-    if(gPad){
+    // for(UInt_t padInd=0; padInd < fPads.size(); padInd++){
+    TVirtualPad* fPad = gPad; //fPads[padInd];
+    if(fPad){
       TList* prims = gPad->GetListOfPrimitives();
       // prims->Remove(gr);
       prims->RecursiveRemove(gr);
@@ -388,8 +426,7 @@ void AntarcticaBackground::deleteGrid(){
   }
 
 }
-
-
+// }
 
 
 
@@ -411,24 +448,54 @@ void AntarcticaBackground::SetGridDivisions(Int_t deltaLon, Int_t deltaLat){
  */
 void AntarcticaBackground::Draw(Option_t* opt){
 
+  if(!gPad){
+    gROOT->MakeDefCanvas();
+  }
+
+  // TVirtualPad* thePadPwd = gPad;
+
+  // TPad* subPad = new TPad("t1", "t1", 0, 0, 1, 1);
+  // subPad->SetFillColor(0);
+  // subPad->SetFillStyle(4000);
+  // // subPad->SetBit(kCanDelete);
+  // // subPad->SetBit(kMustCleanup);
+  // subPad->Draw();  
+  // subPad->cd();
+
+  // fPads.push_back(subPad);
+    
   TProfile2D::Draw(opt);
-  fExec->Draw();
-  TProfile2D::Draw(Form("%s same", opt));
+  fPalSetter->Draw();  
+  TProfile2D::Draw(TString::Format("%s same", opt));
+  fPalUnsetter->Draw();
+    
   setPadMargins();
-  prettifyPalette();
+  PrettifyColorAxis();
+
   fXaxis.SetAxisColor(kWhite);
   fYaxis.SetAxisColor(kWhite);
-
+  fXaxis.SetTitleOffset(9999);
+  fYaxis.SetTitleOffset(9999);  
+  fXaxis.SetLabelOffset(9999);
+  fYaxis.SetLabelOffset(9999);    
+ 
   gPad->Update();
-
 
   fDrawnSelf = true;
 
   SetBit(kMustCleanup);
   SetBit(kCanDelete); // This means the TPad that we've drawn on owns this, and should delete it when the TPad is destroyed.
   updateGrid();
-  ToolTip(fToolTip);
+  SetToolTip(fToolTip);
 
+  // TPad* subPad2 = new TPad("t2", "t2", 0, 0, 1, 1);
+  // subPad2->Draw();
+  // subPad2->cd();
+  // subPad2->SetFillStyle(4000); // transparent
+  // subPad2->SetBit(kCanDelete);
+  // subPad2->SetBit(kMustCleanup); 
+  // subPad->Modified();
+  // setPadMargins();
 }
 
 
@@ -438,8 +505,8 @@ void AntarcticaBackground::Draw(Option_t* opt){
 void AntarcticaBackground::setPadMargins(){
   gPad->SetTopMargin(0.1);
   gPad->SetBottomMargin(0.02);
-  gPad->SetLeftMargin(0.02);
-  gPad->SetRightMargin(0.1);
+  gPad->SetLeftMargin(0.1);
+  gPad->SetRightMargin(0.02);
   // gPad->SetTopMargin(0.05);
   // gPad->SetBottomMargin(0.05);
   // gPad->SetLeftMargin(0.05);
@@ -456,28 +523,22 @@ void AntarcticaBackground::setPadMargins(){
 /**
  * Helper function which prettifies the z-axis
  */
-void AntarcticaBackground::prettifyPalette(){
+void AntarcticaBackground::PrettifyColorAxis(){
   gPad->Modified();
   gPad->Update();
   TPaletteAxis *palette = (TPaletteAxis*) GetListOfFunctions()->FindObject("palette");
   if(palette){
-    palette->SetX1NDC(0.91);
-    palette->SetX2NDC(0.95);
-    palette->SetY1NDC(0.55);
-    palette->SetY2NDC(0.95);
-    // palette->SetX1NDC(0.03);
-    // palette->SetX2NDC(0.06);
-    // palette->SetY1NDC(0.03);
-    // palette->SetY2NDC(0.16);
-    // palette->SetTitleSize(0.001);
-    // palette->SetTitleOffset(0.1);
-
+    palette->SetX1NDC(AntarcticaBackgroundDefaults::zAxisRightMargin);
+    palette->SetX2NDC(AntarcticaBackgroundDefaults::zAxisRightMargin + AntarcticaBackgroundDefaults::zAxisWidth);
+    palette->SetY1NDC(AntarcticaBackgroundDefaults::zAxisTopBottomMargin);
+    palette->SetY2NDC(AntarcticaBackgroundDefaults::zAxisTopBottomMargin + AntarcticaBackgroundDefaults::zAxisHeight);
+    
     TAxis* zAxis = GetZaxis();
     zAxis->SetTitle(RampdemReader::dataSetToAxisTitle(fDataSet));
-    zAxis->SetTitleSize(0.001);
-    zAxis->SetLabelSize(0.001);
+    zAxis->SetTitleSize(AntarcticaBackgroundDefaults::zAxisTextSize);
+    zAxis->SetLabelSize(AntarcticaBackgroundDefaults::zAxisTextSize);
     // std::cout << zAxis->GetTitleOffset() << std::endl;
-    zAxis->SetTitleOffset(25);
+    // zAxis->SetTitleOffset(0.1);
     gPad->Modified();
     gPad->Update();
   }
@@ -488,64 +549,73 @@ void AntarcticaBackground::prettifyPalette(){
 
 // Interactive functions...
 
-void AntarcticaBackground::Rampdem(bool useRampdem){
+void AntarcticaBackground::SetRampdem(bool useRampdem){
   SetDataSet(RampdemReader::rampdem);
 }
 
-Bool_t AntarcticaBackground::GetRampdem(){
+Bool_t AntarcticaBackground::GetRampdem() const {
   return fDataSet == RampdemReader::rampdem;
 }
 
-void AntarcticaBackground::Bed(bool useBed){
+void AntarcticaBackground::SetBed(bool useBed){
   SetDataSet(RampdemReader::bed);
 };
 
-Bool_t AntarcticaBackground::GetBed(){
+Bool_t AntarcticaBackground::GetBed() const {
   return fDataSet == RampdemReader::bed;
 }
 
-void AntarcticaBackground::Icemask(bool useIcemask){
+void AntarcticaBackground::SetIcemask(bool useIcemask){
   SetDataSet(RampdemReader::icemask_grounded_and_shelves);
 }
 
-Bool_t AntarcticaBackground::GetIcemask(){
+Bool_t AntarcticaBackground::GetIcemask() const {
   return fDataSet == RampdemReader::icemask_grounded_and_shelves;
 }
 
-void AntarcticaBackground::Surface(bool useSurface){
+void AntarcticaBackground::SetSurface(bool useSurface){
   SetDataSet(RampdemReader::surface);
 }
 
-Bool_t AntarcticaBackground::GetSurface(){
+Bool_t AntarcticaBackground::GetSurface() const {
   return fDataSet == RampdemReader::surface;
 }
 
-void AntarcticaBackground::Thickness(bool useThickness){
+void AntarcticaBackground::SetThickness(bool useThickness){
   SetDataSet(RampdemReader::thickness);
 }
 
-Bool_t AntarcticaBackground::GetThickness(){
+Bool_t AntarcticaBackground::GetThickness() const {
   return fDataSet == RampdemReader::thickness;
 }
 
-void AntarcticaBackground::Grid(Bool_t grid){
+void AntarcticaBackground::SetGrid(Bool_t grid){
   fGrid = grid;
 
   updateGrid();
 }
 
-Bool_t AntarcticaBackground::GetGrid(){
+Bool_t AntarcticaBackground::GetGrid() const {
   return fGrid;
 }
 
 
-void AntarcticaBackground::ShowBases(Bool_t showBases){
+void AntarcticaBackground::SetShowBases(Bool_t showBases){
   fBases = showBases;
   updateBases();
 }
 
-Bool_t AntarcticaBackground::GetShowBases(){
+Bool_t AntarcticaBackground::GetShowBases() const {
   return fBases;
+}
+
+
+void AntarcticaBackground::SetGrayScale(bool grayScale){
+  fGrayScale = grayScale;
+}
+
+Bool_t AntarcticaBackground::GetGrayScale() const {
+  return fGrayScale;
 }
 
 
@@ -628,5 +698,4 @@ void AntarcticaBackground::setToolTipUnits(){
   if(!gotUnits){
     fToolTipUnits = "";
   }
-
 }
