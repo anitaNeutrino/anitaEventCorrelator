@@ -43,6 +43,7 @@ class AntarcticaBackground : public TProfile2D {
 
   // Interactive plotting fun
   // Enable for extra info on mouse over...
+  void UnZoom(){fXaxis.UnZoom();fYaxis.UnZoom();} // *MENU
 
   void SetGrayScale(bool greyScale); //*TOGGLE* *GETTER=GetGrayScale
   Bool_t GetGrayScale() const;
@@ -76,6 +77,7 @@ class AntarcticaBackground : public TProfile2D {
   Bool_t GetGrid() const;
 
   void SetGridDivisions(Int_t deltaLon, Int_t deltaLat); // *MENU* *ARGS={deltaLat=>fDeltaLon, deltaLon=>fDeltaLat}
+  void PrettifyPalette(); // *MENU
 
   const char* getToolTipUnits(){return fToolTipUnits.Data();}
 
@@ -92,34 +94,33 @@ class AntarcticaBackground : public TProfile2D {
 
   // at some point, supporting ROOT versions < 6 is gonna be impossible...
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
-  std::map<RampdemReader::dataSet, EColorPalette> palettes; //! Does not persist in ROOT!
-  float opacity; //! Does not persist in ROOT!
+    std::map<RampdemReader::dataSet, EColorPalette> palettes; //! Does not persist in ROOT!
+    float opacity; //! Does not persist in ROOT!
 #endif
 
 
  private:
 
 
-  Int_t fCoarseness; // map coarseness factor
-  RampdemReader::dataSet fDataSet; // rampdem data set
-  Bool_t needRemakeHist; // if changed coarseness or data set
-  Bool_t fGrayScale;
+    Int_t fCoarseness; // map coarseness factor
+    RampdemReader::dataSet fDataSet; // rampdem data set
+    Bool_t needRemakeHist; // if changed coarseness or data set
+    Bool_t fGrayScale;
 
 
-  Bool_t fGrid;
-  Int_t fDeltaLon;
-  Int_t fDeltaLat;
-  void updateGrid();
-  void deleteGrid();
-  std::vector<TGraphAntarctica*> grGrids; ///< The internally stored lat/lon grids.
+    Bool_t fGrid;
+    Int_t fDeltaLon;
+    Int_t fDeltaLat;
+    void updateGrid();
+    void deleteGrid();
+    std::vector<TGraphAntarctica*> grGrids; ///< The internally stored lat/lon grids.
 
-  Int_t fGridPoints; ///< Number of points on the lat/lon grid.
-  Bool_t needRemakeGrid; // if changed grid settings
-  void updateHist();
-  void init(RampdemReader::dataSet dataSet, Int_t coarseness); // in case I ever want another constructor
+    Int_t fGridPoints; ///< Number of points on the lat/lon grid.
+    Bool_t needRemakeGrid; // if changed grid settings
+    void updateHist();
+    void init(RampdemReader::dataSet dataSet, Int_t coarseness); // in case I ever want another constructor
 
-  void setPadMargins(); // prettification
-  void prettifyPalette(); // prettification
+    void setPadMargins(); // prettification
 
   Bool_t fUseToolTip;
   TGToolTip* fToolTip;

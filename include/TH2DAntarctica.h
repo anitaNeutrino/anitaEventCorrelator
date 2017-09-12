@@ -94,6 +94,8 @@ class TProfile2DAntarctica : public TProfile2D {
   virtual void Draw(Option_t* opt="");
   virtual Int_t Fill(Double_t lon, Double_t lat, Double_t val=1);
 
+  void UnZoom(){getBackground()->UnZoom();} //*MENU
+
   GF(bool,bool,GrayScale)
   SF(bool,GrayScale)      //*TOGGLE *GETTER=GetGrayScale
   GF(bool,bool,ShowBases)
@@ -125,8 +127,9 @@ class TProfile2DAntarctica : public TProfile2D {
     getBackground()->ExecuteEvent(event, px, py);
     TProfile2D::ExecuteEvent(event, px, py);
   }
-  void prettifyPalette();
-  void FillRandomly(Int_t nTimes = 5000);
+  void FillRandomly(Int_t nTimes = 5000);                               // *MENU
+  void PrettifyPalette();                                               // *MENU
+  void PrettifyBackgroundPalette(){getBackground()->PrettifyPalette();} // *MENU
 
  private:
   mutable AntarcticaBackground* fAntarcticaBackground; //! Don't persist
@@ -173,6 +176,8 @@ class TH2DAntarctica : public TH2D {
   virtual void Draw(Option_t* opt="");
   virtual Int_t Fill(Double_t lon, Double_t lat, Double_t val=1);
 
+  void UnZoom(){getBackground()->UnZoom();} //*MENU
+
   GF(bool,bool,GrayScale)
   SF(bool,GrayScale)      //*TOGGLE *GETTER=GetGrayScale
   GF(bool,bool,ShowBases)
@@ -204,8 +209,9 @@ class TH2DAntarctica : public TH2D {
     getBackground()->ExecuteEvent(event, px, py);
     TH2D::ExecuteEvent(event, px, py);
   }
-  void prettifyPalette();  
-  void FillRandomly(Int_t nTimes = 5000);
+  void FillRandomly(Int_t nTimes = 5000);                               // *MENU
+  void PrettifyPalette();                                               // *MENU
+  void PrettifyBackgroundPalette(){getBackground()->PrettifyPalette();} // *MENU
 
  private:
   mutable AntarcticaBackground* fAntarcticaBackground; //! Don't persist

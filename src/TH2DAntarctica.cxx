@@ -47,7 +47,7 @@ void TProfile2DAntarctica::Draw(Option_t* opt){
   
   TString sameOpt = TString::Format("%s same", opt);
   TProfile2D::Draw(sameOpt);
-  prettifyPalette();  
+  PrettifyPalette();
 }
 
 
@@ -55,7 +55,7 @@ Int_t TProfile2DAntarctica::Fill(Double_t lon, Double_t lat, Double_t val){
 
   Double_t easting, northing;
   RampdemReader::LonLatToEastingNorthing(lon, lat, easting, northing);
-  return TProfile2D::Fill(easting, northing, val);  
+  return TProfile2D::Fill(easting, northing, val);
 }
 
 
@@ -81,7 +81,7 @@ void TProfile2DAntarctica::FillRandomly(Int_t nTimes){
 /**
  * Helper function which prettifies the z-axis
  */
-void TProfile2DAntarctica::prettifyPalette(){
+void TProfile2DAntarctica::PrettifyPalette(){
   gPad->Modified();
   gPad->Update();
   TPaletteAxis *palette = (TPaletteAxis*) GetListOfFunctions()->FindObject("palette");
@@ -159,7 +159,7 @@ void TH2DAntarctica::Draw(Option_t* opt){
   
   TString sameOpt = TString::Format("%s same", opt);
   TH2D::Draw(sameOpt);
-  prettifyPalette();
+  PrettifyPalette();
 }
 
 
@@ -193,7 +193,7 @@ void TH2DAntarctica::FillRandomly(Int_t nTimes){
 /**
  * Helper function which prettifies the z-axis
  */
-void TH2DAntarctica::prettifyPalette(){
+void TH2DAntarctica::PrettifyPalette(){
   gPad->Modified();
   gPad->Update();
   TPaletteAxis *palette = (TPaletteAxis*) GetListOfFunctions()->FindObject("palette");

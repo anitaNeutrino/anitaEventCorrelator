@@ -138,7 +138,6 @@ void AntarcticaBackground::updateHist(){
 
     // std::cout << firstX << "\t" << lastX << "\t" << lowX << "\t" << highX << std::endl;
 
-
     // now I get the new histogram binning
     Int_t nx, ny;
     RampdemReader::getNumXY(nx, ny, fDataSet);
@@ -170,7 +169,7 @@ void AntarcticaBackground::updateHist(){
       fYaxis.SetRangeUser(lowY, highY);
 
       // and update the z-axis title if needed
-      prettifyPalette();
+      PrettifyPalette();
     }
 
     setToolTipUnits();
@@ -471,7 +470,7 @@ void AntarcticaBackground::Draw(Option_t* opt){
   fPalUnsetter->Draw();
     
   setPadMargins();
-  prettifyPalette();
+  PrettifyPalette();
 
   fXaxis.SetAxisColor(kWhite);
   fYaxis.SetAxisColor(kWhite);
@@ -524,7 +523,7 @@ void AntarcticaBackground::setPadMargins(){
 /**
  * Helper function which prettifies the z-axis
  */
-void AntarcticaBackground::prettifyPalette(){
+void AntarcticaBackground::PrettifyPalette(){
   gPad->Modified();
   gPad->Update();
   TPaletteAxis *palette = (TPaletteAxis*) GetListOfFunctions()->FindObject("palette");
