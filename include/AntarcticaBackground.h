@@ -27,6 +27,7 @@ const double zAxisWidth = 0.03; /// Standard size for z-xaxis
 const double zAxisHeight = 0.4; /// Standard size for z-xaxis
 const double zAxisRightMargin = 0.02; /// Standard position for z-xaxis
 const double zAxisTopBottomMargin = 0.02; /// Standard position for z-xaxis
+const TString drawOpt = "";
 }
 
 
@@ -39,7 +40,7 @@ class AntarcticaBackground : public TProfile2D {
                        Int_t coarseness = AntarcticaBackgroundDefaults::defaultCoarseness);
   virtual ~AntarcticaBackground();
 
-  virtual void Draw(Option_t* opt = "colz");
+  virtual void Draw(Option_t* opt = "");
 
   // Interactive plotting fun
   // Enable for extra info on mouse over...
@@ -77,7 +78,11 @@ class AntarcticaBackground : public TProfile2D {
   Bool_t GetGrid() const;
 
   void SetGridDivisions(Int_t deltaLon, Int_t deltaLat); // *MENU* *ARGS={deltaLat=>fDeltaLon, deltaLon=>fDeltaLat}
-  void PrettifyColorAxis(bool trigger_redraw = false); // *MENU
+
+  void SetShowColorAxis(Bool_t showZaxis);  // *TOGGLE* *GETTER=GetShowColorAxis
+  Bool_t GetShowColorAxis() const {return fShowColorAxis;}
+
+  void ResetColorAxis(bool trigger_redraw = false); // *MENU
 
   const char* getToolTipUnits(){return fToolTipUnits.Data();}
 
@@ -121,7 +126,7 @@ class AntarcticaBackground : public TProfile2D {
   void updateHist();
   void init(RampdemReader::dataSet dataSet, Int_t coarseness); // in case I ever want another constructor
 
-  void setPadMargins(); // prettification
+  void setPadMargins();
 
   Bool_t fUseToolTip;
   TGToolTip* fToolTip;
@@ -142,6 +147,7 @@ class AntarcticaBackground : public TProfile2D {
   std::vector<TPad*> fPads; //! Don't persist
   double fScaleMin; //! Don't persist
   double fScaleMax; //! Don't persist
+  Bool_t fShowColorAxis;
   TH2D hDummy; //! Don't persist
   ClassDef(AntarcticaBackground, 0)
   

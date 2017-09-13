@@ -64,6 +64,7 @@ void AntarcticaBackground::init(RampdemReader::dataSet dataSet, Int_t coarseness
   // Dummy histogram whose only purpose is to have a color axis, which we will steal
   // and stay well away from out Antarctica histograms, hence the crazy axis limits
   hDummy.SetBins(2, -9e30, -8e30, 1, -9e30, -8e30);
+  fShowColorAxis = true;
 
   // at some point, supporting ROOT versions < 6 is gonna be impossible...
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
@@ -197,7 +198,7 @@ void AntarcticaBackground::updateHist(){
       fYaxis.SetRangeUser(lowY, highY);
 
       // and update the z-axis title if needed
-      PrettifyColorAxis();
+      ResetColorAxis();
     }
 
     setToolTipUnits();
@@ -474,8 +475,20 @@ void AntarcticaBackground::Draw(Option_t* opt){
     gROOT->MakeDefCanvas();
   }
 
-  // under no circumstances allow this to draw it's own color axis...
+  // handle defaults
   TString opt2 = opt;
+  if(opt2 == AntarcticaBackgroundDefaults::drawOpt){
+    opt2 = "colz";
+    fShowColorAxis = true;
+  }
+  if(opt2.Contains("z")){
+    fShowColorAxis = true;
+  }
+  else{
+    fShowColorAxis = false;
+  }
+
+  // under no circumstances allow this to draw it's own color axis...
   TString opt3 = opt2;
   opt3.ReplaceAll("z", "");
 
@@ -485,7 +498,7 @@ void AntarcticaBackground::Draw(Option_t* opt){
   fPalSetter->Draw(); // 1st exec, to set the background palette
 
   // Now use hDummy's palette instead, which won't be affected by rescaling
-  if(opt2.Contains("z")){
+  if(fShowColorAxis){
     hDummy.Draw("colz same");
   }
   else{
@@ -502,7 +515,7 @@ void AntarcticaBackground::Draw(Option_t* opt){
 
   // pad prettification
   setPadMargins();
-  PrettifyColorAxis(true);
+  ResetColorAxis(true);
   fXaxis.SetAxisColor(kWhite);
   fYaxis.SetAxisColor(kWhite);
   fXaxis.SetTitleOffset(9999);
@@ -550,43 +563,44 @@ void AntarcticaBackground::setPadMargins(){
 /**
  * Helper function which prettifies the z-axis
  */
-void AntarcticaBackground::PrettifyColorAxis(bool trigger_redraw){
+void AntarcticaBackground::ResetColorAxis(bool trigger_redraw){
 
-  if(trigger_redraw){
-    gPad->Modified();
-    gPad->Update();
-  }
-
-  // now, use the Dummy histogram's color axis
-  TPaletteAxis *palette = (TPaletteAxis*) hDummy.GetListOfFunctions()->FindObject("palette");
-  if(palette){
-    palette->SetX1NDC(AntarcticaBackgroundDefaults::zAxisRightMargin);
-    palette->SetX2NDC(AntarcticaBackgroundDefaults::zAxisRightMargin + AntarcticaBackgroundDefaults::zAxisWidth);
-    palette->SetY1NDC(AntarcticaBackgroundDefaults::zAxisTopBottomMargin);
-    palette->SetY2NDC(AntarcticaBackgroundDefaults::zAxisTopBottomMargin + AntarcticaBackgroundDefaults::zAxisHeight);
-    
-    TAxis* zAxis = GetZaxis();
-    zAxis->SetTitle(RampdemReader::dataSetToAxisTitle(fDataSet));
-    zAxis->SetTitleSize(AntarcticaBackgroundDefaults::zAxisTextSize);
-    zAxis->SetLabelSize(AntarcticaBackgroundDefaults::zAxisTextSize);
-
-    TAxis* zAxis2 = hDummy.GetZaxis();
-    zAxis2->SetTitle(RampdemReader::dataSetToAxisTitle(fDataSet));
-    zAxis2->SetTitleSize(AntarcticaBackgroundDefaults::zAxisTextSize);
-    zAxis2->SetLabelSize(AntarcticaBackgroundDefaults::zAxisTextSize);
-
-    // std::cout << zAxis->GetTitleOffset() << std::endl;
-    // zAxis->SetTitleOffset(0.1);
+  if(fShowColorAxis){
     if(trigger_redraw){
       gPad->Modified();
       gPad->Update();
     }
-  }
-  else{
-    std::cerr << "Error in " << __PRETTY_FUNCTION__ << ", couldn't find dummy color axis! " << std::endl;
+
+    // now, use the Dummy histogram's color axis
+    TPaletteAxis *palette = (TPaletteAxis*) hDummy.GetListOfFunctions()->FindObject("palette");
+    if(palette){
+      palette->SetX1NDC(AntarcticaBackgroundDefaults::zAxisRightMargin);
+      palette->SetX2NDC(AntarcticaBackgroundDefaults::zAxisRightMargin + AntarcticaBackgroundDefaults::zAxisWidth);
+      palette->SetY1NDC(AntarcticaBackgroundDefaults::zAxisTopBottomMargin);
+      palette->SetY2NDC(AntarcticaBackgroundDefaults::zAxisTopBottomMargin + AntarcticaBackgroundDefaults::zAxisHeight);
+
+      TAxis* zAxis = GetZaxis();
+      zAxis->SetTitle(RampdemReader::dataSetToAxisTitle(fDataSet));
+      zAxis->SetTitleSize(AntarcticaBackgroundDefaults::zAxisTextSize);
+      zAxis->SetLabelSize(AntarcticaBackgroundDefaults::zAxisTextSize);
+
+      TAxis* zAxis2 = hDummy.GetZaxis();
+      zAxis2->SetTitle(RampdemReader::dataSetToAxisTitle(fDataSet));
+      zAxis2->SetTitleSize(AntarcticaBackgroundDefaults::zAxisTextSize);
+      zAxis2->SetLabelSize(AntarcticaBackgroundDefaults::zAxisTextSize);
+
+      // std::cout << zAxis->GetTitleOffset() << std::endl;
+      // zAxis->SetTitleOffset(0.1);
+      if(trigger_redraw){
+        gPad->Modified();
+        gPad->Update();
+      }
+    }
+    else{
+      std::cerr << "Error in " << __PRETTY_FUNCTION__ << ", couldn't find dummy color axis! " << std::endl;
+    }
   }
 }
-
 
 
 
@@ -660,6 +674,19 @@ void AntarcticaBackground::SetGrayScale(bool grayScale){
 Bool_t AntarcticaBackground::GetGrayScale() const {
   return fGrayScale;
 }
+
+
+void AntarcticaBackground::SetShowColorAxis(bool showColorAxis){
+  fShowColorAxis = showColorAxis;
+  if(fShowColorAxis){
+    hDummy.SetDrawOption("colz same");
+    ResetColorAxis(true);
+  }
+  else{
+    hDummy.SetDrawOption("col same");
+  }
+}
+
 
 
 /**

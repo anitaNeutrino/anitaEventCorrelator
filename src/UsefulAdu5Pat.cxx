@@ -1200,6 +1200,7 @@ int UsefulAdu5Pat::traceBackToContinent(Double_t phiWave, Double_t thetaWave,
                                         Double_t * adj_ptr, Double_t max_adjust, Int_t max_iter)
 {
 
+  if (thetaWave + max_adjust < 0) return 0; //no chance
 
   Double_t lon,lat,alt;
   Double_t last_theta_tried =0;
