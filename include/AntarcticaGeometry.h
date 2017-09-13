@@ -206,7 +206,7 @@ class PayloadParameters
     double distance; //distance between source and payload
 
     /* Checks for collision with the ground */
-    bool checkForCollision(double dx = 100, AntarcticCoord * where = 0, RampdemReader::dataSet d = RampdemReader::rampdem, double grace = 20) const;
+    bool checkForCollision(double dx = 100, AntarcticCoord * where = 0, RampdemReader::dataSet d = RampdemReader::rampdem, double grace = 20, bool reverse = false) const;
     AntarcticCoord payload; 
     AntarcticCoord source; 
   private: 

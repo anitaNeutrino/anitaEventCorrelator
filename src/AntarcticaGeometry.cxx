@@ -13,6 +13,7 @@ ClassImp(AntarcticSegmentationScheme);
 ClassImp(PayloadParameters); 
 ClassImp(StereographicGrid); 
 
+template <int coarseness>
 class SurfaceWrapper
 {
 
@@ -26,7 +27,7 @@ class SurfaceWrapper
     TProfile2D *map; 
     SurfaceWrapper(RampdemReader::dataSet set) 
     {
-      map = RampdemReader::getMap(set, 4); 
+      map = RampdemReader::getMap(set, coarseness); 
     }
 
     ~SurfaceWrapper()
@@ -36,16 +37,17 @@ class SurfaceWrapper
     }
 }; 
 
-static SurfaceWrapper & getSurface(RampdemReader::dataSet set) 
+template <int coarseness> 
+static SurfaceWrapper<coarseness> & getSurface(RampdemReader::dataSet set) 
 {
   if (set == RampdemReader::surface)
   {
-    static SurfaceWrapper w(set); 
+    static SurfaceWrapper<coarseness> w(set); 
     return w; 
   }
 
   //the only other thing that makes sense is rampdem
-  static SurfaceWrapper w(RampdemReader::rampdem); 
+  static SurfaceWrapper<coarseness> w(RampdemReader::rampdem); 
   return w; 
 }
 
@@ -166,7 +168,7 @@ static void cart2stereo(double *x, double * y, double *z)
 
    *z = H / cos_lat - N; 
 
-   ///ok now, we have to go to stereographic. We already reversed the sign of lattitude
+   ///ok now, we have to go to stereographic. We already reversed the sign of latitude
 
    double R = scale_factor * c_0 * pow( (1 + eccentricity * sin_lat ) / (1 - eccentricity * sin_lat), eccentricity/2) ; 
       
@@ -421,7 +423,7 @@ void StereographicGrid::getSegmentCenter(int idx, AntarcticCoord * fillme, bool 
   int ybin = idx / nx; 
   double x = (xbin +0.5) *dx - max_E; 
   double y = max_N - (ybin +0.5) *dy ; 
-  double z = fillalt ? getSurface(dataset).compute(x,y): 0; 
+  double z = fillalt ? getSurface<1> (dataset).compute(x,y): 0; 
   fillme->set(AntarcticCoord::STEREOGRAPHIC,x,y,z); 
 }
 
@@ -443,7 +445,7 @@ AntarcticCoord * StereographicGrid::sampleSegment(int idx, int N, AntarcticCoord
     {
       double x = gRandom->Uniform(lx, lx+dx); 
       double y = gRandom->Uniform(ly, ly-dy); 
-      double z = fillalt ? getSurface(dataset).compute(x,y): 0; 
+      double z = fillalt ? getSurface<1> (dataset).compute(x,y): 0; 
       fill[i].set(AntarcticCoord::STEREOGRAPHIC,x,y,z); 
     }
   }
@@ -456,7 +458,7 @@ AntarcticCoord * StereographicGrid::sampleSegment(int idx, int N, AntarcticCoord
       //TODO check if this is what i want! 
       double x = lx + (dx / (grid-1)) * ((i % grid)); 
       double y = ly - (dy / (grid-1)) * ((i / grid)); 
-      double z = fillalt ? getSurface(dataset).compute(x,y): 0; 
+      double z = fillalt ? getSurface<1> (dataset).compute(x,y): 0; 
       fill[i].set(AntarcticCoord::STEREOGRAPHIC,x,y,z); 
     }
   }
@@ -532,11 +534,14 @@ int StereographicGrid::getNeighbors(int segment, std::vector<int> * neighbors) c
 
 
 
-bool PayloadParameters::checkForCollision(double dx, AntarcticCoord * w, RampdemReader::dataSet d, double grace) const
+
+
+
+bool PayloadParameters::checkForCollision(double dx, AntarcticCoord * w,  RampdemReader::dataSet d, double grace, bool reverse) const
 {
 
-  AntarcticCoord x = source.as(AntarcticCoord::CARTESIAN); 
-  TVector3 v = (payload.v() - source.v()).Unit() * dx;  
+  AntarcticCoord x = (reverse ? payload: source).as(AntarcticCoord::CARTESIAN); 
+  TVector3 v = (reverse ? -1 : 1) * (payload.v() - source.v()).Unit() * dx;  
 
   while(true)
   {
@@ -547,11 +552,11 @@ bool PayloadParameters::checkForCollision(double dx, AntarcticCoord * w, Rampdem
  
     AntarcticCoord s = x.as(AntarcticCoord::STEREOGRAPHIC); 
 
-    //break if higher than Mt. Vinson 
-    if ( s.z > 5000)
+    //break if higher than Mt. Vinson  or, if in reverse, close to source
+    if ( (!reverse && s.z > 5000) || (reverse && (x.v() - source.v()).Mag2() < dx*dx))
       break; 
 
-    double surface = getSurface(d).compute(s.x,s.y); 
+    double surface = getSurface<1> (d).compute(s.x,s.y); 
     if (surface > s.z+grace)
     {
 //      printf("BOOM! alt(%g,%g,%g)= %g\n", s.x, s.y, s.z, surface); 
