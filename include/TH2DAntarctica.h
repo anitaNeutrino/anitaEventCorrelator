@@ -127,10 +127,14 @@ class TProfile2DAntarctica : public TProfile2D {
   } // *MENU* *ARGS={deltaLat=>fDeltaLon, deltaLon=>fDeltaLat}
   
   virtual void ExecuteEvent(int event, int px, int py);
-  void FillRandomly(Int_t nTimes = 5000);                                              // *MENU
-  void PrettifyColorAxis();                                                            // *MENU
-  void PrettifyBackgroundColorAxis(){getBackground()->PrettifyColorAxis();}            // *MENU
-  void RescaleBackground() const {getBackground()->scale(GetMinimum(), GetMaximum());} // *MENU
+  void FillRandomly(Int_t nTimes = 5000);                                                       //*MENU
+  void ResetColorAxis();                                                                        //*MENU
+  Bool_t GetShowBackgroundColorAxis() const {return getBackground()->GetShowColorAxis();}
+  void ShowBackgroundColorAxis(Bool_t b){getBackground()->SetShowColorAxis(b);}                 //*TOGGLE *GETTER=GetShowBackgroundColorAxis
+  void ResetBackgroundColorAxis(){getBackground()->ResetColorAxis();}                           //*MENU
+  void RescaleBackground() const {getBackground()->scale(GetMinimum(), GetMaximum());}          //*MENU
+  virtual void SetMaximum(Double_t maximum = -1111) { fMaximum = maximum; RescaleBackground();} //*MENU*
+  virtual void SetMinimum(Double_t minimum = -1111) { fMinimum = minimum; RescaleBackground();} //*MENU*
   
  private:
   mutable AntarcticaBackground* fAntarcticaBackground; //! Don't persist
@@ -207,12 +211,14 @@ class TH2DAntarctica : public TH2D {
   } // *MENU* *ARGS={deltaLat=>fDeltaLon, deltaLon=>fDeltaLat}
   
   virtual void ExecuteEvent(int event, int px, int py);
-  void FillRandomly(Int_t nTimes = 5000);                                              // *MENU
-  void PrettifyColorAxis();                                                            // *MENU
-  void PrettifyBackgroundColorAxis(){getBackground()->PrettifyColorAxis();}            // *MENU
-  void RescaleBackground() const {
-    getBackground()->scale(GetMinimum(), GetMaximum());
-  } // *MENU
+  void FillRandomly(Int_t nTimes = 5000);                                                       //*MENU
+  void ResetColorAxis();                                                                        //*MENU
+  Bool_t GetShowBackgroundColorAxis() const {return getBackground()->GetShowColorAxis();}
+  void ShowBackgroundColorAxis(Bool_t b){getBackground()->SetShowColorAxis(b);}                 //*TOGGLE *GETTER=GetShowBackgroundColorAxis
+  void ResetBackgroundColorAxis(){getBackground()->ResetColorAxis();}                           //*MENU
+  void RescaleBackground() const {getBackground()->scale(GetMinimum(), GetMaximum());}          //*MENU
+  virtual void SetMaximum(Double_t maximum = -1111) { fMaximum = maximum; RescaleBackground();} //*MENU*
+  virtual void SetMinimum(Double_t minimum = -1111) { fMinimum = minimum; RescaleBackground();} //*MENU*
   
  private:
   mutable AntarcticaBackground* fAntarcticaBackground; //! Don't persist

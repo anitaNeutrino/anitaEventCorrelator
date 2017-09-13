@@ -47,7 +47,7 @@ void TProfile2DAntarctica::Draw(Option_t* opt){
   b->SetBit(kCanDelete, false);
   TString sameOpt = TString::Format("%s same", opt);
   TProfile2D::Draw(sameOpt);
-  PrettifyColorAxis();
+  ResetColorAxis();
   RescaleBackground();
   gPad->Modified();
   gPad->Update();
@@ -85,7 +85,7 @@ void TProfile2DAntarctica::FillRandomly(Int_t nTimes){
 /**
  * Helper function which prettifies the z-axis
  */
-void TProfile2DAntarctica::PrettifyColorAxis(){
+void TProfile2DAntarctica::ResetColorAxis(){
   gPad->Modified();
   gPad->Update();
   TPaletteAxis *palette = (TPaletteAxis*) GetListOfFunctions()->FindObject("palette");
@@ -171,7 +171,7 @@ void TH2DAntarctica::Draw(Option_t* opt){
   b->SetBit(kCanDelete, false);  
   TString sameOpt = TString::Format("%s same", opt);
   TH2D::Draw(sameOpt);
-  PrettifyColorAxis();
+  ResetColorAxis();
   RescaleBackground();
   gPad->Modified();
   gPad->Update();
@@ -208,7 +208,7 @@ void TH2DAntarctica::FillRandomly(Int_t nTimes){
 /**
  * Helper function which prettifies the z-axis
  */
-void TH2DAntarctica::PrettifyColorAxis(){
+void TH2DAntarctica::ResetColorAxis(){
   gPad->Modified();
   gPad->Update();
   TPaletteAxis *palette = (TPaletteAxis*) GetListOfFunctions()->FindObject("palette");
