@@ -324,12 +324,12 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
   double ru = cu.v().Mag();
   TVector3 g = low_frac * (rl / cl.z) * cl.v() + (1 - low_frac) * (ru / cu.z) * cu.v();
 
-  //  Construct the interpolated component vector, where we assume weighting reasonable to the linear interpolation above,
-  //  then return it stereographically projected.
-  double r_over_z = low_frac * rl / cl.z + (1 - low_frac) * ru / cl.z;
-  AntarcticCoord c = AntarcticCoord((1 / r_over_z) * g);
-  c.to(AntarcticCoord::STEREOGRAPHIC);
+  //  Now to invert the transform, back to Cartesian ((x, y, z) = (X, Y, Z) * Z / R, R = sqrt(X^2 + Y^2 + Z^2)).
+  double R = g.Mag();
+  AntarcticCoord c = AntarcticCoord((R / g.z()) * g);
 
+  //  Return this Cartesian vector back in stereographic.
+  c.to(AntarcticCoord::STEREOGRAPHIC);
   return c;
 
 //  //  Interpolated components.
