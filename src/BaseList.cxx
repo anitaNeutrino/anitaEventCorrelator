@@ -308,9 +308,13 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
   double low_frac = double(t - ts[l]) / double(ts[u] - ts[l]);  //  Lower fractional interpolative step.
   AntarcticCoord cl = ps[l];  //  Components in WGS84 coordinates.
   AntarcticCoord cu = ps[u];
-  //  In case either altitude component isn't defined. RampdemReader convention has longitude listed first, then latitude.
-  if (!cl.z || cl.z < 0) cl.z = RampdemReader::SurfaceAboveGeoid(cl.y, cl.x, RampdemReader::surface);
-  if (!cu.z || cu.z < 0) cu.z = RampdemReader::SurfaceAboveGeoid(cu.y, cu.x, RampdemReader::surface);
+  //  The great ellipse trajectories should correspond to the surface of the WGS84 geoid, so we should zero out out z-components.
+  double alt = low_frac * cu.z + (1 - low_frac) * cl.z;  //  For later use.
+  cl.z = 0;
+  cu.z = 0;
+//  //  In case either altitude component isn't defined. RampdemReader convention has longitude listed first, then latitude.
+//  if (!cl.z || cl.z < 0) cl.z = RampdemReader::SurfaceAboveGeoid(cl.y, cl.x, RampdemReader::surface);
+//  if (!cu.z || cu.z < 0) cu.z = RampdemReader::SurfaceAboveGeoid(cu.y, cu.x, RampdemReader::surface);
 
   //  Cast vectors into Cartesian.
   cl.to(AntarcticCoord::CARTESIAN);
@@ -320,7 +324,7 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
   //  See (https://www.uwgb.edu/dutchs/structge/sphproj.htm) and (http://mathworld.wolfram.com/StereographicProjection.html) for details.
   double rl = cl.v().Mag();
   double ru = cu.v().Mag();
-  TVector3 g = low_frac * (rl / cl.z) * cl.v() + (1 - low_frac) * (ru / cu.z) * cu.v();
+  TVector3 g = low_frac * (ru / cu.z) * cu.v() + (1 - low_frac) * (rl / cl.z) * cl.v();
 
   //  Now to invert the transform, back to Cartesian ((x, y, z) = (Z / R) * (X, Y, Z), R = sqrt(X^2 + Y^2 + Z^2)).
   double R = g.Mag();
@@ -328,21 +332,22 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
 
   //  Return this Cartesian vector back in stereographic.
   c.to(AntarcticCoord::STEREOGRAPHIC);
+  c.z = alt;  //  What we place as the stereographic z-component is actually the WGS84 component, altitude.
   return c;
 
 //  //  Interpolated components.
 //  //  The following assumes spherical geometry, following a great circle trajectory. For our choice in Cartesian components, we must do things in terms of cotangents.
-//  double cot_lat = low_frac / tan(DEG2RAD * pl.x) + (1 - low_frac) / tan(DEG2RAD * pu.x);
+//  double cot_lat = low_frac / tan(DEG2RAD * cu.x) + (1 - low_frac) / tan(DEG2RAD * cl.x);
 //  double lat = 90 - atan(cot_lat) / DEG2RAD;
-//  //  double lat = low_frac * pl.x + (1 - low_frac) * pu.x;
-//  if (pu.y - pl.y < -180) pu.y += 360;  //  Accounting for longitude unwrapping, ensuring shorter longitude difference taken.
-//  else if (pu.y - pl.y > 180) pu.y -= 360;
-//  double lon = low_frac * pl.y + (1 - low_frac) * pu.y;
+//  //  double lat = low_frac * cu.x + (1 - low_frac) * cl.x;
+//  if (cu.y - cl.y < -180) cu.y += 360;  //  Accounting for longitude unwrapping, ensuring shorter longitude difference taken.
+//  else if (cu.y - cl.y > 180) cu.y -= 360;
+//  double lon = low_frac * cu.y + (1 - low_frac) * cl.y;
 //  lon = fmod(lon + 180, 360) - 180;  //  Rewrapping longitude. Perhaps unneccessary if going to stereographically project anyway?
-//  double alt = low_frac * pl.z + (1 - low_frac) * pu.z;
+//  double alt = low_frac * cu.z + (1 - low_frac) * cl.z;
 //  if (alt < 0) alt = RampdemReader::SurfaceAboveGeoid(lon, lat, RampdemReader::surface);  //  In case at least one of the input altitude components wasn't actually filled.
 //
-//  //  Construct the interpolated component vector, then return it in stereographically projected.
+//  //  Construct the interpolated component vector, then return it stereographically projected.
 //  AntarcticCoord c(AntarcticCoord::WGS84, lat, lon, alt);
 //  c.to(AntarcticCoord::STEREOGRAPHIC);
 //
