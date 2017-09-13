@@ -60,10 +60,13 @@
     return f##FunctionName;                                             \
   }
 
-#define SF(var_type, FunctionName)                         \
+#define SF(var_type, FunctionName, forceRescale)           \
   void Set##FunctionName(var_type use##FunctionName)       \
   {                                                        \
     getBackground()->Set##FunctionName(use##FunctionName); \
+    if(forceRescale){                                      \
+      RescaleBackground();                                 \
+    }                                                      \
   }
 
 
@@ -97,40 +100,42 @@ class TProfile2DAntarctica : public TProfile2D {
   void UnZoom(){getBackground()->UnZoom();} //*MENU
 
   GF(bool,bool,GrayScale)
-  SF(bool,GrayScale)      //*TOGGLE *GETTER=GetGrayScale
+  SF(bool,GrayScale, false)      //*TOGGLE *GETTER=GetGrayScale
   GF(bool,bool,ShowBases)
-  SF(bool,ShowBases)      //*TOGGLE *GETTER=GetShowBases
+  SF(bool,ShowBases, false)      //*TOGGLE *GETTER=GetShowBases
   GF(bool,bool,ToolTip);
-  SF(bool,ToolTip)        //*TOGGLE *GETTER=GetToolTip
+  SF(bool,ToolTip, false)        //*TOGGLE *GETTER=GetToolTip
 
   GF(int,,Coarseness)
-  SF(int,Coarseness)      //*MENU *ARGS={useCoarseness=>fCoarseness}
+  SF(int,Coarseness, false)      //*MENU *ARGS={useCoarseness=>fCoarseness}
   
   GF(bool,bool,Rampdem)
-  SF(bool,Rampdem)        //*TOGGLE *GETTER=GetRampdem
+  SF(bool,Rampdem,true)        //*TOGGLE *GETTER=GetRampdem
   GF(bool,bool,Bed)
-  SF(bool,Bed)            //*TOGGLE *GETTER=GetBed
+  SF(bool,Bed,true)            //*TOGGLE *GETTER=GetBed
   GF(bool,bool,Icemask)
-  SF(bool,Icemask)        //*TOGGLE *GETTER=GetIcemask
+  SF(bool,Icemask,true)        //*TOGGLE *GETTER=GetIcemask
   GF(bool,bool,Surface)
-  SF(bool,Surface)        //*TOGGLE *GETTER=GetSurface
+  SF(bool,Surface,true)        //*TOGGLE *GETTER=GetSurface
   GF(bool,bool,Thickness)
-  SF(bool,Thickness)      //*TOGGLE *GETTER=GetThickness
+  SF(bool,Thickness,true)      //*TOGGLE *GETTER=GetThickness
   GF(bool,bool,Grid)
-  SF(bool,Grid)           //*TOGGLE *GETTER=GetGrid
+  SF(bool,Grid,false)           //*TOGGLE *GETTER=GetGrid
   
   void SetGridDivisions(Int_t deltaLon, Int_t deltaLat){
     getBackground()->SetGridDivisions(deltaLon, deltaLat);
   } // *MENU* *ARGS={deltaLat=>fDeltaLon, deltaLon=>fDeltaLat}
   
-  virtual void ExecuteEvent(int event, int px, int py){
-    getBackground()->ExecuteEvent(event, px, py);
-    TProfile2D::ExecuteEvent(event, px, py);
-  }
-  void FillRandomly(Int_t nTimes = 5000);                                  // *MENU
-  void PrettifyColorAxis();                                                // *MENU
-  void PrettifyBackgroundColorAxis(){getBackground()->PrettifyColorAxis();}// *MENU
-
+  virtual void ExecuteEvent(int event, int px, int py);
+  void FillRandomly(Int_t nTimes = 5000);                                                       //*MENU
+  void ResetColorAxis();                                                                        //*MENU
+  Bool_t GetShowBackgroundColorAxis() const {return getBackground()->GetShowColorAxis();}
+  void ShowBackgroundColorAxis(Bool_t b){getBackground()->SetShowColorAxis(b);}                 //*TOGGLE *GETTER=GetShowBackgroundColorAxis
+  void ResetBackgroundColorAxis(){getBackground()->ResetColorAxis();}                           //*MENU
+  void RescaleBackground() const {getBackground()->scale(GetMinimum(), GetMaximum());}          //*MENU
+  virtual void SetMaximum(Double_t maximum = -1111) { fMaximum = maximum; RescaleBackground();} //*MENU*
+  virtual void SetMinimum(Double_t minimum = -1111) { fMinimum = minimum; RescaleBackground();} //*MENU*
+  
  private:
   mutable AntarcticaBackground* fAntarcticaBackground; //! Don't persist
   mutable int                   fCoarseness;           //! Don't persist
@@ -179,40 +184,42 @@ class TH2DAntarctica : public TH2D {
   void UnZoom(){getBackground()->UnZoom();} //*MENU
 
   GF(bool,bool,GrayScale)
-  SF(bool,GrayScale)      //*TOGGLE *GETTER=GetGrayScale
+  SF(bool,GrayScale,false)      //*TOGGLE *GETTER=GetGrayScale
   GF(bool,bool,ShowBases)
-  SF(bool,ShowBases)      //*TOGGLE *GETTER=GetShowBases
+  SF(bool,ShowBases,false)      //*TOGGLE *GETTER=GetShowBases
   GF(bool,bool,ToolTip);
-  SF(bool,ToolTip)        //*TOGGLE *GETTER=GetToolTip
+  SF(bool,ToolTip,false)        //*TOGGLE *GETTER=GetToolTip
 
   GF(int,,Coarseness)
-  SF(int,Coarseness)      //*MENU *ARGS={useCoarseness=>fCoarseness}
+  SF(int,Coarseness,false)      //*MENU *ARGS={useCoarseness=>fCoarseness}
   
   GF(bool,bool,Rampdem)
-  SF(bool,Rampdem)        //*TOGGLE *GETTER=GetRampdem
+  SF(bool,Rampdem,true)        //*TOGGLE *GETTER=GetRampdem
   GF(bool,bool,Bed)
-  SF(bool,Bed)            //*TOGGLE *GETTER=GetBed
+  SF(bool,Bed,true)            //*TOGGLE *GETTER=GetBed
   GF(bool,bool,Icemask)
-  SF(bool,Icemask)        //*TOGGLE *GETTER=GetIcemask
+  SF(bool,Icemask,true)        //*TOGGLE *GETTER=GetIcemask
   GF(bool,bool,Surface)
-  SF(bool,Surface)        //*TOGGLE *GETTER=GetSurface
+  SF(bool,Surface,true)        //*TOGGLE *GETTER=GetSurface
   GF(bool,bool,Thickness)
-  SF(bool,Thickness)      //*TOGGLE *GETTER=GetThickness
+  SF(bool,Thickness,true)      //*TOGGLE *GETTER=GetThickness
   GF(bool,bool,Grid)
-  SF(bool,Grid)           //*TOGGLE *GETTER=GetGrid
+  SF(bool,Grid,false)           //*TOGGLE *GETTER=GetGrid
   
   void SetGridDivisions(Int_t deltaLon, Int_t deltaLat){
     getBackground()->SetGridDivisions(deltaLon, deltaLat);
   } // *MENU* *ARGS={deltaLat=>fDeltaLon, deltaLon=>fDeltaLat}
   
-  virtual void ExecuteEvent(int event, int px, int py){
-    getBackground()->ExecuteEvent(event, px, py);
-    TH2D::ExecuteEvent(event, px, py);
-  }
-  void FillRandomly(Int_t nTimes = 5000);                                  // *MENU
-  void PrettifyColorAxis();                                                // *MENU
-  void PrettifyBackgroundColorAxis(){getBackground()->PrettifyColorAxis();}// *MENU
-
+  virtual void ExecuteEvent(int event, int px, int py);
+  void FillRandomly(Int_t nTimes = 5000);                                                       //*MENU
+  void ResetColorAxis();                                                                        //*MENU
+  Bool_t GetShowBackgroundColorAxis() const {return getBackground()->GetShowColorAxis();}
+  void ShowBackgroundColorAxis(Bool_t b){getBackground()->SetShowColorAxis(b);}                 //*TOGGLE *GETTER=GetShowBackgroundColorAxis
+  void ResetBackgroundColorAxis(){getBackground()->ResetColorAxis();}                           //*MENU
+  void RescaleBackground() const {getBackground()->scale(GetMinimum(), GetMaximum());}          //*MENU
+  virtual void SetMaximum(Double_t maximum = -1111) { fMaximum = maximum; RescaleBackground();} //*MENU*
+  virtual void SetMinimum(Double_t minimum = -1111) { fMinimum = minimum; RescaleBackground();} //*MENU*
+  
  private:
   mutable AntarcticaBackground* fAntarcticaBackground; //! Don't persist
   mutable int                   fCoarseness;           //! Don't persist
@@ -225,7 +232,6 @@ class TH2DAntarctica : public TH2D {
     }  
     return fAntarcticaBackground;
   }
-  
   ClassDef(TH2DAntarctica, 1);
 
 };

@@ -2,7 +2,7 @@
 #include "AnitaVersion.h" 
 #include "TFile.h" 
 #include "TMath.h" 
-#include <math.h>
+#include <cmath>
 #include "TTree.h" 
 #include <unistd.h> 
 #include "TROOT.h" 
@@ -10,6 +10,11 @@
 
 
 using namespace BaseList;
+
+
+#ifndef DEG2RAD
+#define DEG2RAD M_PI / 180
+#endif
 
 
 static void fillBases(std::vector<base> & baseList, int anita) 
@@ -301,23 +306,47 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
   int l = TMath::BinarySearch(ts.size(), & ts[0], t); 
   int u = l + 1; 
   double low_frac = double(t - ts[l]) / double(ts[u] - ts[l]);  //  Lower fractional interpolative step.
-  AntarcticCoord cl = ps[l].as(AntarcticCoord::WGS84);
-  AntarcticCoord cu = ps[u].as(AntarcticCoord::WGS84);
+  AntarcticCoord cl = ps[l];  //  Components in WGS84 coordinates.
+  AntarcticCoord cu = ps[u];
+  //  In case either altitude component isn't defined. RampdemReader convention has longitude listed first, then latitude.
+  if (!cl.z || cl.z < 0) cl.z = RampdemReader::SurfaceAboveGeoid(cl.y, cl.x, RampdemReader::surface);
+  if (!cu.z || cu.z < 0) cu.z = RampdemReader::SurfaceAboveGeoid(cu.y, cu.x, RampdemReader::surface);
 
-  //  Interpolated components.
-  double lat = low_frac * cl.x + (1 - low_frac) * cu.x;
-  if (cu.y - cl.y < -180) cu.y += 360;  //  Accounting for longitude unwrapping, ensuring shorter longitude difference taken.
-  else if (cu.y - cl.y > 180) cu.y -= 360;
-  double lon = low_frac * cl.y + (1 - low_frac) * cu.y;
-  lon = fmod(lon + 180, 360) - 180;  //  Rewrapping longitude. Perhaps unneccessary if going to stereographically project anyway?
-  double alt = low_frac * cl.z + (1 - low_frac) * cu.z;
-  if (alt < 0) alt = RampdemReader::SurfaceAboveGeoid(lon, lat, RampdemReader::surface);  //  In case at least one of the input altitude components wasn't actually filled.
+  //  Cast vectors into Cartesian.
+  cl.to(AntarcticCoord::CARTESIAN);
+  cu.to(AntarcticCoord::CARTESIAN);
 
-  //  Construct the interpolated component vector, then return it in stereographically projected.
-  AntarcticCoord c(AntarcticCoord::WGS84, lat, lon, alt);
+  //  Assuring a great ellipse trajectory between components, we will linearly interpolate gnomonic projection (X, Y, Z) between Cartesian points (x, y, z) ((X, Y, Z) = (r / z) * (x, y, z)).
+  //  See (https://www.uwgb.edu/dutchs/structge/sphproj.htm) and (http://mathworld.wolfram.com/StereographicProjection.html) for details.
+  double rl = cl.v().Mag();
+  double ru = cu.v().Mag();
+  TVector3 g = low_frac * (rl / cl.z) * cl.v() + (1 - low_frac) * (ru / cu.z) * cu.v();
+
+  //  Now to invert the transform, back to Cartesian ((x, y, z) = (Z / R) * (X, Y, Z), R = sqrt(X^2 + Y^2 + Z^2)).
+  double R = g.Mag();
+  AntarcticCoord c = AntarcticCoord((g.z() / R) * g);
+
+  //  Return this Cartesian vector back in stereographic.
   c.to(AntarcticCoord::STEREOGRAPHIC);
-
   return c;
+
+//  //  Interpolated components.
+//  //  The following assumes spherical geometry, following a great circle trajectory. For our choice in Cartesian components, we must do things in terms of cotangents.
+//  double cot_lat = low_frac / tan(DEG2RAD * pl.x) + (1 - low_frac) / tan(DEG2RAD * pu.x);
+//  double lat = 90 - atan(cot_lat) / DEG2RAD;
+//  //  double lat = low_frac * pl.x + (1 - low_frac) * pu.x;
+//  if (pu.y - pl.y < -180) pu.y += 360;  //  Accounting for longitude unwrapping, ensuring shorter longitude difference taken.
+//  else if (pu.y - pl.y > 180) pu.y -= 360;
+//  double lon = low_frac * pl.y + (1 - low_frac) * pu.y;
+//  lon = fmod(lon + 180, 360) - 180;  //  Rewrapping longitude. Perhaps unneccessary if going to stereographically project anyway?
+//  double alt = low_frac * pl.z + (1 - low_frac) * pu.z;
+//  if (alt < 0) alt = RampdemReader::SurfaceAboveGeoid(lon, lat, RampdemReader::surface);  //  In case at least one of the input altitude components wasn't actually filled.
+//
+//  //  Construct the interpolated component vector, then return it in stereographically projected.
+//  AntarcticCoord c(AntarcticCoord::WGS84, lat, lon, alt);
+//  c.to(AntarcticCoord::STEREOGRAPHIC);
+//
+//  return c;
 
 //  AntarcticCoord cl = ps[l].as(AntarcticCoord::CARTESIAN); 
 //  AntarcticCoord cu = ps[u].as(AntarcticCoord::CARTESIAN); 
