@@ -306,7 +306,7 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
   int l = TMath::BinarySearch(ts.size(), & ts[0], t); 
   int u = l + 1; 
   double low_frac = double(t - ts[l]) / double(ts[u] - ts[l]);  //  Lower fractional interpolative step.
-  AntarcticCoord cl = ps[l];  //  In WGS84 components.
+  AntarcticCoord cl = ps[l];  //  Components in WGS84 coordinates.
   AntarcticCoord cu = ps[u];
   //  In case either altitude component isn't defined. RampdemReader convention has longitude listed first, then latitude.
   if (!cl.z || cl.z < 0) cl.z = RampdemReader::SurfaceAboveGeoid(cl.y, cl.x, RampdemReader::surface);
@@ -316,17 +316,15 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
   cl.to(AntarcticCoord::CARTESIAN);
   cu.to(AntarcticCoord::CARTESIAN);
 
-  //  Assuring a great elliptic trajectory between components, we will linearly interpolate
-  //  gnomonic projection (X, Y, Z) between Cartesian points (x, y, z) ((X, Y, Z) = (x, y, z) * r / z).
-  //  See (https://www.uwgb.edu/dutchs/structge/sphproj.htm) and
-  //  (http://mathworld.wolfram.com/StereographicProjection.html) for details.
+  //  Assuring a great ellipse trajectory between components, we will linearly interpolate gnomonic projection (X, Y, Z) between Cartesian points (x, y, z) ((X, Y, Z) = (r / z) * (x, y, z)).
+  //  See (https://www.uwgb.edu/dutchs/structge/sphproj.htm) and (http://mathworld.wolfram.com/StereographicProjection.html) for details.
   double rl = cl.v().Mag();
   double ru = cu.v().Mag();
   TVector3 g = low_frac * (rl / cl.z) * cl.v() + (1 - low_frac) * (ru / cu.z) * cu.v();
 
-  //  Now to invert the transform, back to Cartesian ((x, y, z) = (X, Y, Z) * Z / R, R = sqrt(X^2 + Y^2 + Z^2)).
+  //  Now to invert the transform, back to Cartesian ((x, y, z) = (Z / R) * (X, Y, Z), R = sqrt(X^2 + Y^2 + Z^2)).
   double R = g.Mag();
-  AntarcticCoord c = AntarcticCoord((R / g.z()) * g);
+  AntarcticCoord c = AntarcticCoord((g.z() / R) * g);
 
   //  Return this Cartesian vector back in stereographic.
   c.to(AntarcticCoord::STEREOGRAPHIC);
