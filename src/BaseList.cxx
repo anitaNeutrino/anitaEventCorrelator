@@ -308,13 +308,12 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
   double low_frac = double(t - ts[l]) / double(ts[u] - ts[l]);  //  Lower fractional interpolative step.
   AntarcticCoord cl = ps[l];  //  Components in WGS84 coordinates.
   AntarcticCoord cu = ps[u];
+  //  In case either altitude component isn't defined. RampdemReader convention has longitude listed first, then latitude.
+  if (!cl.z || cl.z < 0) cl.z = RampdemReader::SurfaceAboveGeoid(cl.y, cl.x, RampdemReader::surface);
+  if (!cu.z || cu.z < 0) cu.z = RampdemReader::SurfaceAboveGeoid(cu.y, cu.x, RampdemReader::surface);
   //  The great ellipse trajectories should correspond to the surface of the WGS84 geoid, so we should zero out out z-components.
-  double alt = low_frac * cu.z + (1 - low_frac) * cl.z;  //  For later use.
-  cl.z = 0;
-  cu.z = 0;
-//  //  In case either altitude component isn't defined. RampdemReader convention has longitude listed first, then latitude.
-//  if (!cl.z || cl.z < 0) cl.z = RampdemReader::SurfaceAboveGeoid(cl.y, cl.x, RampdemReader::surface);
-//  if (!cu.z || cu.z < 0) cu.z = RampdemReader::SurfaceAboveGeoid(cu.y, cu.x, RampdemReader::surface);
+  double alt = low_frac * cu.z + (1 - low_frac) * cl.z;  //  For later use right before return.
+  cl.z = 0, cu.z = 0;
 
   //  Cast vectors into Cartesian.
   cl.to(AntarcticCoord::CARTESIAN);
