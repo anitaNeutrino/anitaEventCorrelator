@@ -303,16 +303,17 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
   if (!isValid(t)) return AntarcticCoord(AntarcticCoord::WGS84, 90, 0, 0); // North pole is about as far as we can get! 
 
   //  Components to interpolate with.
-  int l = TMath::BinarySearch(ts.size(), & ts[0], t); 
+  int l = TMath::BinarySearch(ts.size(), & ts [0], t); 
   int u = l + 1; 
-  double low_frac = double(t - ts[l]) / double(ts[u] - ts[l]);  //  Lower fractional interpolative step.
-  AntarcticCoord cl = ps[l];  //  Components in WGS84 coordinates.
-  AntarcticCoord cu = ps[u];
-  //  In case either altitude component isn't defined. RampdemReader convention has longitude listed first, then latitude.
-  if (!cl.z || cl.z < 0) cl.z = RampdemReader::SurfaceAboveGeoid(cl.y, cl.x, RampdemReader::surface);
-  if (!cu.z || cu.z < 0) cu.z = RampdemReader::SurfaceAboveGeoid(cu.y, cu.x, RampdemReader::surface);
-  //  The great ellipse trajectories should correspond to the surface of the WGS84 geoid, so we should zero out out z-components.
-  double alt = low_frac * cu.z + (1 - low_frac) * cl.z;  //  For later use right before return.
+  double low_frac = double(t - ts [l]) / double(ts [u] - ts [l]);  //  Lower fractional interpolative step.
+  AntarcticCoord cl = ps [l];  //  Components in WGS84 coordinates.
+  AntarcticCoord cu = ps [u];
+  //  For later use; in case either altitude component isn't defined or negative. RampdemReader convention has longitude listed first, then latitude.
+  double gndl = RampdemReader::SurfaceAboveGeoid(cl.y, cl.x, RampdemReader::surface);
+  double gndu = RampdemReader::SurfaceAboveGeoid(cu.y, cu.x, RampdemReader::surface);
+  double clz = (!cl.z || cl.z < 0) ? gndl : cl.z;
+  double cuz = (!cu.z || cu.z < 0) ? gndu : cu.z;
+  //  Great ellipse trajectories should correspond to the surface of the WGS84 geoid, so we should zero out out z-components.
   cl.z = 0, cu.z = 0;
 
   //  Cast vectors into Cartesian.
@@ -333,7 +334,7 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
   c.to(AntarcticCoord::WGS84);
   double gnd = RampdemReader::SurfaceAboveGeoid(c.y, c.x, RampdemReader::surface);
   c.to(AntarcticCoord::STEREOGRAPHIC);
-  c.z = alt > gnd ? alt : gnd;  //  What we place as the stereographic z-component is actually the WGS84 component, altitude.
+  c.z = (clz == gndl && cuz == gndu) ? gnd : low_frac * cuz + (1 - low_frac) * clz;  //  What we place as the stereographic z-component is actually the WGS84 component, altitude.
   return c;
 
 //  //  Interpolated components.
