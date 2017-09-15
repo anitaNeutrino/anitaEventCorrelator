@@ -316,8 +316,7 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
   cl.z = 0, cu.z = 0;
 
   //  Cast vectors into Cartesian.
-  cl.to(AntarcticCoord::CARTESIAN);
-  cu.to(AntarcticCoord::CARTESIAN);
+  cl.to(AntarcticCoord::CARTESIAN), cu.to(AntarcticCoord::CARTESIAN);
 
   //  Assuring a great ellipse trajectory between components, we will linearly interpolate gnomonic projection (X, Y, Z) between Cartesian points (x, y, z) ((X, Y, Z) = (r / z) * (x, y, z)).
   //  See (https://www.uwgb.edu/dutchs/structge/sphproj.htm) and (http://mathworld.wolfram.com/StereographicProjection.html) for details.
@@ -337,7 +336,7 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
 //  //  Interpolated components.
 //  //  The following assumes spherical geometry, following a great circle trajectory. For our choice in Cartesian components, we must do things in terms of cotangents.
 //  double cot_lat = low_frac / tan(DEG2RAD * cu.x) + (1 - low_frac) / tan(DEG2RAD * cl.x);
-//  double lat = 90 - atan(cot_lat) / DEG2RAD;
+//  double lat = atan(1 / cot_lat) / DEG2RAD;
 //  //  double lat = low_frac * cu.x + (1 - low_frac) * cl.x;
 //  if (cu.y - cl.y < -180) cu.y += 360;  //  Accounting for longitude unwrapping, ensuring shorter longitude difference taken.
 //  else if (cu.y - cl.y > 180) cu.y -= 360;
