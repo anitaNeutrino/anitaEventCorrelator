@@ -330,10 +330,18 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
   AntarcticCoord c = AntarcticCoord((g.z() / R) * g);
 
   //  Return this Cartesian vector back in stereographic.
-  c.to(AntarcticCoord::WGS84);
-  double gnd = RampdemReader::SurfaceAboveGeoid(c.y, c.x, RampdemReader::surface);
-  c.to(AntarcticCoord::STEREOGRAPHIC);
-  c.z = (clz == gndl && cuz == gndu) ? gnd : low_frac * cuz + (1 - low_frac) * clz;  //  What we place as the stereographic z-component is actually the WGS84 component, altitude.
+  if (clz == gndl && cuz == gndu) {
+
+    c.to(AntarcticCoord::WGS84);
+    double gnd = RampdemReader::SurfaceAboveGeoid(c.y, c.x, RampdemReader::surface);
+    c.to(AntarcticCoord::STEREOGRAPHIC);
+    c.z = gndl;
+  } else {
+
+    c.to(AntarcticCoord::STEREOGRAPHIC);
+    c.z = low_frac * cuz + (1 - low_frac) * clz;  //  What we place as the stereographic z-component is actually the WGS84 component, altitude.
+  }
+
   return c;
 
 //  //  Interpolated components.
