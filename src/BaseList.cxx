@@ -319,15 +319,15 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
   //  Cast vectors into Cartesian.
   cl.to(AntarcticCoord::CARTESIAN), cu.to(AntarcticCoord::CARTESIAN);
 
-  //  Assuring a great ellipse trajectory between components, we will linearly interpolate polar gnomonic projection (X, Y, Z) between Cartesian points (x, y, z) ((X, Y, Z) = (r / z) * (x, y, z)).
+  //  Assuring a great ellipse trajectory between components, we will linearly interpolate polar gnomonic projection (X, Y, Z) between Cartesian points (x, y, z) ((X, Y, Z) = abs(r / z) * (x, y, z)).
   //  See (https://www.uwgb.edu/dutchs/structge/sphproj.htm) and (http://mathworld.wolfram.com/StereographicProjection.html) for details.
   double rl = cl.v().Mag();
   double ru = cu.v().Mag();
-  TVector3 g = low_frac * (ru / cu.z) * cu.v() + (1 - low_frac) * (rl / cl.z) * cl.v();
+  TVector3 g = low_frac * std::abs(ru / cu.z) * cu.v() + (1 - low_frac) * std::abs(rl / cl.z) * cl.v();
 
-  //  Now to invert the transform, back to Cartesian ((x, y, z) = (Z / R) * (X, Y, Z), R = sqrt(X^2 + Y^2 + Z^2)).
+  //  Now to invert the transform, back to Cartesian ((x, y, z) = abs(Z / R) * (X, Y, Z), R = sqrt(X^2 + Y^2 + Z^2)).
   double R = g.Mag();
-  AntarcticCoord c = AntarcticCoord((g.z() / R) * g);
+  AntarcticCoord c = AntarcticCoord(std::abs(g.z() / R) * g);
 
   //  Return this Cartesian vector back in stereographic.
   if (clz == gndl && cuz == gndu) {
