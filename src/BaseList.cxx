@@ -324,11 +324,10 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
   double rl = cl.v().Mag();
   double ru = cu.v().Mag();
   TVector3 g = low_frac * (ru / cu.z) * cu.v() + (1 - low_frac) * (rl / cl.z) * cl.v();
-  g *= -1;  // Explicitly enforce that we are in reference to the South Pole.
 
   //  Now to invert the transform, back to Cartesian ((x, y, z) = (Z / R) * (X, Y, Z), R = sqrt(X^2 + Y^2 + Z^2)).
   double R = g.Mag();
-  AntarcticCoord c = AntarcticCoord((-g.z() / R) * g);
+  AntarcticCoord c = AntarcticCoord((g.z() / R) * g);
 
   //  Return this Cartesian vector back in stereographic.
   if (clz == gndl && cuz == gndu) {
