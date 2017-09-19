@@ -320,19 +320,22 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
   //  Cast vectors into Cartesian.
   cl.to(AntarcticCoord::CARTESIAN), cu.to(AntarcticCoord::CARTESIAN);
 
-  //  Assuring a great ellipse trajectory between components, we will linearly interpolate polar gnomonic projection (X, Y, Z) between Cartesian points (x, y, z) ((X, Y, Z) = abs(b / z) * (x / a, y / a, z / b), a = semi-major, b = semi-minor).
+  //  Assuring a great ellipse trajectory between components, we will linearly interpolate a unit auxiliary sphere in
+  //  polar gnomonic projection (X, Y, Z) between Cartesian points (x, y, z) ((X, Y, Z) = abs(b / z) * (x / a, y / a, z / b), a = semi-major, b = semi-minor). The unit auxiliary sphere is assuming (x / a)^2 + (y / a)^2 + (z / b)^2 = 1.
   //  See (https://www.uwgb.edu/dutchs/structge/sphproj.htm) and (http://mathworld.wolfram.com/StereographicProjection.html) for details.
   TVector3 g = low_frac / std::abs(cu.z) * cu.v() + (1 - low_frac) / std::abs(cl.z) * cl.v();
-  g *= GEOID_MIN / GEOID_MAX;
-  g(2) *= GEOID_MAX / GEOID_MIN;
+  g(0) *= GEOID_MIN / GEOID_MAX;
+  g(1) *= GEOID_MIN / GEOID_MAX;
 //  double rl = cl.v().Mag();
 //  double ru = cu.v().Mag();
 //  TVector3 g = low_frac * std::abs(ru / cu.z) * cu.v() + (1 - low_frac) * std::abs(rl / cl.z) * cl.v();
 
   //  Now to invert the transform, back to Cartesian ((x, y, z) = (1 / R) * (a * X, a * Y, b * Z), R = sqrt(X^2 + Y^2 + Z^2)).
-  double R = g.Mag();
-  AntarcticCoord c = AntarcticCoord(GEOID_MAX / R * g);
-  c.z *= GEOID_MIN / GEOID_MAX;
+  AntarcticCoord c = AntarcticCoord(g.Unit());
+  c.x *= GEOID_MAX;
+  c.y *= GEOID_MAX;
+  c.z *= GEOID_MIN;
+//  double R = g.Mag();
 //  AntarcticCoord c = AntarcticCoord(std::abs(g.z() / R) * g);
 
   //  Return this Cartesian vector back in stereographic.
