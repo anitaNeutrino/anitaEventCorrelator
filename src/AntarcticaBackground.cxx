@@ -22,7 +22,7 @@ static int numAntarcticaBackgrounds = 0;
 
 
 AntarcticaBackground::AntarcticaBackground(RampdemReader::dataSet dataSet, Int_t coarseness)
-    : TProfile2D() {
+    : TProfile2D(), hDummy() {
   init(dataSet, coarseness);
 }
 
@@ -36,6 +36,8 @@ void AntarcticaBackground::init(RampdemReader::dataSet dataSet, Int_t coarseness
   SetDirectory(0);
   fName = Form("%s%d", getDefaultName(), numAntarcticaBackgrounds);
   numAntarcticaBackgrounds++;
+  fMinVal = DBL_MAX;
+  fMaxVal = -DBL_MAX;
   fDataSet = dataSet;
   fCoarseness = coarseness;
   needRemakeHist = true;  // force updateHist() to read in data by setting impossible coarseness
@@ -58,6 +60,11 @@ void AntarcticaBackground::init(RampdemReader::dataSet dataSet, Int_t coarseness
   fPalSetter = new TExec(palSetterName,Form("%s->setPalette()", fName.Data()));
   TString palUnsetterName = TString::Format("%sPalSetter", fName.Data());  
   fPalUnsetter = new TExec(palUnsetterName,Form("%s->unsetPalette()", fName.Data()));
+
+  // Dummy histogram whose only purpose is to have a color axis, which we will steal
+  // and stay well away from out Antarctica histograms, hence the crazy axis limits
+  hDummy.SetBins(2, -9e30, -8e30, 1, -9e30, -8e30);
+  fShowColorAxis = true;
 
   // at some point, supporting ROOT versions < 6 is gonna be impossible...
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
@@ -162,6 +169,28 @@ void AntarcticaBackground::updateHist(){
     // insert new data
     RampdemReader::fillThisHist(this, fDataSet);
 
+    fMinVal = DBL_MAX;
+    fMaxVal = -DBL_MAX;
+    for(int by=1; by <= GetNbinsY(); by++){
+      for(int bx=1; bx <= GetNbinsX(); bx++){
+        double val = GetBinContent(bx, by);
+        if(val < fMinVal){
+          fMinVal = val;
+        }
+        if(val > fMaxVal){
+          fMaxVal = val;
+        }
+      }
+    }
+    SetMaximum(fMaxVal);
+    SetMinimum(fMinVal);
+    fScaleMax = 0;
+    fScaleMin = 0;
+    hDummy.SetBinContent(1, fMinVal);
+    hDummy.SetBinContent(2, fMinVal);
+    hDummy.SetMaximum(fMaxVal);
+    hDummy.SetMinimum(fMinVal);
+
     if(fDrawnSelf){
 
       // now set the viewing range to the same as before if we have a gPad instance
@@ -169,7 +198,7 @@ void AntarcticaBackground::updateHist(){
       fYaxis.SetRangeUser(lowY, highY);
 
       // and update the z-axis title if needed
-      PrettifyColorAxis();
+      ResetColorAxis();
     }
 
     setToolTipUnits();
@@ -180,8 +209,6 @@ void AntarcticaBackground::updateHist(){
   GetYaxis()->SetNdivisions(0, kFALSE);
 
   needRemakeGrid = false;
-
-
 }
 
 
@@ -273,9 +300,6 @@ void AntarcticaBackground::updateBases(){
 
   updateGPadPrims(grBases, fBases, "p");
 }
-
-
-
 
 
 void AntarcticaBackground::updateGrid(){
@@ -426,7 +450,6 @@ void AntarcticaBackground::deleteGrid(){
   }
 
 }
-// }
 
 
 
@@ -444,7 +467,7 @@ void AntarcticaBackground::SetGridDivisions(Int_t deltaLon, Int_t deltaLat){
 /**
  * Draw function for Antarctica Background which also prettifies the pad/canvas.
  *
- * @param opt is the draw option (default is colz)
+ * @param opt is the draw option (default is col)
  */
 void AntarcticaBackground::Draw(Option_t* opt){
 
@@ -452,26 +475,47 @@ void AntarcticaBackground::Draw(Option_t* opt){
     gROOT->MakeDefCanvas();
   }
 
-  // TVirtualPad* thePadPwd = gPad;
+  // handle defaults
+  TString opt2 = opt;
+  if(opt2 == AntarcticaBackgroundDefaults::drawOpt){
+    opt2 = "colz";
+    fShowColorAxis = true;
+  }
+  if(opt2.Contains("z")){
+    fShowColorAxis = true;
+  }
+  else{
+    fShowColorAxis = false;
+  }
 
-  // TPad* subPad = new TPad("t1", "t1", 0, 0, 1, 1);
-  // subPad->SetFillColor(0);
-  // subPad->SetFillStyle(4000);
-  // // subPad->SetBit(kCanDelete);
-  // // subPad->SetBit(kMustCleanup);
-  // subPad->Draw();  
-  // subPad->cd();
+  // under no circumstances allow this to draw it's own color axis...
+  TString opt3 = opt2;
+  opt3.ReplaceAll("z", "");
 
-  // fPads.push_back(subPad);
-    
-  TProfile2D::Draw(opt);
-  fPalSetter->Draw();  
-  TProfile2D::Draw(TString::Format("%s same", opt));
+  // 1st instance, no color axis
+  TProfile2D::Draw(opt3);
+
+  fPalSetter->Draw(); // 1st exec, to set the background palette
+
+  // Now use hDummy's palette instead, which won't be affected by rescaling
+  if(fShowColorAxis){
+    hDummy.Draw("colz same");
+  }
+  else{
+    hDummy.Draw("col");
+  }
+
+  // 2nd instance, no color axis
+  opt3 += " same";
+  TProfile2D::Draw(opt3);
+
+  // 2nd exec, to set the foreground palette again
   fPalUnsetter->Draw();
-    
-  setPadMargins();
-  PrettifyColorAxis();
 
+
+  // pad prettification
+  setPadMargins();
+  ResetColorAxis(true);
   fXaxis.SetAxisColor(kWhite);
   fYaxis.SetAxisColor(kWhite);
   fXaxis.SetTitleOffset(9999);
@@ -479,23 +523,19 @@ void AntarcticaBackground::Draw(Option_t* opt){
   fXaxis.SetLabelOffset(9999);
   fYaxis.SetLabelOffset(9999);    
  
-  gPad->Update();
 
+  // force redraw
+  gPad->Update();
   fDrawnSelf = true;
 
   SetBit(kMustCleanup);
   SetBit(kCanDelete); // This means the TPad that we've drawn on owns this, and should delete it when the TPad is destroyed.
+  // (These bits are UNSET in TH2DAntarctica, which can own it's own background)
+
+  // set up things the background owns, if requested
   updateGrid();
   SetToolTip(fToolTip);
 
-  // TPad* subPad2 = new TPad("t2", "t2", 0, 0, 1, 1);
-  // subPad2->Draw();
-  // subPad2->cd();
-  // subPad2->SetFillStyle(4000); // transparent
-  // subPad2->SetBit(kCanDelete);
-  // subPad2->SetBit(kMustCleanup); 
-  // subPad->Modified();
-  // setPadMargins();
 }
 
 
@@ -523,27 +563,44 @@ void AntarcticaBackground::setPadMargins(){
 /**
  * Helper function which prettifies the z-axis
  */
-void AntarcticaBackground::PrettifyColorAxis(){
-  gPad->Modified();
-  gPad->Update();
-  TPaletteAxis *palette = (TPaletteAxis*) GetListOfFunctions()->FindObject("palette");
-  if(palette){
-    palette->SetX1NDC(AntarcticaBackgroundDefaults::zAxisRightMargin);
-    palette->SetX2NDC(AntarcticaBackgroundDefaults::zAxisRightMargin + AntarcticaBackgroundDefaults::zAxisWidth);
-    palette->SetY1NDC(AntarcticaBackgroundDefaults::zAxisTopBottomMargin);
-    palette->SetY2NDC(AntarcticaBackgroundDefaults::zAxisTopBottomMargin + AntarcticaBackgroundDefaults::zAxisHeight);
-    
-    TAxis* zAxis = GetZaxis();
-    zAxis->SetTitle(RampdemReader::dataSetToAxisTitle(fDataSet));
-    zAxis->SetTitleSize(AntarcticaBackgroundDefaults::zAxisTextSize);
-    zAxis->SetLabelSize(AntarcticaBackgroundDefaults::zAxisTextSize);
-    // std::cout << zAxis->GetTitleOffset() << std::endl;
-    // zAxis->SetTitleOffset(0.1);
-    gPad->Modified();
-    gPad->Update();
+void AntarcticaBackground::ResetColorAxis(bool trigger_redraw){
+
+  if(fShowColorAxis){
+    if(trigger_redraw){
+      gPad->Modified();
+      gPad->Update();
+    }
+
+    // now, use the Dummy histogram's color axis
+    TPaletteAxis *palette = (TPaletteAxis*) hDummy.GetListOfFunctions()->FindObject("palette");
+    if(palette){
+      palette->SetX1NDC(AntarcticaBackgroundDefaults::zAxisRightMargin);
+      palette->SetX2NDC(AntarcticaBackgroundDefaults::zAxisRightMargin + AntarcticaBackgroundDefaults::zAxisWidth);
+      palette->SetY1NDC(AntarcticaBackgroundDefaults::zAxisTopBottomMargin);
+      palette->SetY2NDC(AntarcticaBackgroundDefaults::zAxisTopBottomMargin + AntarcticaBackgroundDefaults::zAxisHeight);
+
+      TAxis* zAxis = GetZaxis();
+      zAxis->SetTitle(RampdemReader::dataSetToAxisTitle(fDataSet));
+      zAxis->SetTitleSize(AntarcticaBackgroundDefaults::zAxisTextSize);
+      zAxis->SetLabelSize(AntarcticaBackgroundDefaults::zAxisTextSize);
+
+      TAxis* zAxis2 = hDummy.GetZaxis();
+      zAxis2->SetTitle(RampdemReader::dataSetToAxisTitle(fDataSet));
+      zAxis2->SetTitleSize(AntarcticaBackgroundDefaults::zAxisTextSize);
+      zAxis2->SetLabelSize(AntarcticaBackgroundDefaults::zAxisTextSize);
+
+      // std::cout << zAxis->GetTitleOffset() << std::endl;
+      // zAxis->SetTitleOffset(0.1);
+      if(trigger_redraw){
+        gPad->Modified();
+        gPad->Update();
+      }
+    }
+    else{
+      std::cerr << "Error in " << __PRETTY_FUNCTION__ << ", couldn't find dummy color axis! " << std::endl;
+    }
   }
 }
-
 
 
 
@@ -619,6 +676,19 @@ Bool_t AntarcticaBackground::GetGrayScale() const {
 }
 
 
+void AntarcticaBackground::SetShowColorAxis(bool showColorAxis){
+  fShowColorAxis = showColorAxis;
+  if(fShowColorAxis){
+    hDummy.SetDrawOption("colz same");
+    ResetColorAxis(true);
+  }
+  else{
+    hDummy.SetDrawOption("col same");
+  }
+}
+
+
+
 /**
  * Interactive magic.
  *
@@ -633,6 +703,89 @@ void AntarcticaBackground::ExecuteEvent(Int_t event, Int_t x, Int_t y){
 }
 
 
+
+/** 
+ * This is the magic function that makes two 2D histograms plotted on top of one 
+ * another have the same dynamic range, by rescaling the background.
+ * This is called by TH2DAntarctica using G
+ * 
+ * @param newMin should be TH2DAntarctica::GetMinimum()
+ * @param newMax should be TH2DAntarctica::GetMaximum()
+ */
+void AntarcticaBackground::scale(double newMin, double newMax){
+
+  // This line prevents the empty bins in the TH2D filling the whole histogram
+  if(newMin == 0){
+    // epsilon
+    newMin += 1e-15;
+  }
+
+  double currentMax = -DBL_MAX;
+  double currentMin = DBL_MAX;
+
+  if(fScaleMax == fScaleMin){
+    // need to discover the current scale max/min
+    // not sure we can get here now?
+
+    for(int by=1; by <= GetNbinsY(); by++){
+      for(int bx=1; bx <= GetNbinsX(); bx++){
+
+        Int_t bin = GetBin(bx, by);
+        double binEntries = GetBinEntries(bin);
+        // cleverer way of checking this was a filled background bin
+        if(binEntries > 0){
+          double val = GetBinContent(bx, by);
+
+          currentMin = val < currentMin ? val : currentMin;
+          currentMax = val > currentMax ? val : currentMax;
+        }
+      }
+    }
+  }
+  else{
+    currentMax = fScaleMax;
+    currentMin = fScaleMin;
+  }
+
+  double currentDelta = currentMax - currentMin;
+  double newDelta = newMax - newMin;
+
+  for(int by=1; by <= GetNbinsY(); by++){
+    for(int bx=1; bx <= GetNbinsX(); bx++){
+
+      // cleverer way of checking this was a filled background bin
+      Int_t bin = GetBin(bx, by);
+      double binEntries = GetBinEntries(bin);
+
+      if(binEntries > 0){
+
+        double val = GetBinContent(bx, by);
+        double frac = (val - currentMin)/currentDelta;
+
+        // if(val != 0 && currentMax - val < 100){
+        //   std::cerr << val << "\t" << currentMin << "\t" << currentMax << "\t" << frac << std::endl;
+        // }
+
+        double newVal = newMin + frac*newDelta;
+        SetBinContent(bx, by, newVal);
+        SetBinEntries(bin, 1); // otherwise TProfile scales the value
+
+      }
+    }
+  }
+  // record new scale
+  fScaleMax = newMax;
+  fScaleMin = newMin;
+
+  // set max/min
+  SetMaximum(newMax);
+  SetMinimum(newMin);
+
+  // trigger re-paint of canvas
+  gPad->Modified();
+  gPad->Update();
+
+}
 
 
 
@@ -666,6 +819,7 @@ void AntarcticaBackground::updateToolTip(Int_t event, Int_t x, Int_t y, const ch
     fToolTip->Show(topX + x + xOffset, topY + y + yOffset);
 
   }
+  TProfile2D::ExecuteEvent(event, x, y);
 }
 
 

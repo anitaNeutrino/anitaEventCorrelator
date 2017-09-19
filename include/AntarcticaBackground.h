@@ -27,6 +27,7 @@ const double zAxisWidth = 0.03; /// Standard size for z-xaxis
 const double zAxisHeight = 0.4; /// Standard size for z-xaxis
 const double zAxisRightMargin = 0.02; /// Standard position for z-xaxis
 const double zAxisTopBottomMargin = 0.02; /// Standard position for z-xaxis
+const TString drawOpt = "";
 }
 
 
@@ -39,7 +40,7 @@ class AntarcticaBackground : public TProfile2D {
                        Int_t coarseness = AntarcticaBackgroundDefaults::defaultCoarseness);
   virtual ~AntarcticaBackground();
 
-  void Draw(Option_t* opt = "colz");
+  virtual void Draw(Option_t* opt = "");
 
   // Interactive plotting fun
   // Enable for extra info on mouse over...
@@ -77,7 +78,11 @@ class AntarcticaBackground : public TProfile2D {
   Bool_t GetGrid() const;
 
   void SetGridDivisions(Int_t deltaLon, Int_t deltaLat); // *MENU* *ARGS={deltaLat=>fDeltaLon, deltaLon=>fDeltaLat}
-  void PrettifyColorAxis(); // *MENU
+
+  void SetShowColorAxis(Bool_t showZaxis);  // *TOGGLE* *GETTER=GetShowColorAxis
+  Bool_t GetShowColorAxis() const {return fShowColorAxis;}
+
+  void ResetColorAxis(bool trigger_redraw = false); // *MENU
 
   const char* getToolTipUnits(){return fToolTipUnits.Data();}
 
@@ -94,33 +99,34 @@ class AntarcticaBackground : public TProfile2D {
 
   // at some point, supporting ROOT versions < 6 is gonna be impossible...
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
-    std::map<RampdemReader::dataSet, EColorPalette> palettes; //! Does not persist in ROOT!
-    float opacity; //! Does not persist in ROOT!
+  std::map<RampdemReader::dataSet, EColorPalette> palettes; //! Does not persist in ROOT!
+  float opacity; //! Does not persist in ROOT!
 #endif
 
-
+  void scale(double newMin, double newMax);
  private:
 
+  Double_t fMinVal;
+  Double_t fMaxVal;
 
-    Int_t fCoarseness; // map coarseness factor
-    RampdemReader::dataSet fDataSet; // rampdem data set
-    Bool_t needRemakeHist; // if changed coarseness or data set
-    Bool_t fGrayScale;
+  Int_t fCoarseness; // map coarseness factor
+  RampdemReader::dataSet fDataSet; // rampdem data set
+  Bool_t needRemakeHist; // if changed coarseness or data set
+  Bool_t fGrayScale;
 
+  Bool_t fGrid;
+  Int_t fDeltaLon;
+  Int_t fDeltaLat;
+  void updateGrid();
+  void deleteGrid();
+  std::vector<TGraphAntarctica*> grGrids; ///< The internally stored lat/lon grids.
 
-    Bool_t fGrid;
-    Int_t fDeltaLon;
-    Int_t fDeltaLat;
-    void updateGrid();
-    void deleteGrid();
-    std::vector<TGraphAntarctica*> grGrids; ///< The internally stored lat/lon grids.
+  Int_t fGridPoints; ///< Number of points on the lat/lon grid.
+  Bool_t needRemakeGrid; // if changed grid settings
+  void updateHist();
+  void init(RampdemReader::dataSet dataSet, Int_t coarseness); // in case I ever want another constructor
 
-    Int_t fGridPoints; ///< Number of points on the lat/lon grid.
-    Bool_t needRemakeGrid; // if changed grid settings
-    void updateHist();
-    void init(RampdemReader::dataSet dataSet, Int_t coarseness); // in case I ever want another constructor
-
-    void setPadMargins(); // prettification
+  void setPadMargins();
 
   Bool_t fUseToolTip;
   TGToolTip* fToolTip;
@@ -133,13 +139,18 @@ class AntarcticaBackground : public TProfile2D {
 
   Bool_t fDrawnSelf; // Set by Draw(), help the updateHist() function to do sensible things
   void updateGPadPrims(std::vector<TGraphAntarctica*>& grs, Bool_t drawThem, Option_t* opt);
-  ClassDef(AntarcticaBackground, 0)
 
   std::vector<Int_t> fOldPalette; //! Don't persist
   Bool_t fOldGrayScale; //! Don't persist
   TExec* fPalSetter; //! Don't persist
   TExec* fPalUnsetter; //! Don't persist
   std::vector<TPad*> fPads; //! Don't persist
+  double fScaleMin; //! Don't persist
+  double fScaleMax; //! Don't persist
+  Bool_t fShowColorAxis;
+  TH2D hDummy; //! Don't persist
+  ClassDef(AntarcticaBackground, 0)
+  
 };
 
 
