@@ -1250,9 +1250,87 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
 
 
 
+/** 
+ * Gets the expected polarisation angle for a 1e19 eV cosmic ray exiting the ice
+ * 
+ * @param usefulPat contains ANITA's position
+ * @param phiWave azimith
+ * @param thetaWave elevation angle (radians) in payload coordinates (-ve theta is up, +ve theta is down)
+ * @param pathLength distance along the upgoing vector that the shower begins, since it isn't well defined 
+ *
+ * @return 
+ */
+
+double GeoMagnetic::getExpectedPolarisationUpgoing(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave,
+						   double pathLength){
+
+  prepareGeoMagnetics();
+  
+  if(debug){
+    std::cout << "Anita position = " << usefulPat.longitude << "\t" << usefulPat.latitude << "\t" << usefulPat.altitude << std::endl;
+  }
+  
+  // use the silly UsefulAdu5Pat convention that -ve theta is down...
+  // phiWave is in radians relative to ADU5 Aft Fore line
+
+  double reflectionLon=0, reflectionLat=0, reflectionAlt=0, deltaTheta=100; // need non-zero deltaTheta when testing whether things intersectg, as theta < 0 returns instantly
+  usefulPat.traceBackToContinent(phiWave, thetaWave, &reflectionLon, &reflectionLat, &reflectionAlt, &deltaTheta);
+
+  TVector3 destination; // ANITA position if direct cosmic ray or surface position if reflected cosmic ray
+  TVector3 destinationToSource; // unit vector from ANITA (if direct) or reflection position (if indirect) which points in the direction the cosmic ray signal came from
+  bool directCosmicRay = TMath::Abs(deltaTheta) > 1e-20 ? true : false; // direct cosmic ray?
+
+  TVector3 anitaPosition = lonLatAltToVector(usefulPat.longitude, usefulPat.latitude, usefulPat.altitude);
+
+  // here we do the geometry slightly differently for the direct vs. reflected case
+  if(directCosmicRay){
+    std::cout << "I'm pointed above the horizon!  I can't be an upgoing event!  Exiting..." << std::endl;
+    return -9999;
+  }
+  else{ // reflected cosmic ray
+    if(debug){
+      std::cout << "I'm pointed at the continent! " << deltaTheta << "\t" <<  reflectionLon << "\t" << reflectionLat << "\t"  << reflectionAlt  << std::endl;
+    }
+    destination = lonLatAltToVector(reflectionLon, reflectionLat, reflectionAlt); // i.e. the source on the ice
+    destinationToSource = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, thetaWave); // from ANITA to ice
+  }
+
+  //the cosmic ray is traveling in the opposite direction as the direction from ANITA to the ice
+  const TVector3 cosmicRayDirection = -destinationToSource.Unit();
+
+  //calculate where the shower max is, which is from the ice in the direction of the shower pathLength away
+  TVector3 xMaxPosition = destination.Unit()+cosmicRayDirection*pathLength;
+
+  // Calculate the geo-magnetic field field at x-max
+  FieldPoint fp(usefulPat.realTime, xMaxPosition);
+  
+  // This is our electric field vector!
+  // If I cared about getting the magnitude correct in addition to the orientation, there are some missing factors
+  // It should be: B_vec x S_vec = (1/mu0)B^{2} E_vec
+  // But there's no radio cherenkov/geomagnetic shower model or anything so for now just the cross product will do.
+  TVector3 EVec = fp.field().Cross(cosmicRayDirection).Unit();
+  
+  // Here I find the VPol and HPol antenna axes.
+  // And I'm going to  pretend that one of ANITA's antennas points exactly at phiWave
+  // getting an off axis response will be more complicated
+
+  // Since the antennas points down at -10 degrees, the VPol axis is 80 degrees above the horizontal plane
+  TVector3 vPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, -80*TMath::DegToRad());
+  // The VPol feed is up... (if) the HPol feed is to the right (looking down the boresight) then it points anticlockwise around the payload
+  // phi increases anti-clockwise in payload coordinates, therefore
+  TVector3 hPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave + TMath::PiOver2(), -10*TMath::DegToRad());
+  
+  // Dot the electric field with the antenna polarisation vectors...
+  double vPolComponent = EVec.Dot(vPolAxis);
+  double hPolComponent = EVec.Dot(hPolAxis);
+  
+  // et voila
+  double polarisationAngle = TMath::ATan2(vPolComponent, hPolComponent);
+  
+  return polarisationAngle;
 
 
-
+}
 
 
 
@@ -1390,3 +1468,5 @@ TVector3 GeoMagnetic::getXMaxPosition(const TVector3& initialPosition, const TVe
   
   return currentPosition;
 }
+
+

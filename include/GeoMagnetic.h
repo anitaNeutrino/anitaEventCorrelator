@@ -61,6 +61,7 @@ class FieldPoint : public TArrow {
 
 
   double getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave);
+  double getExpectedPolarisationUpgoing(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave, double pathLength);
 
   TVector3 getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave);
 
