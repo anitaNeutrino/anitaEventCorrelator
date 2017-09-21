@@ -321,22 +321,17 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
   cl.to(AntarcticCoord::CARTESIAN), cu.to(AntarcticCoord::CARTESIAN);
 
   //  Assuring a great ellipse trajectory between components, we will linearly interpolate a unit auxiliary sphere in
-  //  polar gnomonic projection (X, Y, Z) between Cartesian points (x, y, z) ((X, Y, Z) = abs(b / z) * (x / a, y / a, z / b), a = semi-major, b = semi-minor). The unit auxiliary sphere is assuming (x / a)^2 + (y / a)^2 + (z / b)^2 = 1.
+  //  polar gnomonic projection (X, Y, Z) between Cartesian points (x, y, z) ((X, Y, Z) = abs(b / z) * (x / a, y / a, z / b), a = semi-major axis, b = semi-minor axis). The unit auxiliary sphere is assuming (x / a)^2 + (y / a)^2 + (z / b)^2 = 1.
   //  See (https://www.uwgb.edu/dutchs/structge/sphproj.htm) and (http://mathworld.wolfram.com/StereographicProjection.html) for details.
   TVector3 g = low_frac / std::abs(cu.z) * cu.v() + (1 - low_frac) / std::abs(cl.z) * cl.v();
-  g(0) *= GEOID_MIN / GEOID_MAX;
+  g(0) *= GEOID_MIN / GEOID_MAX;  //  GEOID_MIN and GEOD_MAX defined in "AnitaGeomTool.h".
   g(1) *= GEOID_MIN / GEOID_MAX;
-//  double rl = cl.v().Mag();
-//  double ru = cu.v().Mag();
-//  TVector3 g = low_frac * std::abs(ru / cu.z) * cu.v() + (1 - low_frac) * std::abs(rl / cl.z) * cl.v();
 
   //  Now to invert the transform, back to Cartesian ((x, y, z) = (1 / R) * (a * X, a * Y, b * Z), R = sqrt(X^2 + Y^2 + Z^2)).
   AntarcticCoord c = AntarcticCoord(g.Unit());
   c.x *= GEOID_MAX;
   c.y *= GEOID_MAX;
   c.z *= GEOID_MIN;
-//  double R = g.Mag();
-//  AntarcticCoord c = AntarcticCoord(std::abs(g.z() / R) * g);
 
   //  Return this Cartesian vector back in stereographic.
   if (clz == gndl && cuz == gndu) {
@@ -344,26 +339,33 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
     c.to(AntarcticCoord::WGS84);
     double gnd = RampdemReader::SurfaceAboveGeoid(c.y, c.x, RampdemReader::surface);
     c.to(AntarcticCoord::STEREOGRAPHIC);
-    c.z = gnd;
+    c.z = gnd;  //  What we place as the stereographic z-component is actually the WGS84 component, altitude.
   } else {
 
     c.to(AntarcticCoord::STEREOGRAPHIC);
-    c.z = low_frac * cuz + (1 - low_frac) * clz;  //  What we place as the stereographic z-component is actually the WGS84 component, altitude.
+    c.z = low_frac * cuz + (1 - low_frac) * clz;
   }
 
   return c;
 
 //  //  Interpolated components.
-//  //  The following assumes spherical geometry, following a great circle trajectory. For our choice in Cartesian components, we must do things in terms of cotangents.
+//  //  Define gndl and gndu for altitude later.
+//  double gndl = RampdemReader::SurfaceAboveGeoid(cl.y, cl.x, RampdemReader::surface);
+//  double gndu = RampdemReader::SurfaceAboveGeoid(cu.y, cu.x, RampdemReader::surface);
+//  //  For latitude, we first linearly interpolate radial distance in the gnomonic plane (R(lat) = sgn(lat) * (b / a) * cot(lat)).
+//  //  Dividing out constants, we just end up linearly interpolating cot(lat), then inverting it to get our latitude.
 //  double cot_lat = low_frac / tan(DEG2RAD * cu.x) + (1 - low_frac) / tan(DEG2RAD * cl.x);
-//  double lat = atan(1 / cot_lat) / DEG2RAD;
-//  //  double lat = low_frac * cu.x + (1 - low_frac) * cl.x;
-//  if (cu.y - cl.y < -180) cu.y += 360;  //  Accounting for longitude unwrapping, ensuring shorter longitude difference taken.
+//  double lat = cot_lat != 0 ? atan(1 / cot_lat) / DEG2RAD : -90;  //  -pi / 2 <= atan() <= pi / 2, handling South Pole exception.
+//  //  For longitude, we need to unwrap our upper input longitude to insure that shorter longitude difference is taken.
+//  if (cu.y - cl.y < -180) cu.y += 360;
 //  else if (cu.y - cl.y > 180) cu.y -= 360;
 //  double lon = low_frac * cu.y + (1 - low_frac) * cl.y;
 //  lon = fmod(lon + 180, 360) - 180;  //  Rewrapping longitude. Perhaps unneccessary if going to stereographically project anyway?
-//  double alt = low_frac * cu.z + (1 - low_frac) * cl.z;
-//  if (alt < 0) alt = RampdemReader::SurfaceAboveGeoid(lon, lat, RampdemReader::surface);  //  In case at least one of the input altitude components wasn't actually filled.
+//  //  For altitude, we replace with the surface values gndl and/or gndu above when we don't have input altitudes.
+//  //  If both input altitudes end up being replaced by these surface values, we just evaluate at the surface with the interpolated latitude and longitude.
+//  double altl = (!cl.z || cl.z < 0) ? gndl : cl.z;
+//  double altu = (!cu.z || cu.z < 0) ? gndu : cu.z;
+//  double alt = (altl == gndl && altu == gndu) ? RampdemReader::SurfaceAboveGeoid(lon, lat, RampdemReader::surface) : low_frac * altu + (1 - low_frac) * altl;
 //
 //  //  Construct the interpolated component vector, then return it stereographically projected.
 //  AntarcticCoord c(AntarcticCoord::WGS84, lat, lon, alt);
@@ -371,6 +373,7 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
 //
 //  return c;
 
+//  //  The orignial code.
 //  AntarcticCoord cl = ps[l].as(AntarcticCoord::CARTESIAN); 
 //  AntarcticCoord cu = ps[u].as(AntarcticCoord::CARTESIAN); 
 //  double x =  low_frac * cl.x  + (1-low_frac) * cu.x; 
