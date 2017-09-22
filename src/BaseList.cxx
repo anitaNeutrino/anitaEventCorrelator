@@ -355,7 +355,7 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
 //  //  For latitude, we first linearly interpolate radial distance in the gnomonic plane (R(lat) = sgn(lat) * (b / a) * cot(lat)).
 //  //  Dividing out constants, we just end up linearly interpolating cot(lat), then inverting it to get our latitude.
 //  double cot_lat = low_frac / tan(DEG2RAD * cu.x) + (1 - low_frac) / tan(DEG2RAD * cl.x);
-//  double lat = cot_lat != 0 ? atan(1 / cot_lat) / DEG2RAD : -90;  //  -pi / 2 <= atan() <= pi / 2, handling South Pole exception.
+//  double lat = -90 - atan(cot_lat) / DEG2RAD;  //  -pi / 2 <= lat < 0 in southern hemispheroid.
 //  //  For longitude, we need to unwrap our upper input longitude to insure that shorter longitude difference is taken.
 //  if (cu.y - cl.y < -180) cu.y += 360;
 //  else if (cu.y - cl.y > 180) cu.y -= 360;
