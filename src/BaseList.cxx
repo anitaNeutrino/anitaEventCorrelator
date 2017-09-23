@@ -349,20 +349,20 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
   return c;
 
 //  //  Interpolated components.
-//  //  Define gndl and gndu for altitude later.
-//  double gndl = RampdemReader::SurfaceAboveGeoid(cl.y, cl.x, RampdemReader::surface);
-//  double gndu = RampdemReader::SurfaceAboveGeoid(cu.y, cu.x, RampdemReader::surface);
 //  //  For latitude, we first linearly interpolate radial distance in the gnomonic plane (R(lat) = sgn(lat) * (b / a) * cot(lat)).
 //  //  Dividing out constants, we just end up linearly interpolating cot(lat), then inverting it to get our latitude.
 //  double cot_lat = low_frac / tan(DEG2RAD * cu.x) + (1 - low_frac) / tan(DEG2RAD * cl.x);
 //  double lat = -90 - atan(cot_lat) / DEG2RAD;  //  -pi / 2 <= lat < 0 in southern hemispheroid.
 //  //  For longitude, we need to unwrap our upper input longitude to insure that shorter longitude difference is taken.
-//  if (cu.y - cl.y < -180) cu.y += 360;
-//  else if (cu.y - cl.y > 180) cu.y -= 360;
-//  double lon = low_frac * cu.y + (1 - low_frac) * cl.y;
-//  lon = fmod(lon + 180, 360) - 180;  //  Rewrapping longitude. Perhaps unneccessary if going to stereographically project anyway?
-//  //  For altitude, we replace with the surface values gndl and/or gndu above when we don't have input altitudes.
-//  //  If both input altitudes end up being replaced by these surface values, we just evaluate at the surface with the interpolated latitude and longitude.
+//  double lonl = cl.y, lonu = cu.y;
+//  if (lonu - lonl < -180) lonu += 360;
+//  else if (lonu - lonl > 180) lonu -= 360;
+//  double lon = low_frac * lonu + (1 - low_frac) * lonl;
+//  lon = fmod(lon + 180, 360) - 180;  //  Rewrapping longitude. Perhaps unneccessary if going to stereographic projection anyway?
+//  //  For altitude, when we don't have an input altitude we use surface value instead.
+//  //  If both input altitudes end up being replaced by surface values, we evaluate interpolated altitude at the surface with the interpolated latitude and longitude.
+//  double gndl = RampdemReader::SurfaceAboveGeoid(cl.y, cl.x, RampdemReader::surface);
+//  double gndu = RampdemReader::SurfaceAboveGeoid(cu.y, cu.x, RampdemReader::surface);
 //  double altl = (!cl.z || cl.z < 0) ? gndl : cl.z;
 //  double altu = (!cu.z || cu.z < 0) ? gndu : cu.z;
 //  double alt = (altl == gndl && altu == gndu) ? RampdemReader::SurfaceAboveGeoid(lon, lat, RampdemReader::surface) : low_frac * altu + (1 - low_frac) * altl;
