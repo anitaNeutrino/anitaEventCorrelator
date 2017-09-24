@@ -314,17 +314,18 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
   double gndu = RampdemReader::SurfaceAboveGeoid(cu.y, cu.x, RampdemReader::surface);
   double clz = (!cl.z || cl.z < 0) ? gndl : cl.z;
   double cuz = (!cu.z || cu.z < 0) ? gndu : cu.z;
-  //  Great ellipse trajectories should correspond to the surface of the WGS84 geoid, so we should zero out out z-components.
+  //  Geodesic trajectories should correspond to the surface of the WGS84 geoid, so we should zero out z-components.
   cl.z = 0, cu.z = 0;
 
   //  Cast vectors into Cartesian.
   cl.to(AntarcticCoord::CARTESIAN), cu.to(AntarcticCoord::CARTESIAN);
 
-  //  Assuring a great ellipse trajectory between components, we will linearly interpolate a unit auxiliary sphere in
-  //  polar gnomonic projection (X, Y, Z) between Cartesian points (x, y, z) ((X, Y, Z) = abs(b / z) * (x / a, y / a, z / b), a = semi-major axis, b = semi-minor axis). The unit auxiliary sphere is assuming (x / a)^2 + (y / a)^2 + (z / b)^2 = 1.
+  //  Assuring a geodesic trajectory between components by transforming to a great circle trajectory, we will linearly interpolate a unit auxiliary sphere
+  //  in polar gnomonic projection (X, Y, Z) between Cartesian points (x, y, z) ((X, Y, Z) = abs(b / z) * (x / a, y / a, z / b), a = semi-major axis, b = semi-minor axis).
+  //  The unit auxiliary sphere is assuming (x / a)^2 + (y / a)^2 + (z / b)^2 = 1.
   //  See (https://www.uwgb.edu/dutchs/structge/sphproj.htm) and (http://mathworld.wolfram.com/StereographicProjection.html) for details.
-  TVector3 g = low_frac / std::abs(cu.z) * cu.v() + (1 - low_frac) / std::abs(cl.z) * cl.v();
-  g(0) *= GEOID_MIN / GEOID_MAX;  //  GEOID_MIN and GEOD_MAX defined in "AnitaGeomTool.h".
+  TVector3 g = low_frac * std::abs(1 / cu.z) * cu.v() + (1 - low_frac) * std::abs(1 / cl.z) * cl.v();
+  g(0) *= GEOID_MIN / GEOID_MAX;  //  GEOID_MIN and GEOID_MAX defined in "AnitaGeomTool.h".
   g(1) *= GEOID_MIN / GEOID_MAX;
 
   //  Now to invert the transform, back to Cartesian ((x, y, z) = (1 / R) * (a * X, a * Y, b * Z), R = sqrt(X^2 + Y^2 + Z^2)).
