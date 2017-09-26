@@ -168,8 +168,8 @@ Double_t RampdemReader::SurfaceAboveGeoid(Double_t lon, Double_t lat, RampdemRea
   getDataIfNeeded(dataSet);
   VecVec& surface_elevation = bedMap2Data[dataSet];
 
-  Int_t nCols_surface = numXs[dataSet];
-  Int_t nRows_surface = numYs[dataSet];
+  Int_t nCols_surface = dataSet == rampdem ? numYs[dataSet] : numXs[dataSet];
+  Int_t nRows_surface = dataSet == rampdem ? numXs[dataSet] : numYs[dataSet];
 
   Double_t surface=0;
 
@@ -186,7 +186,12 @@ Double_t RampdemReader::SurfaceAboveGeoid(Double_t lon, Double_t lat, RampdemRea
     return -9999;
   }
   else{
-    surface = double(surface_elevation[e_coord_surface][n_coord_surface]);
+    if(dataSet==rampdem){
+      surface = double(surface_elevation[e_coord_surface][n_coord_surface]);
+    }
+    else{
+      surface = double(surface_elevation[n_coord_surface][e_coord_surface]);
+    }
   }
 
   return surface;
@@ -199,8 +204,8 @@ Double_t RampdemReader::SurfaceAboveGeoidEN(Double_t Easting, Double_t Northing,
   getDataIfNeeded(dataSet);
   VecVec& surface_elevation = bedMap2Data[dataSet];
 
-  Int_t nCols_surface = numXs[dataSet];
-  Int_t nRows_surface = numYs[dataSet];
+  Int_t nCols_surface = dataSet == rampdem ? numYs[dataSet] : numXs[dataSet];
+  Int_t nRows_surface = dataSet == rampdem ? numXs[dataSet] : numYs[dataSet];
 
   Double_t surface=0;
 
@@ -215,9 +220,14 @@ Double_t RampdemReader::SurfaceAboveGeoidEN(Double_t Easting, Double_t Northing,
   else if(n_coord_surface >= nRows_surface || n_coord_surface <0){
     //     std::cerr<<"[RampdemReader::surfaceAboveGeoid]  Error!  Trying to access y-element "<<n_coord_surface<<" of the RAMP DEM data! (Longitude, latitude = "<<lon<<", "<<lat<<")\n";
     return -9999;
-  }
+  }  
   else{
-    surface = double(surface_elevation[e_coord_surface][n_coord_surface]);
+    if(dataSet==rampdem){
+      surface = double(surface_elevation[e_coord_surface][n_coord_surface]);
+    }
+    else{
+      surface = double(surface_elevation[n_coord_surface][e_coord_surface]);
+    }
   }
 
   return surface;
