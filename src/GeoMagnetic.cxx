@@ -43,9 +43,6 @@ const double dPhi = 0.01*TMath::DegToRad();
 // from a table in the Wikipedia
 TGraph grAtmosDensity;
 TF1* fExpAtmos;
-// I read xMax for a 1e19 eV proton off a plot in an Auger paper
-const double xMax = 0.8e4; // kg / m^{2}
-
 
 // --------------------------------------------------------------------------------------------------------------------------------------
 // Utility functions, for initialisation and internal calculation
@@ -1149,7 +1146,8 @@ TVector3 GeoMagnetic::getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPa
  * @return 
  */
 
-double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave){
+double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave, 
+					    double xMax){
 
   prepareGeoMagnetics();
   
@@ -1161,11 +1159,13 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
   // phiWave is in radians relative to ADU5 Aft Fore line
 
   double reflectionLon=0, reflectionLat=0, reflectionAlt=0, deltaTheta=100; // need non-zero deltaTheta when testing whether things intersectg, as theta < 0 returns instantly
-  usefulPat.traceBackToContinent(phiWave, thetaWave, &reflectionLon, &reflectionLat, &reflectionAlt, &deltaTheta);
+  
+  //histGround==1 or 2 means it hits ground, 0 means it doesn't
+  int hitsGround = usefulPat.traceBackToContinent(phiWave, thetaWave, &reflectionLon, &reflectionLat, &reflectionAlt, &deltaTheta);
 
   TVector3 destination; // ANITA position if direct cosmic ray or surface position if reflected cosmic ray
   TVector3 destinationToSource; // unit vector from ANITA (if direct) or reflection position (if indirect) which points in the direction the cosmic ray signal came from
-  bool directCosmicRay = TMath::Abs(deltaTheta) > 1e-20 ? true : false; // direct cosmic ray?
+  bool directCosmicRay = hitsGround == 0 ? true : false; // direct cosmic ray?
 
   TVector3 anitaPosition = lonLatAltToVector(usefulPat.longitude, usefulPat.latitude, usefulPat.altitude);
 
@@ -1176,14 +1176,14 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
   // here we do the geometry slightly differently for the direct vs. reflected case
   if(directCosmicRay){
     if(debug){
-      std::cout << "I'm a direct Cosmic Ray! " << deltaTheta << "\t" <<  reflectionLon << "\t" << reflectionLat << "\t"  << reflectionAlt  << std::endl;
+      std::cout << "I'm a direct Cosmic Ray! (" << hitsGround << ") " << deltaTheta << "\t" <<  reflectionLon << "\t" << reflectionLat << "\t"  << reflectionAlt  << std::endl;
     }
     destination = anitaPosition;
     destinationToSource = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, thetaWave);
   }
   else{ // reflected cosmic ray
     if(debug){
-      std::cout << "I'm a reflected Cosmic Ray! " << deltaTheta << "\t" <<  reflectionLon << "\t" << reflectionLat << "\t"  << reflectionAlt  << std::endl;
+      std::cout << "I'm a reflected Cosmic Ray! (" << hitsGround << ") " << deltaTheta << "\t" <<  reflectionLon << "\t" << reflectionLat << "\t"  << reflectionAlt  << std::endl;
     }
     destination = lonLatAltToVector(reflectionLon, reflectionLat, reflectionAlt); // i.e. the reflection point
 
@@ -1207,11 +1207,14 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
   const TVector3 cosmicRayDirection = -destinationToSource.Unit();
 
   // We integrate along that vector with our atmospheric model until we get to xMax, where the cosmic ray would interact, on average
-  TVector3 xMaxPosition = getXMaxPosition(cosmicRayAtmosphericEntry, cosmicRayDirection);
+  TVector3 xMaxPosition = getXMaxPosition(cosmicRayAtmosphericEntry, cosmicRayDirection, xMax);
 
   // Calculate the geo-magnetic field field at x-max
   FieldPoint fp(usefulPat.realTime, xMaxPosition);
-  
+  if (debug){
+    std::cout << "FieldPoint position:" << fp.posX() << "," << fp.posY() << ","<< fp.posZ() << std::endl; 
+    std::cout << "FieldPoint vector:" << fp.componentX() << "," << fp.componentY() << ","<< fp.componentZ() << std::endl; 
+  }
   // This is our electric field vector!
   // If I cared about getting the magnitude correct in addition to the orientation, there are some missing factors
   // It should be: B_vec x S_vec = (1/mu0)B^{2} E_vec
@@ -1274,17 +1277,20 @@ double GeoMagnetic::getExpectedPolarisationUpgoing(UsefulAdu5Pat& usefulPat, dou
   // phiWave is in radians relative to ADU5 Aft Fore line
 
   double reflectionLon=0, reflectionLat=0, reflectionAlt=0, deltaTheta=100; // need non-zero deltaTheta when testing whether things intersectg, as theta < 0 returns instantly
-  usefulPat.traceBackToContinent(phiWave, thetaWave, &reflectionLon, &reflectionLat, &reflectionAlt, &deltaTheta);
+  int hitsGround = usefulPat.traceBackToContinent(phiWave, thetaWave, &reflectionLon, &reflectionLat, &reflectionAlt, &deltaTheta);
 
   TVector3 destination; // ANITA position if direct cosmic ray or surface position if reflected cosmic ray
   TVector3 destinationToSource; // unit vector from ANITA (if direct) or reflection position (if indirect) which points in the direction the cosmic ray signal came from
-  bool directCosmicRay = TMath::Abs(deltaTheta) > 1e-20 ? true : false; // direct cosmic ray?
+  bool directCosmicRay = hitsGround == 0 ? true : false; // direct cosmic ray?
 
   TVector3 anitaPosition = lonLatAltToVector(usefulPat.longitude, usefulPat.latitude, usefulPat.altitude);
 
   // here we do the geometry slightly differently for the direct vs. reflected case
   if(directCosmicRay){
-    std::cout << "I'm pointed above the horizon!  I can't be an upgoing event!  Exiting..." << std::endl;
+    if (debug) {
+      std::cout << "I'm pointed above the horizon!  I can't be an upgoing event!  Exiting..." << std::endl;
+      std::cout << "deltaTheta=" << deltaTheta << " hitsGround=" << hitsGround << std::endl;
+    }
     return -9999;
   }
   else{ // reflected cosmic ray
@@ -1411,7 +1417,8 @@ TVector3 GeoMagnetic::getInitialPosition(const TVector3& destination, const TVec
  * 
  * @return a cartesian vector containing the position of X_{max}
  */
-TVector3 GeoMagnetic::getXMaxPosition(const TVector3& initialPosition, const TVector3& cosmicRayDirection){
+TVector3 GeoMagnetic::getXMaxPosition(const TVector3& initialPosition, const TVector3& cosmicRayDirection,
+				      double xMax){
   prepareGeoMagnetics();
 
   TVector3 currentPosition = initialPosition;
@@ -1436,13 +1443,13 @@ TVector3 GeoMagnetic::getXMaxPosition(const TVector3& initialPosition, const TVe
 
 
     if(debug && currentAtmosphereTraversed == 0){
-      std::cout << "Finding xMax position... Initial position... " << currentLon << "\t" << currentLat << "\t" << currentAlt << "\t" << currentAtmosphereTraversed << std::endl;
+      std::cout << "Finding xMax position... " << xMax << " Initial position... " << currentLon << "\t" << currentLat << "\t" << currentAlt << "\t" << currentAtmosphereTraversed << std::endl;
     }
     
     currentAtmosphereTraversed += getAtmosphericDensity(currentAlt)*dx;
 
     if(debug && currentAtmosphereTraversed >= xMax){
-      std::cout << "Found xMax position... " << currentLon << "\t" << currentLat << "\t" << currentAlt << "\t" << currentAtmosphereTraversed << std::endl;
+      std::cout << "Found xMax position... " << xMax << " Initial position... " << currentLon << "\t" << currentLat << "\t" << currentAlt << "\t" << currentAtmosphereTraversed << std::endl;
     }
 
     // then we're ascending without reaching xMax, which is bad
