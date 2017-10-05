@@ -18,7 +18,7 @@ namespace BaseList{
       virtual const char * getName() const = 0; 
       virtual const char * getSource() const = 0; 
       virtual AntarcticCoord  getPosition(unsigned time) const = 0;
-      virtual bool isValid(unsigned time) const { return true; } 
+      virtual bool isValid(unsigned time) const { (void) time; return true; }
 
       virtual ~abstract_base() { ; } 
   }; 

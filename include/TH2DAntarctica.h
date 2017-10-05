@@ -73,7 +73,7 @@
 
 
 
-
+class TGraphAntarctica;
 
 
 
@@ -86,7 +86,7 @@
 class TProfile2DAntarctica : public TProfile2D {
  public:
   TProfile2DAntarctica(Int_t nx=-1, Int_t ny=-1);
-  TProfile2DAntarctica(const char* name, const char* title, Int_t nx, Int_t ny);
+  TProfile2DAntarctica(const char* name, const char* title, Int_t nx=-1, Int_t ny=-1);
   virtual ~TProfile2DAntarctica(){
     if(fAntarcticaBackground){
       delete fAntarcticaBackground;
@@ -135,7 +135,7 @@ class TProfile2DAntarctica : public TProfile2D {
   void RescaleBackground() const {getBackground()->scale(GetMinimum(), GetMaximum());}          //*MENU
   virtual void SetMaximum(Double_t maximum = -1111) { fMaximum = maximum; RescaleBackground();} //*MENU*
   virtual void SetMinimum(Double_t minimum = -1111) { fMinimum = minimum; RescaleBackground();} //*MENU*
-  
+
  private:
   mutable AntarcticaBackground* fAntarcticaBackground; //! Don't persist
   mutable int                   fCoarseness;           //! Don't persist
@@ -170,7 +170,7 @@ class TProfile2DAntarctica : public TProfile2D {
 class TH2DAntarctica : public TH2D {
  public:
   TH2DAntarctica(Int_t nx=-1, Int_t ny=-1);
-  TH2DAntarctica(const char* name, const char* title, Int_t nx, Int_t ny);
+  TH2DAntarctica(const char* name, const char* title, Int_t nx=-1, Int_t ny=-1);
   virtual ~TH2DAntarctica(){
     if(fAntarcticaBackground){
       delete fAntarcticaBackground;
