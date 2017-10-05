@@ -136,6 +136,8 @@ class TProfile2DAntarctica : public TProfile2D {
   virtual void SetMaximum(Double_t maximum = -1111) { fMaximum = maximum; RescaleBackground();} //*MENU*
   virtual void SetMinimum(Double_t minimum = -1111) { fMinimum = minimum; RescaleBackground();} //*MENU*
 
+  TGraphAntarctica* findLocalMaxima() const;
+
  private:
   mutable AntarcticaBackground* fAntarcticaBackground; //! Don't persist
   mutable int                   fCoarseness;           //! Don't persist
@@ -148,7 +150,6 @@ class TProfile2DAntarctica : public TProfile2D {
     }  
     return fAntarcticaBackground;
   }
-  
   ClassDef(TProfile2DAntarctica, 1);
 
 };
@@ -219,6 +220,8 @@ class TH2DAntarctica : public TH2D {
   void RescaleBackground() const {getBackground()->scale(GetMinimum(), GetMaximum());}          //*MENU
   virtual void SetMaximum(Double_t maximum = -1111) { fMaximum = maximum; RescaleBackground();} //*MENU*
   virtual void SetMinimum(Double_t minimum = -1111) { fMinimum = minimum; RescaleBackground();} //*MENU*
+
+  TGraphAntarctica* findLocalMaxima() const;
   
  private:
   mutable AntarcticaBackground* fAntarcticaBackground; //! Don't persist

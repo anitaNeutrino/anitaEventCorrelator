@@ -1,6 +1,7 @@
 #include "TH2DAntarctica.h"
 #include "RampdemReader.h"
 #include "AntarcticaBackground.h"
+#include "TGraphAntarctica.h"
 #include "TRandom3.h"
 #include "TVirtualPad.h"
 #include "TPaletteAxis.h"
@@ -116,6 +117,34 @@ void TProfile2DAntarctica::ExecuteEvent(int event, int px, int py){
 }
 
 
+TGraphAntarctica* TProfile2DAntarctica::findLocalMaxima() const {
+
+  TGraphAntarctica* grLocalMaxima = new TGraphAntarctica();
+
+  for(int by=2; by <= GetNbinsY()-1; by++){
+    for(int bx=2; bx <= GetNbinsX()-1; bx++){
+
+      // check the 8 points around this point
+      double cVal = GetBinContent(bx, by);
+
+      // Is this a local maximum?
+      if(cVal > GetBinContent(bx-1, by-1) &&
+         cVal > GetBinContent(bx-1, by  ) &&
+         cVal > GetBinContent(bx-1, by+1) &&
+         cVal > GetBinContent(bx  , by-1) &&
+         cVal > GetBinContent(bx  , by+1) &&
+         cVal > GetBinContent(bx+1, by-1) &&
+         cVal > GetBinContent(bx+1, by  ) &&
+         cVal > GetBinContent(bx+1, by+1)){
+
+        Double_t easting  = GetXaxis()->GetBinCenter(bx);
+        Double_t northing = GetYaxis()->GetBinCenter(by);
+        grLocalMaxima->TGraph::SetPoint(grLocalMaxima->GetN(), easting, northing);
+      }
+    }
+  }
+  return grLocalMaxima;
+}
 
 
 
@@ -236,4 +265,34 @@ void TH2DAntarctica::ExecuteEvent(int event, int px, int py){
   }
   getBackground()->ExecuteEvent(event, px, py);
   TH2D::ExecuteEvent(event, px, py);
+}
+
+
+TGraphAntarctica* TH2DAntarctica::findLocalMaxima() const {
+
+  TGraphAntarctica* grLocalMaxima = new TGraphAntarctica();
+
+  for(int by=2; by <= GetNbinsY()-1; by++){
+    for(int bx=2; bx <= GetNbinsX()-1; bx++){
+
+      // check the 8 points around this point
+      double cVal = GetBinContent(bx, by);
+
+      // Is this a local maximum?
+      if(cVal > GetBinContent(bx-1, by-1) &&
+         cVal > GetBinContent(bx-1, by  ) &&
+         cVal > GetBinContent(bx-1, by+1) &&
+         cVal > GetBinContent(bx  , by-1) &&
+         cVal > GetBinContent(bx  , by+1) &&
+         cVal > GetBinContent(bx+1, by-1) &&
+         cVal > GetBinContent(bx+1, by  ) &&
+         cVal > GetBinContent(bx+1, by+1)){
+
+        Double_t easting  = GetXaxis()->GetBinCenter(bx);
+        Double_t northing = GetYaxis()->GetBinCenter(by);
+        grLocalMaxima->TGraph::SetPoint(grLocalMaxima->GetN(), easting, northing);
+      }
+    }
+  }
+  return grLocalMaxima;
 }
