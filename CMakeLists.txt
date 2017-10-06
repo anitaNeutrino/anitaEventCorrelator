@@ -160,6 +160,15 @@ if (FORCE_OLD_GPP_ABI)
   add_definitions( -D_GLIBCXX_USE_CXX11_ABI=0 )
 endif()
 
+option ( USE_GEOGRAPHIC_LIB "Use GeographicLib for geodesic calculations" ) 
+
+if (USE_GEOGRAPHIC_LIB) 
+  add_definitions  (-DUSE_GEOGRAPHIC_LIB )
+  target_link_libraries (${libname} Geographic )
+endif()
+
+
+
 option (USE_HEALPIX "Enable Healpix Segmentation, requires healpix to be
 installed on your system in a place that can be found easily." OFF)
 

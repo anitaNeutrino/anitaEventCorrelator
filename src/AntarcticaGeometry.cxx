@@ -7,6 +7,12 @@
 #include "TRandom.h" 
 #include "TGraph2D.h" 
 #include "TString.h" 
+#include "TFile.h" 
+
+#ifdef USE_GEOGRAPHIC_LIB
+#include "GeographicLib/GeodesicLine.hpp" 
+#include "GeographicLib/Geodesic.hpp" 
+#endif
 
 ClassImp(AntarcticCoord); 
 ClassImp(AntarcticSegmentationScheme); 
@@ -51,6 +57,10 @@ static SurfaceWrapper<coarseness> & getSurface(RampdemReader::dataSet set)
   return w; 
 }
 
+
+
+
+
 void AntarcticCoord::asString(TString * s) const
 {
 
@@ -76,17 +86,18 @@ PayloadParameters::PayloadParameters()
   memset(this,0,sizeof(PayloadParameters)); 
 }
 
-PayloadParameters::PayloadParameters(const Adu5Pat * gps, const AntarcticCoord & source_pos) 
+PayloadParameters::PayloadParameters(const Adu5Pat * gps, const AntarcticCoord & source_pos, const Refraction::Model * refract) 
   : payload(AntarcticCoord::WGS84, gps->latitude, gps->longitude, gps->altitude), 
     source(source_pos)
 {
+
   payload.to(AntarcticCoord::CARTESIAN); 
   //vector from source to payload
-
 
   TVector3 p = payload.v(); 
   TVector3 s = source.v(); 
 
+#ifndef USE_GEOGRAPHIC_LIB
   TVector3 sprime = s; 
   // this is stolen from AnitaGeomTool. Seems like it should be equivalent to a some form of rotateUz 
   // wihch would probably be a more efficient way to do this without trig functions 
@@ -110,6 +121,34 @@ PayloadParameters::PayloadParameters(const Adu5Pat * gps, const AntarcticCoord &
   pprime[2] = s.Mag() - fabs(pprime.z()); 
   payload_el = -FFTtools::wrap( 90 - pprime.Theta() * TMath::RadToDeg(), 180, 0); 
   payload_az = pprime.Phi() * TMath::RadToDeg(); 
+
+#else
+
+  //vector from source to paylaod
+  TVector3 v = (s-p); 
+  //angle between v and p gives zenith angle. elevation is - 90. 
+  source_theta = p.Angle(v) * TMath::RadToDeg() - 90; 
+  payload_el =  s.Angle(v) * TMath::RadToDeg() - 90; 
+  //To get phi, we have to solve the inverse geodesic problem 
+  AntarcticCoord swgs84 = source.as(AntarcticCoord::WGS84); 
+  
+  GeographicLib::Geodesic::WGS84().Inverse(gps->latitude, gps->longitude, swgs84.x, swgs84.y, source_phi, payload_az); 
+  //rotate by 180 to get direction towards payload, and wrap 
+  payload_az = FFTtools::wrap(payload_az-180, 360); 
+
+
+  source_phi = FFTtools::wrap(gps->heading - source_phi,360); 
+#endif
+
+  if (refract) 
+  {
+    //We actually want the apparent anagle
+    double payload_el_correction = 0;
+    source_theta -= refract->getElevationCorrection(gps, &source, &payload_el_correction); 
+    payload_el-= payload_el_correction; 
+  }
+
+
 
   distance = (source.v() - payload.v()).Mag(); 
 }
@@ -182,6 +221,7 @@ static void cart2stereo(double *x, double * y, double *z)
 }
 
 
+
 static void stereo2cart(double *x, double *y, double *z) 
 {
   double E = *x; 
@@ -252,6 +292,7 @@ static void stereo2cart(double *x, double *y, double *z)
   *y = C3 * cos_lat * cos_lon; 
   *z = (R_EARTH * Q2 + alt) * sin_lat; 
 }
+
 
 
 void AntarcticCoord::convert(CoordType t) 
@@ -423,7 +464,7 @@ void StereographicGrid::getSegmentCenter(int idx, AntarcticCoord * fillme, bool 
   int ybin = idx / nx; 
   double x = (xbin +0.5) *dx - max_E; 
   double y = max_N - (ybin +0.5) *dy ; 
-  double z = fillalt ? getSurface<1> (dataset).compute(x,y): 0; 
+  double z = fillalt ? getSurface<4> (dataset).compute(x,y): 0; 
   fillme->set(AntarcticCoord::STEREOGRAPHIC,x,y,z); 
 }
 
@@ -445,7 +486,7 @@ AntarcticCoord * StereographicGrid::sampleSegment(int idx, int N, AntarcticCoord
     {
       double x = gRandom->Uniform(lx, lx+dx); 
       double y = gRandom->Uniform(ly, ly-dy); 
-      double z = fillalt ? getSurface<1> (dataset).compute(x,y): 0; 
+      double z = fillalt ? getSurface<4> (dataset).compute(x,y): 0; 
       fill[i].set(AntarcticCoord::STEREOGRAPHIC,x,y,z); 
     }
   }
@@ -458,7 +499,7 @@ AntarcticCoord * StereographicGrid::sampleSegment(int idx, int N, AntarcticCoord
       //TODO check if this is what i want! 
       double x = lx + (dx / (grid-1)) * ((i % grid)); 
       double y = ly - (dy / (grid-1)) * ((i / grid)); 
-      double z = fillalt ? getSurface<1> (dataset).compute(x,y): 0; 
+      double z = fillalt ? getSurface<4> (dataset).compute(x,y): 0; 
       fill[i].set(AntarcticCoord::STEREOGRAPHIC,x,y,z); 
     }
   }
@@ -556,7 +597,7 @@ bool PayloadParameters::checkForCollision(double dx, AntarcticCoord * w,  Rampde
     if ( (!reverse && s.z > 5000) || (reverse && (x.v() - source.v()).Mag2() < dx*dx))
       break; 
 
-    double surface = getSurface<1> (d).compute(s.x,s.y); 
+    double surface = getSurface<4> (d).compute(s.x,s.y); 
     if (surface > s.z+grace)
     {
 //      printf("BOOM! alt(%g,%g,%g)= %g\n", s.x, s.y, s.z, surface); 
@@ -573,3 +614,195 @@ bool PayloadParameters::checkForCollision(double dx, AntarcticCoord * w,  Rampde
 
 
 }
+
+PayloadParameters::PayloadParameters(const PayloadParameters & other) 
+{
+  source_phi = other.source_phi; 
+  source_theta = other.source_theta; 
+  payload_el = other.payload_el; 
+  payload_az = other.payload_az; 
+  distance = other.distance; 
+  payload = other.payload; 
+  source = other.source; 
+}
+
+
+static int first = 1; 
+static const CartesianSurfaceMap & cartmap() 
+{
+  static CartesianSurfaceMap sm; 
+  if (first)
+  {
+    first = 0; 
+    TFile f("cartmap.root","recreate"); 
+    sm.getMap()->Write(); 
+  }
+  return sm; 
+}
+
+
+PayloadParameters * PayloadParameters::findSourceOnContinent(double theta, double phi, const Adu5Pat * gps, PayloadParameters * pp, double dx, double tol, double min_el, RampdemReader::dataSet d) 
+{
+  //no chance. 
+  if (theta < 0 ) 
+  {
+    return 0; 
+  }
+
+  AntarcticCoord payload(AntarcticCoord::WGS84, gps->latitude, gps->longitude, gps->altitude); 
+  AntarcticCoord x = payload.as(AntarcticCoord::CARTESIAN); 
+
+
+#ifdef USE_GEOGRAPHIC_LIB
+  GeographicLib::GeodesicLine gl(GeographicLib::Geodesic::WGS84(),  gps->latitude,  gps->longitude, gps->heading - phi); 
+  
+  int i = 1; 
+  while (true) 
+  {
+    double lat, lon; 
+    gl.Position(i * dx, lat, lon); 
+    AntarcticCoord c(AntarcticCoord::WGS84, lat, lon, RampdemReader::SurfaceAboveGeoid(lon,lat,d)); 
+    PayloadParameters p(gps, c); 
+
+//    printf("%f::%f %f::%f::   %f\n", phi, p.source_phi, theta, p.source_theta, p.payload_el); 
+
+    if (p.payload_el < min_el) return 0; 
+
+    if (fabs(p.source_phi -phi) < tol && fabs(p.source_theta - theta) < tol) 
+    {
+      if (!pp) pp = new PayloadParameters(p); 
+      else *pp = p; 
+      return pp; 
+    }
+    i++; 
+  }
+
+
+
+ #else
+
+  /* This doesn't work yet 
+  //use great ellipse 
+
+  //Find vector normal to our plane, use 0,0,0 as our point
+  TVector3 d = (x.x,x.y,0); //north pointing vector
+  d.RotateZ(gps->heading); 
+
+  TVector3 n = x.v().Cross(d); 
+
+  // The intersection of the plane and geoid will be an ellipse. We must follow it. 
+  // This sucks. 
+
+  while(true) 
+  {
+    //somehow propagate along ellipse 
+
+    //form the coordinates on the ice surface 
+    AntarcticCoord s(AntarcticCoord::CARTESIAN, x2.X(), x2.Y(), cartmap().z(x2.X(), x2.Y()));
+    TString str;
+    s.asString(&str); 
+    printf("%s\n",str.Data());
+
+    PayloadParameters pp(x,gps->heading, s); 
+
+    printf("%f::%f %f::%f\n", phi, pp.source_phi, theta, pp.source_theta); 
+    if (isnan(s.z)) return 0; 
+
+    if (fabs(pp.source_phi -phi) < tol && fabs(pp.source_theta - theta) < tol) 
+    {
+      return new PayloadParameters(pp); 
+    }
+  }
+  */
+#endif
+
+  return 0; 
+}
+
+
+CartesianSurfaceMap::CartesianSurfaceMap(double resolution , RampdemReader::dataSet d) 
+{
+  // figure out the corners of the stereographic projection in cartesian. 
+ 
+  AntarcticCoord sa(AntarcticCoord::STEREOGRAPHIC); 
+  AntarcticCoord sb(AntarcticCoord::STEREOGRAPHIC); 
+  AntarcticCoord sc(AntarcticCoord::STEREOGRAPHIC); 
+  AntarcticCoord sd(AntarcticCoord::STEREOGRAPHIC); 
+  
+  double xu,xl, yl,yu; 
+  RampdemReader::getMapCoordinates(xl,yl,xu,yu, d); 
+
+  sa.x = xl; 
+  sa.y = yl; 
+  sb.x = xu; 
+  sb.y = yl; 
+  sc.x = xu; 
+  sc.y = yu; 
+  sd.x = xl; 
+  sd.y = yu; 
+
+
+  sa.to(AntarcticCoord::CARTESIAN); 
+  sb.to(AntarcticCoord::CARTESIAN); 
+  sc.to(AntarcticCoord::CARTESIAN); 
+  sd.to(AntarcticCoord::CARTESIAN); 
+
+  double xmin = TMath::Min (  TMath::Min( sa.x,sb.x), TMath::Min(sc.x,sd.x)); 
+  double xmax = TMath::Max (  TMath::Max( sa.x,sb.x), TMath::Max(sc.x,sd.x)); 
+  double ymin = TMath::Min (  TMath::Min( sa.y,sb.y), TMath::Min(sc.y,sd.y)); 
+  double ymax = TMath::Max (  TMath::Max( sa.y,sb.y), TMath::Max(sc.y,sd.y)); 
+
+
+  int nbinsx = (xmax - xmin)/ resolution; 
+  int nbinsy = (ymax - ymin)/ resolution; 
+  map = new TH2D("cartmap","Cartesian Map", nbinsx, xmin, xmax, nbinsy, ymin,ymax); 
+
+  for (int i = 1; i <= nbinsx; i++) 
+  {
+    for (int j = 1; j <= nbinsy; j++)
+    {
+      // get cartesian point on geoid... 
+      double x = map->GetXaxis()->GetBinCenter(i); 
+      double y =  map->GetYaxis()->GetBinCenter(j); 
+
+      static const double a = 6378137; 
+      static const double b = 6356752.31424518; 
+      double z = b * sqrt( 1  -  (1./(a*a))*(x*x+y*y)); 
+      AntarcticCoord c(AntarcticCoord::CARTESIAN, x,y,z); 
+
+      double R = c.v().Mag(); 
+
+      c.to(AntarcticCoord::STEREOGRAPHIC); 
+      double alt = 0; 
+      if (c.x > xl && c.x < xu && c.y > yl && c.y < yu) 
+      {
+        alt = getSurface<4>(d).map->Interpolate(c.x, c.y); 
+      }
+
+      map->SetBinContent(i,j, R + alt); 
+    }
+  }
+}
+
+
+double CartesianSurfaceMap::CartesianSurfaceMap::surface(double x, double y) const 
+{
+  return map->Interpolate(x,y); 
+}
+
+double CartesianSurfaceMap::CartesianSurfaceMap::z(double x, double y) const 
+{
+  double r = surface(x,y); 
+  return sqrt( r*r - x*x - y*y); 
+}
+
+
+
+double CartesianSurfaceMap::metersAboveIce(double x, double y, double z) const 
+{
+  return sqrt(x*x + y*y+z*z) - surface(x,y); 
+}
+
+
+
+
