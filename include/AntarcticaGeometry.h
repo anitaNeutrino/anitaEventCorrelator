@@ -10,9 +10,8 @@
 #include "RampdemReader.h" 
 #include <vector> 
 #include "TVector3.h" 
-
-class Adu5Pat; 
-
+#include "Adu5Pat.h" 
+#include "RefractionModel.h" 
 
 
 /** Slightly smarter Antarctic Coordinates.  */ 
@@ -24,7 +23,7 @@ class AntarcticCoord
     {
       WGS84,  // (lat lon alt)  [deg, deg, m] 
       STEREOGRAPHIC,  // (Easting Northing alt) [m,m,m]  
-      CARTESIAN  // (x y z)  [m,m,m] ( in the very strange ANITA "convention") 
+      CARTESIAN,  // (x y z)  [m,m,m] ( in the very strange ANITA "convention") 
     }; 
 
 
@@ -36,6 +35,11 @@ class AntarcticCoord
     AntarcticCoord(const TVector3 & v) 
     {
       set(CARTESIAN, v.x(),v.y(),v.z()); 
+    }
+
+    AntarcticCoord(const Adu5Pat * pat) 
+    {
+      set(WGS84, pat->latitude, pat->longitude, pat->altitude); 
     }
 
     TVector3 v() const
@@ -75,6 +79,26 @@ class AntarcticCoord
     ClassDef(AntarcticCoord,1); 
 
 }; 
+
+
+/** To speed up raytracing, we can store for Antarctica the surface as X, Y, R.
+ * That way, we don't have to constantly flip between a stereographic and cartesian projection
+  */ 
+
+class CartesianSurfaceMap  
+{
+
+  public: 
+    CartesianSurfaceMap( double resolution = 1e3, RampdemReader::dataSet d = RampdemReader::rampdem); 
+    ~CartesianSurfaceMap() { delete map; } 
+    double surface(double x, double y) const; 
+    double z(double x, double y) const; 
+    double  metersAboveIce(double x, double y, double z) const; 
+    TH2 * getMap() { return map; } 
+
+  private: 
+    TH2 * map; 
+};
 
 
 /* A segmentation scheme divides Antarctica into chunks (segments) 
@@ -198,7 +222,10 @@ class StereographicGrid : public AntarcticSegmentationScheme
 class PayloadParameters
 {
   public: 
-    PayloadParameters(const Adu5Pat * gps, const AntarcticCoord & source_pos); 
+    double surface(double x, double y) const; 
+    PayloadParameters(const Adu5Pat * pat,  const AntarcticCoord & source_pos, const Refraction::Model * refraction =0); 
+    PayloadParameters(const PayloadParameters & other); 
+
     double source_phi;  //the phi of the source, in payload coordinates (degrees). 
     double source_theta; //the theta of the source, in payload coordinates (degrees) such that theta > 0 is coming from below
     double payload_el;  // the elevation of the payload from the source (deg) . positive is UP
@@ -209,11 +236,20 @@ class PayloadParameters
     bool checkForCollision(double dx = 100, AntarcticCoord * where = 0, RampdemReader::dataSet d = RampdemReader::rampdem, double grace = 20, bool reverse = false) const;
     AntarcticCoord payload; 
     AntarcticCoord source; 
+
+    static PayloadParameters*  findSourceOnContinent(double theta, double phi, const Adu5Pat * gps, PayloadParameters * pp = 0, 
+                          double dx = 50, double tol = 0.001, double min_el  = -1, RampdemReader::dataSet d= RampdemReader::rampdem); 
+
   private: 
 
     PayloadParameters();  
     ClassDefNV (PayloadParameters,1); 
 };
+
+
+
+
+
 
 
 /*
