@@ -222,7 +222,6 @@ class StereographicGrid : public AntarcticSegmentationScheme
 class PayloadParameters
 {
   public: 
-    double surface(double x, double y) const; 
     PayloadParameters(const Adu5Pat * pat,  const AntarcticCoord & source_pos, const Refraction::Model * refraction =0); 
     PayloadParameters(const PayloadParameters & other); 
 
