@@ -28,6 +28,11 @@ AntarcticaBackground::AntarcticaBackground(RampdemReader::dataSet dataSet, Int_t
 
 
 AntarcticaBackground::~AntarcticaBackground(){
+  if(gPad){
+    SetToolTip(false);
+    gPad->Modified();
+    gPad->Update();
+  }
   deleteGrid();
 }
 
