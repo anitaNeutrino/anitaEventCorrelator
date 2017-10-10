@@ -70,10 +70,20 @@ namespace AntarcticAtmosphere
       virtual ~StandardUS() { ;} 
 
       virtual int computeAtmosphere(double h, Pars * p) const; 
-    private: 
+    protected: 
       double sea_level_T; 
       double sea_level_P; 
   };
+
+  /** Same as standard US atmosphere, but with refractivty = 315 exp(-0.1361 h) */ 
+  class ITURefraction : public StandardUS
+  {
+    public: 
+      ITURefraction() : StandardUS() { ; }
+
+      virtual int computeAtmosphere(double h, Pars * p) const; 
+      virtual ~ITURefraction() {; } 
+  }; 
 
 
 }

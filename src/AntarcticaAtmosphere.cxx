@@ -80,8 +80,6 @@ static int us_atmosphere(double alt_km, double * rel_rho,double * rel_P, double 
   return 0; 
 }
 
-
-
 int AntarcticAtmosphere::StandardUS::computeAtmosphere(double h, Pars *p) const 
 {
 
@@ -91,6 +89,19 @@ int AntarcticAtmosphere::StandardUS::computeAtmosphere(double h, Pars *p) const
   p->rho *= 1.225 * sea_level_T / sea_level_P; 
   p->N = 77.6 * p->P / p->T; 
   
+  return ret; 
+}
+
+
+
+int AntarcticAtmosphere::ITURefraction::computeAtmosphere(double h, Pars *p) const 
+{
+
+  int ret = us_atmosphere(h/1e3, &p->rho, &p->P, &p->T); 
+  p->T *= sea_level_T; 
+  p->P *= sea_level_P; 
+  p->rho *= 1.225 * sea_level_T / sea_level_P; 
+  p->N = 315 * exp(-1.361 * h); 
   return ret; 
 }
 
