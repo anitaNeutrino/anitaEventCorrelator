@@ -44,7 +44,7 @@ public:
   };
 
   // static members
-  static TGraphAntarctica* makeGpsGraph(int firstRun, int lastRun, int gpsTreeStride=defaultGpsTreeStride);
+  static TGraphAntarctica* makeGpsGraph(int firstRun, int lastRun, int gpsTreeStride=defaultGpsTreeStride, bool quiet=true);
 
   // boring constructors
   TGraphAntarctica() : TGraph() {init();}
