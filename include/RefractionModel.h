@@ -39,7 +39,7 @@ namespace Refraction
      * */ 
     virtual double getElevationCorrection(double theta, double hSource, double hPayload, double * correction_at_source = 0) const = 0; 
 
-    TGraph * makeGraph(double hSource, double hPayload, double minEl = 0); 
+  //  TGraph * makeGraph(double hSource, double hPayload, double minEl = 0); 
 
     /* Implemented in terms of the other prototpe */ 
     virtual double getElevationCorrection(const Adu5Pat * pat, const AntarcticCoord * source, double * correction_at_source = 0)const ; 
@@ -65,7 +65,7 @@ namespace Refraction
       RaytracerSpherical(const AntarcticAtmosphere::AtmosphericModel *atm)
       {
         m = atm; 
-        step_size = 100; 
+        step_size = 10; 
       }
 
      struct Setup

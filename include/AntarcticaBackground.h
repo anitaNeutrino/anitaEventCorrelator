@@ -134,11 +134,12 @@ class AntarcticaBackground : public TProfile2D {
   void setToolTipUnits();
 
   Bool_t fBases;
+  Bool_t fDrawBasesOnTop;
   std::vector<TGraphAntarctica*> grBases;
   void updateBases();
 
   Bool_t fDrawnSelf; // Set by Draw(), help the updateHist() function to do sensible things
-  void updateGPadPrims(std::vector<TGraphAntarctica*>& grs, Bool_t drawThem, Option_t* opt);
+  void updateGPadPrims(std::vector<TGraphAntarctica*>& grs, Bool_t drawThem, Option_t* opt, bool drawOnTop=false);
 
   std::vector<Int_t> fOldPalette; //! Don't persist
   Bool_t fOldGrayScale; //! Don't persist

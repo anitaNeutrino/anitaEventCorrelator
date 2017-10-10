@@ -2,6 +2,7 @@
 #include "TGraph.h" 
 #include "TAxis.h" 
 #include "Adu5Pat.h" 
+#include "math.h"
 
 #ifdef USE_GEOGRAPHIC_LIB
 #include "GeographicLib/Geoid.hpp" 

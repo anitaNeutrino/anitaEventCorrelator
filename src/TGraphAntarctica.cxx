@@ -2,6 +2,7 @@
 #include "TROOT.h"
 #include "TVirtualPad.h"
 #include "Adu5Pat.h"
+#include "AnitaDataset.h"
 
 ClassImp(TGraphAntarctica)
 
@@ -18,6 +19,37 @@ void TGraphAntarctica::SetPoint(Int_t i, Double_t lon, Double_t lat){
 
 
 
+
+
+/** 
+ * Construct a TGraph antarctica from run firstRun to lastRun (inclusive)
+ * This is mostly for plotting purposes, otherwise 
+ * 
+ * @param firstRun is the first run
+ * @param lastRun is the last run
+ * @param pointEvery 
+ * 
+ * @return the newly constructed TGraphAntarctica
+ */
+TGraphAntarctica* TGraphAntarctica::makeGpsGraph(int firstRun, int lastRun, int gpsTreeStride){
+
+  // handle default tree stride
+  gpsTreeStride = gpsTreeStride <= 0 ? defaultGpsTreeStride : gpsTreeStride;
+
+  TGraphAntarctica* gr = new TGraphAntarctica();
+
+  for(int run=firstRun; run<=lastRun; run++){
+    AnitaDataset d(run);
+    for(int entry=0; entry < d.N(); entry+=gpsTreeStride){
+      d.getEntry(entry);
+      Adu5Pat* pat = d.gps();
+
+      gr->SetPoint(gr->GetN(), pat->longitude, pat->latitude);
+
+    }
+  }
+  return gr;
+}
 
 
 

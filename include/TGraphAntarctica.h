@@ -39,6 +39,13 @@ class TGraphAntarctica : public TGraph {
 
 public:
 
+  enum {
+    defaultGpsTreeStride = 10000
+  };
+
+  // static members
+  static TGraphAntarctica* makeGpsGraph(int firstRun, int lastRun, int gpsTreeStride=defaultGpsTreeStride);
+
   // boring constructors
   TGraphAntarctica() : TGraph() {init();}
   explicit TGraphAntarctica(Int_t n) : TGraph(n) {init();}

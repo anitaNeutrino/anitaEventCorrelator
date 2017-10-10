@@ -28,6 +28,11 @@ AntarcticaBackground::AntarcticaBackground(RampdemReader::dataSet dataSet, Int_t
 
 
 AntarcticaBackground::~AntarcticaBackground(){
+  if(gPad){
+    SetToolTip(false);
+    gPad->Modified();
+    gPad->Update();
+  }
   deleteGrid();
 }
 
@@ -75,6 +80,9 @@ void AntarcticaBackground::init(RampdemReader::dataSet dataSet, Int_t coarseness
   palettes[RampdemReader::thickness] = kRedBlue;
   opacity = 1; 
 #endif
+
+  fBases = false;
+  fDrawBasesOnTop = true;
 }
 
 
@@ -284,10 +292,12 @@ void AntarcticaBackground::updateBases(){
       BaseList::base theBase = BaseList::getBase(b);
       gr->SetPoint(gr->GetN(), theBase.longitude, theBase.latitude);
       gr->SetTitle(theBase.name);
+      gr->SetName(theBase.name);
 
       // gr->SetDrawOption("*");
       gr->SetMarkerStyle(8);
       gr->SetMarkerColor(kMagenta);
+      gr->SetEditable(false);
 
       gr->SetDrawOption("p");
       // if(fBases){
@@ -298,7 +308,7 @@ void AntarcticaBackground::updateBases(){
     }
   }
 
-  updateGPadPrims(grBases, fBases, "p");
+  updateGPadPrims(grBases, fBases, "p", fDrawBasesOnTop);
 }
 
 
@@ -355,7 +365,7 @@ void AntarcticaBackground::updateGrid(){
 
 
 
-void AntarcticaBackground::updateGPadPrims(std::vector<TGraphAntarctica*>& grs, Bool_t drawThem, Option_t* opt){
+void AntarcticaBackground::updateGPadPrims(std::vector<TGraphAntarctica*>& grs, Bool_t drawThem, Option_t* opt, bool drawGraphsOnTop){
 
 
   // for(UInt_t padInd = 0; padInd < fPads.size(); padInd++){
@@ -404,15 +414,30 @@ void AntarcticaBackground::updateGPadPrims(std::vector<TGraphAntarctica*>& grs, 
         prims->RecursiveRemove(tempObjs.at(i));
       }
 
-      // now add the TGraphs with the proper options
-      for(UInt_t grInd=0; grInd < grs.size(); grInd++){
-        TGraphAntarctica* gr = grs.at(grInd);
-        prims->AddLast(gr, opt);
-      }
 
-      // and re-add the things we removed
-      for(UInt_t i=0; i < tempObjs.size(); i++){
-        prims->AddLast(tempObjs.at(i), tempOpts.at(i));
+      // now we need to redraw them in the proper order specified by onTop
+      
+      if(drawGraphsOnTop){
+        // first, re-add the things we removed
+        for(UInt_t i=0; i < tempObjs.size(); i++){
+          prims->AddLast(tempObjs.at(i), tempOpts.at(i));
+        }
+        // then the TGraphs, with the proper options
+        for(UInt_t grInd=0; grInd < grs.size(); grInd++){
+          TGraphAntarctica* gr = grs.at(grInd);
+          prims->AddLast(gr, opt);
+        }
+      }
+      else{
+        // otherwise add the TGraphs first, with the proper options
+        for(UInt_t grInd=0; grInd < grs.size(); grInd++){
+          TGraphAntarctica* gr = grs.at(grInd);
+          prims->AddLast(gr, opt);
+        }
+        // and then re-add the things we removed
+        for(UInt_t i=0; i < tempObjs.size(); i++){
+          prims->AddLast(tempObjs.at(i), tempOpts.at(i));
+        }
       }
     }
     else{
