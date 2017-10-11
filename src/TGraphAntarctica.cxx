@@ -28,10 +28,12 @@ void TGraphAntarctica::SetPoint(Int_t i, Double_t lon, Double_t lat){
  * @param firstRun is the first run
  * @param lastRun is the last run
  * @param pointEvery 
- * 
+ * @param quiet default true
+ *
  * @return the newly constructed TGraphAntarctica
  */
-TGraphAntarctica* TGraphAntarctica::makeGpsGraph(int firstRun, int lastRun, int gpsTreeStride){
+TGraphAntarctica* TGraphAntarctica::makeGpsGraph(int firstRun, int lastRun, int gpsTreeStride,bool quiet){
+  if (!quiet) std::cout << "makeGpsGraph(): starting..." << std::endl;
 
   // handle default tree stride
   gpsTreeStride = gpsTreeStride <= 0 ? defaultGpsTreeStride : gpsTreeStride;
@@ -39,8 +41,16 @@ TGraphAntarctica* TGraphAntarctica::makeGpsGraph(int firstRun, int lastRun, int 
   TGraphAntarctica* gr = new TGraphAntarctica();
 
   for(int run=firstRun; run<=lastRun; run++){
+    if (AnitaVersion::get() == 3) {
+      if (run > 256 && run < 264) {
+	std::cout << "makeGpsGraph(): In ANITA3 runs 257 through 263 are broken, skipping to 264..." << std::endl;
+	run = 264;
+      } }
+
     AnitaDataset d(run);
+    if (!quiet) std::cout << "makeGpsGraph(): starting run" << run << " - d.N()=" << d.N() << std::endl;
     for(int entry=0; entry < d.N(); entry+=gpsTreeStride){
+      if (!quiet) std::cout << "makeGpsGraph(): run:" << run << " entry:" << entry << std::endl;
       d.getEntry(entry);
       Adu5Pat* pat = d.gps();
 
@@ -50,8 +60,6 @@ TGraphAntarctica* TGraphAntarctica::makeGpsGraph(int firstRun, int lastRun, int 
   }
   return gr;
 }
-
-
 
 
 
