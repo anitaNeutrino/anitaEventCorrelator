@@ -33,5 +33,6 @@
 #pragma link C++ class Refraction::PositionIndependentModel; 
 #pragma link C++ class Refraction::PGFit; 
 #pragma link C++ class Refraction::RaytracerSpherical; 
+#pragma link C++ class Refraction::SphRay; 
 
 #endif

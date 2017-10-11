@@ -191,6 +191,76 @@ void Refraction::RaytracerSpherical::draw()
 
 
 
+double Refraction::SphRay::getElevationCorrection(double el, double hSource, double hPayload, double * correction_at_source ) const
+{
+
+
+  UInt_t hash = 0;
+
+  if (use_cache) 
+  {
+    //use a very dumb hash for now, assuming a certain range for the start and end heights and 10 m  / 0.01 degree height / angle precision. 
+
+    //box hSource into (0,5000,nearest multiple of 10) 
+    hSource = TMath::Max(0., hSource); 
+    hSource = TMath::Min(4999., hSource); 
+    hSource = ((int)hSource/10) * 10; 
+    hash += hSource / 10; 
+
+     //box hPayload into (36000,41000,nearest multiple of 10) 
+    hPayload = TMath::Max(36e3, hPayload); 
+    hPayload = TMath::Min(40.999e3, hPayload); 
+    hPayload = ((int)hPayload/10) * 10; 
+    hash +=  500 * ((hPayload-36e3) / 10); 
+
+    
+    // box el into (0,90, nearest hundredth of a degree) 
+    el = TMath::Min(90.,el); 
+    el = TMath::Max(0.,el); 
+    el = ((int) (el * 100)) / 100.; 
+    printf("%g %g %g\n", hSource, hPayload, el); 
+    hash += 500 * 500 * el * 100; 
+
+    if (cache.count(hash)) 
+    {
+      if (correction_at_source) 
+        *correction_at_source = cache[hash].second; 
+      return cache[hash].first; 
+    }
+  }
+
+  //create the ray tracer 
+  RaytracerSpherical ray(atm); 
+  ray.step_size = step;  
+
+  //compute the horizon angle at the ground 
+  
+  double throw_angle = TMath::RadToDeg() * acos (  cos(el * TMath::DegToRad())  * (REARTH + hPayload) / (REARTH + hSource)  * (1 + 1e-6 * atm->get(hPayload, AntarcticAtmosphere::REFRACTIVITY)) /  (1 + 1e-6 * atm->get(hSource, AntarcticAtmosphere::REFRACTIVITY)));
+
+  RaytracerSpherical::Setup s; 
+  RaytracerSpherical::Result r; 
+  s.save_path = false; 
+  s.start_alt = hSource; 
+  s.end_alt = hPayload; 
+  s.thrown_payload_angle = throw_angle; 
+
+  ray.raytrace(&s,&r); 
+
+
+  double answer = r.actual_source_angle - r.apparent_source_angle; 
+  double correction = r.actual_payload_angle - s.thrown_payload_angle; 
+  
+
+  if (use_cache) 
+  {
+    cache[hash] = std::pair<double,double> (answer, correction) ; 
+  }
+
+  if (correction_at_source) *correction_at_source = correction; 
+  return answer ; 
+}
+
+
 
 
 

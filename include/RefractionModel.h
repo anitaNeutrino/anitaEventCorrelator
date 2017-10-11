@@ -3,6 +3,8 @@
 
 #include <vector> 
 #include "AntarcticAtmosphere.h" 
+#include <map> 
+#include "Rtypes.h" 
 
 class Adu5Pat; 
 class AntarcticCoord; 
@@ -58,6 +60,7 @@ namespace Refraction
 
 
 
+
   /** Raytracer  assuming Spherical Eart*/
   class RaytracerSpherical
   {
@@ -69,10 +72,13 @@ namespace Refraction
       }
 
      struct Setup
+       
      {
+       Setup() : start_alt(0) , end_alt(40e3), thrown_payload_angle(1), save_path(true)  {;} 
        double start_alt; 
        double end_alt; 
        double thrown_payload_angle; 
+       bool save_path; 
      };
 
      struct Result
@@ -101,6 +107,35 @@ namespace Refraction
      std::vector<double> last_path_x; 
      std::vector<double> last_path_y; 
   }; 
+
+ /** This will use spherical raytracing to compute the correction 
+   * This doesn't require more than one iteration because we can compute
+   * the thrown angle from the apparent angle 
+   *
+   *
+   * */ 
+
+  class SphRay : public PositionIndependentModel
+  {
+    public: 
+
+      SphRay(const AntarcticAtmosphere::AtmosphericModel * a , double step_size = 10, bool cache_similar = true)  
+        : atm(a), step(step_size), use_cache(cache_similar) 
+      {
+
+      }
+      void changeAtmosphere(const AntarcticAtmosphere::AtmosphericModel * a) { atm = a; }
+      virtual double getElevationCorrection(double el, double hSource, double hPayload, double * correction_at_source = 0) const ; 
+      virtual ~SphRay() {; } 
+
+    private: 
+      const AntarcticAtmosphere::AtmosphericModel * atm; 
+      double step;
+      bool use_cache; 
+      mutable std::map<UInt_t, std::pair<double,double> > cache; 
+  }; 
+
+
 
 
 }
