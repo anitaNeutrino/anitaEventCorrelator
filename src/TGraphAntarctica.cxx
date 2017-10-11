@@ -43,7 +43,7 @@ TGraphAntarctica* TGraphAntarctica::makeGpsGraph(int firstRun, int lastRun, int 
   for(int run=firstRun; run<=lastRun; run++){
     if (AnitaVersion::get() == 3) {
       if (run > 256 && run < 264) {
-	std::cout << "makeGpsGraph(): In ANITA3 runs 257 through 263 are broken, skipping to 264..." << std::cout;
+	std::cout << "makeGpsGraph(): In ANITA3 runs 257 through 263 are broken, skipping to 264..." << std::endl;
 	run = 264;
       } }
 
