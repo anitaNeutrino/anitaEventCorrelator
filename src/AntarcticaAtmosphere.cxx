@@ -95,14 +95,14 @@ int AntarcticAtmosphere::StandardUS::computeAtmosphere(double h, Pars *p) const
 
 
 
-int AntarcticAtmosphere::ITURefraction::computeAtmosphere(double h, Pars *p) const 
+int AntarcticAtmosphere::ExponentialRefractivity::computeAtmosphere(double h, Pars *p) const 
 {
 
   int ret = us_atmosphere(h/1e3, &p->rho, &p->P, &p->T); 
   p->T *= sea_level_T; 
   p->P *= sea_level_P; 
   p->rho *= 1.225 * sea_level_T / sea_level_P; 
-  p->N = 315 * exp(-1.361 * h); 
+  p->N = k_A * exp(-k_B * h); 
   return ret; 
 }
 
@@ -216,4 +216,8 @@ double AntarcticAtmosphere::AtmosphericModel::get(double h, Par p)  const
 }
 
 
-
+const AntarcticAtmosphere::ExponentialRefractivity & AntarcticAtmosphere::ITURefractivity() 
+{
+ static ExponentialRefractivity er(315,0.1361e-3); 
+ return er; 
+}

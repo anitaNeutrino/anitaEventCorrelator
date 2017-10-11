@@ -75,16 +75,20 @@ namespace AntarcticAtmosphere
       double sea_level_P; 
   };
 
-  /** Same as standard US atmosphere, but with refractivty = 315 exp(-0.1361 h) */ 
-  class ITURefraction : public StandardUS
+  /** Same as standard US atmosphere, but with refractivty = a exp(- b h) */ 
+  class ExponentialRefractivity : public StandardUS
   {
     public: 
-      ITURefraction() : StandardUS() { ; }
+      ExponentialRefractivity(double a, double b) : StandardUS() {k_A = a ; k_B =b; }
 
       virtual int computeAtmosphere(double h, Pars * p) const; 
-      virtual ~ITURefraction() {; } 
+      virtual ~ExponentialRefractivity() {; } 
+    protected:
+     double k_A, k_B; 
+
   }; 
 
+  const ExponentialRefractivity & ITURefractivity(); 
 
 }
 
