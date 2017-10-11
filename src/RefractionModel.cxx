@@ -109,7 +109,6 @@ double Refraction::PGFit::getElevationCorrection(double theta, double h, double 
    double el = -theta; 
    return -(a / (el * el) + b / (el) + c * exp(d * (el-e))); 
    if (correction_at_source) *correction_at_source = 0; //we don't provide one 
-
 } 
 
 
@@ -118,107 +117,62 @@ const double speed_of_light=299792458;
 int Refraction::RaytracerSpherical::raytrace(const Setup * setup, Result * result) 
 {
 
-  // Refraction raytracing in a spherical geometry
-  // Originally, I had tried just linear steps, now I'll quadratic segments 
-  // At the start of each segment, the direction is known. 
-  //  
-  //    That means y'(x0) = 2 a x0 + b  = 
-  //
-  //    For a quadratic, the curvature k  = y'' / (1 + y'^2)^3/2, 
-  //
-  //    and k = - cos
-
   last_path_x.clear(); 
   last_path_y.clear(); 
 
+  double r0 = setup->start_alt + REARTH; 
+  double r1 = setup->end_alt + REARTH; 
+  double theta = setup->thrown_payload_angle * TMath::DegToRad(); 
+  double r = r0; 
+  double phi=0; 
   double x0 = 0; 
-  double h = setup->start_alt; 
-  double y0 = REARTH + h; 
-  double R = y0; 
+  double y0 = r0; 
 
-  double x =x0;
-  double y =y0; 
-
-  //slope, above z = 0
-  double slope = tan(setup->thrown_payload_angle * TMath::Pi() / 180); 
-
-  //angle with horizion 
-  double cos_phi = cos(setup->thrown_payload_angle * TMath::Pi() / 180); 
-
-
+  double x= x0; 
+  double y= y0; 
   result->ray_distance = 0; 
-  result->ray_time = 0; 
 
-  while (h < setup->end_alt) 
+  while (r <= r1) 
   {
 
     last_path_x.push_back(x); 
     last_path_y.push_back(y); 
-    double N = m->get(h, AntarcticAtmosphere::REFRACTIVITY); 
-    double Nprime = m->get(h+10, AntarcticAtmosphere::REFRACTIVITY); 
-    double n = N * 1e-6 + 1; 
 
-    double dndh = (Nprime - N) * 1e-6 / 10; 
+    // we want to step in r  dphi 
 
-//    printf("%g %g\n",h, dndh); 
+    double dphi = step_size  / r; 
+    double r_step = step_size * tan(theta); 
 
-    //compute curvature 
-    double k = cos_phi*dndh/ n; 
-//    printf("k: %g\n", k); 
+    double N = m->get(r-REARTH, AntarcticAtmosphere::REFRACTIVITY); 
+    double N1 = m->get(r-REARTH+r_step, AntarcticAtmosphere::REFRACTIVITY); 
+    double DN = N1-N ;
+    double dn = DN * 1e-6; 
+    double n = 1 + N * 1e-6; 
+ //   printf("%g\n",tan(theta) * r); 
+    double dtheta = dn/n/tan(theta) + dphi; 
+//    printf("%g %g %g\n", r,theta,dtheta); 
 
-
-    double rho = 1 /k ; 
-
-    //solve for the circle. We know rho, We can use the derivative to find xc 
-    double xc = x - slope*rho*sqrt( 1./ (1 +slope*slope)); 
-    double yc = y - sqrt(rho*rho - (x-xc) * (x-xc)); 
-
-
-    //for the chord length 
-    double xlast = x; 
-    double ylast = y; 
-
-    //iterate
-    x+= step_size; 
-    y = yc + sqrt( rho*rho - (x-xc)* (x-xc)); 
-    slope = - (x -xc) / sqrt(rho*rho - (x-xc) *(x-xc)); 
-   
-
-    // get the arc length
-    double c = sqrt( (x-xlast) * (x-xlast) + (y-ylast) * (y-ylast)); 
-    double l = rho * ( 2 * asin(c/(2*rho)));
-
-    result->ray_distance += l; 
-    result->ray_time += l * n / speed_of_light; 
- 
-
-    R = sqrt(x*x+y*y); 
-    h = R-REARTH; 
-//    printf("%g\n",h); 
-
-    //figure out our new orientation to the horizontal 
-    //  normal is x,y, so horizon is (y,-x) 
-    cos_phi = (y  - x * slope) /( R * (sqrt(1+slope*slope))); 
-//    printf("cos_phi: %g\n", cos_phi); 
-
-  } 
-
-
-  double dx = x - x0; 
-  double dy = y - y0; 
-
-  double dM = sqrt(dx *dx + dy *dy); 
-
-  result->apparent_source_angle = acos(cos_phi) * 180 / TMath::Pi(); 
-  result->actual_source_angle = 90 - acos (( dx *x + dy*y) / ( R * dM)) * 180 / TMath::Pi(); 
-  result->actual_distance = dM; 
-  result->actual_payload_angle = acos (dy / dM) * 180 / TMath::Pi() - 90; 
+    result->ray_distance += step_size; 
+    result->ray_time += step_size * n / speed_of_light; 
+//    printf("%g %g %g %g\n",dphi,dtheta, phi,theta); 
+    theta += dtheta; 
+    phi +=  dphi; 
+    r += r_step; 
+    x = r* sin(phi); 
+    y = r* cos(phi); 
+  }
 
   last_path_x.push_back(x); 
   last_path_y.push_back(y); 
 
+  double dx = x- x0; 
+  double dy = y- y0; 
+  double dM  = sqrt(dx*dx + dy*dy); 
 
-
+  result->actual_distance = dM; 
+  result->apparent_source_angle = theta * TMath::RadToDeg(); 
+  result->actual_source_angle = 90 - acos( (dx*x + dy*y) / (r * dM)) *TMath::RadToDeg(); 
+  result->actual_payload_angle = 90 - acos(dy/dM) * TMath::RadToDeg(); 
   return 0; 
 }
 

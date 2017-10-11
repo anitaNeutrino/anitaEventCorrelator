@@ -1,8 +1,9 @@
+#include "RefractionModel.h" 
 
 void testRefraction() 
 {
   
-  AntarcticAtmosphere::StandardUS m; 
+  const AntarcticAtmosphere::AtmosphericModel & m = AntarcticAtmosphere::ITURefractivity(); 
 
   Refraction::RaytracerSpherical ray(&m); 
 
@@ -15,11 +16,11 @@ void testRefraction()
   t->Branch("setup",&s); 
   t->Branch("result",&r); 
 
-  for (double h = 0; h < 1000; h+= 500)
+  for (double h = 0; h <= 4000; h+= 500)
   {
-    for (double H = 40e3; H <= 50e3; H+= 10e3)
+    for (double H = 37e3; H <= 40e3; H+= 500)
     {
-      for (double el = 0.005; el < 10; el+= 0.005)
+      for (double el = 0.005; el <= 89; el+= 0.005)
       {
 
         s->start_alt = h; 
@@ -29,7 +30,7 @@ void testRefraction()
         t->Fill(); 
 
 
-        if (h == 0 && H == 40e3 && el == 0.5) ray.draw(); 
+        if (h == 0 && H == 40e3 && el == 0.005) ray.draw(); 
 
 
       }
