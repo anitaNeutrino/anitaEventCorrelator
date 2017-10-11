@@ -41,6 +41,12 @@ TGraphAntarctica* TGraphAntarctica::makeGpsGraph(int firstRun, int lastRun, int 
   TGraphAntarctica* gr = new TGraphAntarctica();
 
   for(int run=firstRun; run<=lastRun; run++){
+    if (AnitaVersion::get() == 3) {
+      if (run > 256 && run < 264) {
+	std::cout << "makeGpsGraph(): In ANITA3 runs 257 through 263 are broken, skipping to 264..." << std::cout;
+	run = 264;
+      } }
+
     AnitaDataset d(run);
     if (!quiet) std::cout << "makeGpsGraph(): starting run" << run << " - d.N()=" << d.N() << std::endl;
     for(int entry=0; entry < d.N(); entry+=gpsTreeStride){
