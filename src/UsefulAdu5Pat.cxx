@@ -88,7 +88,7 @@ UsefulAdu5Pat::UsefulAdu5Pat(const Adu5Pat *patPtr)
   fSourceLatitude=-1;
   //std::cout << "LatLonAlt: " << latitude << "\t" << longitude << "\t" << altitude << "\n";
   AnitaGeomTool::Instance()->getCartesianCoords(latitude,longitude,altitude,
-				  fBalloonCoords);
+						fBalloonCoords);
   // std::cout << "Balloon Coords: " << fBalloonCoords[0] << "\t" << fBalloonCoords[1] << "\t" << fBalloonCoords[2] << "\n";
   fBalloonPos.SetXYZ(fBalloonCoords[0],fBalloonCoords[1],fBalloonCoords[2]);
   fBalloonTheta=fBalloonPos.Theta();
@@ -864,9 +864,9 @@ Double_t UsefulAdu5Pat::getDistanceFromSource(Double_t sourceLat, Double_t sourc
 
   static Double_t pTaylor[3]={0};
   AnitaGeomTool::Instance()->getCartesianCoords(TMath::Abs(sourceLat),
-				  sourceLong,
-				  sourceAlt,
-				  pTaylor);
+						sourceLong,
+						sourceAlt,
+						pTaylor);
   //   std::cout << "Old Geoid Model:\t" << fTaylorPos.x() << "\t" << fTaylorPos.y() << "\t" << fTaylorPos.z() << "\n";
   //    std::cout << "New Model:\t" << pTaylor[0] << "\t" << pTaylor[1] << "\t" << pTaylor << "\n";
 
