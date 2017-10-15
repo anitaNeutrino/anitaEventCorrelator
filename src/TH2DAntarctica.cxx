@@ -137,8 +137,8 @@ TGraphAntarctica* TProfile2DAntarctica::findLocalMaxima() const {
          cVal > GetBinContent(bx+1, by  ) &&
          cVal > GetBinContent(bx+1, by+1)){
 
-        Double_t easting  = GetXaxis()->GetBinCenter(bx);
-        Double_t northing = GetYaxis()->GetBinCenter(by);
+        Double_t easting  = fXaxis.GetBinCenter(bx);
+        Double_t northing = fYaxis.GetBinCenter(by);
         grLocalMaxima->TGraph::SetPoint(grLocalMaxima->GetN(), easting, northing);
       }
     }
@@ -146,6 +146,25 @@ TGraphAntarctica* TProfile2DAntarctica::findLocalMaxima() const {
   return grLocalMaxima;
 }
 
+TAxis* TProfile2DAntarctica::GetXaxis(){
+  AntarcticaBackground* b = getBackground();
+  if(b){
+    return b->GetXaxis();
+  }
+  else{
+    return &fXaxis;
+  }
+}
+
+TAxis* TProfile2DAntarctica::GetYaxis(){
+  AntarcticaBackground* b = getBackground();
+  if(b){
+    return b->GetYaxis();
+  }
+  else{
+    return &fYaxis;
+  }
+}
 
 
 
@@ -288,11 +307,32 @@ TGraphAntarctica* TH2DAntarctica::findLocalMaxima() const {
          cVal > GetBinContent(bx+1, by  ) &&
          cVal > GetBinContent(bx+1, by+1)){
 
-        Double_t easting  = GetXaxis()->GetBinCenter(bx);
-        Double_t northing = GetYaxis()->GetBinCenter(by);
+        Double_t easting  = fXaxis.GetBinCenter(bx);
+        Double_t northing = fYaxis.GetBinCenter(by);
         grLocalMaxima->TGraph::SetPoint(grLocalMaxima->GetN(), easting, northing);
       }
     }
   }
   return grLocalMaxima;
+}
+
+
+TAxis* TH2DAntarctica::GetXaxis(){
+  AntarcticaBackground* b = getBackground();
+  if(b){
+    return b->GetXaxis();
+  }
+  else{
+    return &fXaxis;
+  }
+}
+
+TAxis* TH2DAntarctica::GetYaxis(){
+  AntarcticaBackground* b = getBackground();
+  if(b){
+    return b->GetYaxis();
+  }
+  else{
+    return &fYaxis;
+  }
 }
