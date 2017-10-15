@@ -21,6 +21,7 @@ void TGraphAntarctica::SetPoint(Int_t i, Double_t lon, Double_t lat){
 
 
 
+
 /** 
  * Construct a TGraph antarctica from run firstRun to lastRun (inclusive)
  * This is mostly for plotting purposes, otherwise 
@@ -206,6 +207,23 @@ void TGraphAntarctica::ExecuteEvent(Int_t event, Int_t x, Int_t y){
 
 
 
+TGraphAntarctica::TGraphAntarctica(const BaseList::base& b){
+  init();
+  SetPoint(0, b.longitude, b.latitude);
+  TString sanitizedName(b.getName());
+
+  // try to remove anything that would confuse getting this name
+  // from a file by typing the name on the command line
+  sanitizedName.ReplaceAll(" ", "_");
+  sanitizedName.ReplaceAll("-", "_");
+  sanitizedName.ReplaceAll("(", "");
+  sanitizedName.ReplaceAll(")", "");
+  sanitizedName.ReplaceAll(")", "");
+  sanitizedName.ReplaceAll(";", "");
+  sanitizedName.ReplaceAll(".", "");
+
+  SetNameTitle(sanitizedName, b.getName());
+}
 
 
 

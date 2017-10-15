@@ -28,6 +28,8 @@ AntarcticaBackground::AntarcticaBackground(RampdemReader::dataSet dataSet, Int_t
 
 
 AntarcticaBackground::~AntarcticaBackground(){
+  delete fPalSetter;
+  delete fPalUnsetter;
   if(gPad){
     SetToolTip(false);
     gPad->Modified();

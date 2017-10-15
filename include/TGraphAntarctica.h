@@ -17,9 +17,7 @@
 #include "AntarcticaBackground.h"
 #include "TChain.h"
 #include "TCut.h"
-
-
-
+#include "BaseList.h"
 
 
 /**
@@ -55,8 +53,8 @@ public:
   explicit TGraphAntarctica(const TGraph &gr) : TGraph(gr) {init();}
 
   // interesting constructors
-  TGraphAntarctica(TChain* chain, TString lonSelector, TString latSelector, TCut cut = "");
-  TGraphAntarctica(TTree* tree, TString lonSelector, TString latSelector, TCut cut = "");
+  TGraphAntarctica(TChain* chain, TString lonSelector="longitude", TString latSelector="latitude", TCut cut = "");
+  TGraphAntarctica(TTree* tree, TString lonSelector="longitude", TString latSelector="latitude", TCut cut = "");
 
   explicit TGraphAntarctica(const TVectorF &vx, const TVectorF &vy) : TGraph(vx, vy) {init();}
 
@@ -66,6 +64,7 @@ public:
   explicit TGraphAntarctica(const TF1 *f, Option_t *option="") : TGraph(f, option){init();}
 
   explicit TGraphAntarctica(const char *filename, const char *format="%lg %lg", Option_t *option="") : TGraph(filename, format, option) {init();}
+  TGraphAntarctica(const BaseList::base& b);
 
 
   virtual void SetPoint(Int_t i, Double_t lon, Double_t lat);
