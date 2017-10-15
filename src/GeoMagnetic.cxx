@@ -1220,6 +1220,9 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
   // It should be: B_vec x S_vec = (1/mu0)B^{2} E_vec
   // But there's no radio cherenkov/geomagnetic shower model or anything so for now just the cross product will do.
   TVector3 EVec = fp.field().Cross(cosmicRayDirection).Unit();
+  if (debug) {
+    std::cout << "EVec: (" << EVec.X() << "," << EVec.Y() << "," << EVec.Z() << ")" << std::endl;
+  }
   
   if(!directCosmicRay){
     // Modifies EVec by applying the Fresnel coefficients during the reflection
@@ -1244,9 +1247,13 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
   // Dot the electric field with the antenna polarisation vectors...
   double vPolComponent = EVec.Dot(vPolAxis);
   double hPolComponent = EVec.Dot(hPolAxis);
-  
+  if (debug) {
+    std::cout << "vPolComponent: " << vPolComponent << std::endl;
+    std::cout << "hPolComponent: " << hPolComponent << std::endl;
+  }
+
   // et voila
-  double polarisationAngle = TMath::ATan2(vPolComponent, hPolComponent);
+  double polarisationAngle = TMath::ATan(vPolComponent/hPolComponent);
   
   return polarisationAngle;
 }
@@ -1266,9 +1273,12 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
 
 double GeoMagnetic::getExpectedPolarisationUpgoing(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave,
 						   double pathLength){
-
+  if (debug) {
+    std::cout << "----------------GeoMagnetic::getExpectedPolarisationUpgoing(): Begin." << std::endl;
+  }
   prepareGeoMagnetics();
   
+
   if(debug){
     std::cout << "Anita position = " << usefulPat.longitude << "\t" << usefulPat.latitude << "\t" << usefulPat.altitude << std::endl;
   }
@@ -1301,20 +1311,49 @@ double GeoMagnetic::getExpectedPolarisationUpgoing(UsefulAdu5Pat& usefulPat, dou
     destinationToSource = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, thetaWave); // from ANITA to ice
   }
 
+  const TVector3 surfaceNormal = (lonLatAltToVector(reflectionLon, reflectionLat, reflectionAlt + 1) - destination).Unit();
+  
   //the cosmic ray is traveling in the opposite direction as the direction from ANITA to the ice
   const TVector3 cosmicRayDirection = -destinationToSource.Unit();
 
+  double emergenceAngle = surfaceNormal.Angle(cosmicRayDirection);
+  if (debug) {
+    std::cout << "surfaceNormal: (" << surfaceNormal.X() << "," << surfaceNormal.Y() << "," << surfaceNormal.Z() << ")" << std::endl;
+    std::cout << "cosmicRayDirection: (" << cosmicRayDirection.X() << "," << cosmicRayDirection.Y() << "," << cosmicRayDirection.Z() << ")" << std::endl;
+    std::cout << "Emergence Angle: " << emergenceAngle << std::endl;
+}
+
+  
+
   //calculate where the shower max is, which is from the ice in the direction of the shower pathLength away
-  TVector3 xMaxPosition = destination.Unit()+cosmicRayDirection*pathLength;
+  TVector3 xMaxPosition = destination+cosmicRayDirection*pathLength;
+
+
+  if (debug) {
+    std::cout << "anitaPosition: (" << anitaPosition.X() << "," << anitaPosition.Y() << "," << anitaPosition.Z() << ")" << std::endl;
+    std::cout << "destination: (" << destination.X() << "," << destination.Y() << "," << destination.Z() << ")" << std::endl;
+    std::cout << "destinationToSource: (" << destinationToSource.X() << "," << destinationToSource.Y() << "," << destinationToSource.Z() << ")" << std::endl;
+    std::cout << "cosmicRayDirection: (" << cosmicRayDirection.X() << "," << cosmicRayDirection.Y() << "," << cosmicRayDirection.Z() << ")" << std::endl;
+    std::cout << "xMaxPosition: (" << xMaxPosition.X() << "," << xMaxPosition.Y() << "," << xMaxPosition.Z() << ")" << std::endl;
+  }
+
 
   // Calculate the geo-magnetic field field at x-max
   FieldPoint fp(usefulPat.realTime, xMaxPosition);
-  
+  if (debug) {
+    std::cout << "FieldPoint: pos=(" << fp.posX() << "," << fp.posY() << "," << fp.posZ() << ")" << std::endl;
+    std::cout << "           comp=(" << fp.componentX() << "," << fp.componentY() << "," << fp.componentZ() << std::endl;
+  }
+
+
   // This is our electric field vector!
   // If I cared about getting the magnitude correct in addition to the orientation, there are some missing factors
   // It should be: B_vec x S_vec = (1/mu0)B^{2} E_vec
   // But there's no radio cherenkov/geomagnetic shower model or anything so for now just the cross product will do.
   TVector3 EVec = fp.field().Cross(cosmicRayDirection).Unit();
+  if (debug) {
+    std::cout << "EVec: (" << EVec.X() << "," << EVec.Y() << "," << EVec.Z() << ")" << std::endl;
+  }
   
   // Here I find the VPol and HPol antenna axes.
   // And I'm going to  pretend that one of ANITA's antennas points exactly at phiWave
@@ -1329,9 +1368,13 @@ double GeoMagnetic::getExpectedPolarisationUpgoing(UsefulAdu5Pat& usefulPat, dou
   // Dot the electric field with the antenna polarisation vectors...
   double vPolComponent = EVec.Dot(vPolAxis);
   double hPolComponent = EVec.Dot(hPolAxis);
+  if (debug) {
+    std::cout << "vPolComponent: " << vPolComponent << std::endl;
+    std::cout << "hPolComponent: " << hPolComponent << std::endl;
+  }
   
   // et voila
-  double polarisationAngle = TMath::ATan2(vPolComponent, hPolComponent);
+  double polarisationAngle = TMath::ATan(vPolComponent/hPolComponent);
   
   return polarisationAngle;
 
