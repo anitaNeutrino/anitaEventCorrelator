@@ -36,6 +36,6 @@
 #pragma link C++ class Refraction::PGFit; 
 #pragma link C++ class Refraction::RaytracerSpherical; 
 #pragma link C++ class Refraction::SphRay; 
-#pragma link C++ class AntarcticAstmosphere::ArtificialInversion; 
+#pragma link C++ class AntarcticAtmosphere::ArtificialInversion; 
 
 #endif
