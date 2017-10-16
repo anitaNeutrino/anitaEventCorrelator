@@ -82,6 +82,7 @@ namespace AntarcticAtmosphere
       ExponentialRefractivity(double a, double b) : StandardUS() {k_A = a ; k_B =b; }
 
       virtual int computeAtmosphere(double h, Pars * p) const; 
+      virtual double get(double h, Par p) const; 
       virtual ~ExponentialRefractivity() {; } 
     protected:
      double k_A, k_B; 
@@ -90,6 +91,20 @@ namespace AntarcticAtmosphere
 
   const ExponentialRefractivity & ITURefractivity(); 
 
+
+  class ArtificialInversion : public AtmosphericModel
+  {
+    public: 
+      ArtificialInversion(const AtmosphericModel & base, double max_height, double max_ampl)  
+        : m(base), hmax(max_height), Amax(max_ampl)  {; } 
+      virtual int computeAtmosphere(double h, Pars * p) const; 
+      virtual double get(double h, Par p) const; 
+    private: 
+      const AtmosphericModel & m;
+      double hmax; 
+      double Amax; 
+      double correction(double h) const; 
+  }; 
 }
 
 
