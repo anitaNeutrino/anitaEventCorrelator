@@ -890,7 +890,7 @@ double AntarcticCoord::surfaceDistance(double lat0 , double lat1, double lon0, d
 #else
 
   double distance; 
-  GeographicLib::Geodesic::WGS84().Inverse( lat0,lat1,lon0,lon1, distance); 
+  GeographicLib::Geodesic::WGS84().Inverse( lat0,lon0,lat1,lon1, distance); 
   return distance; 
 #endif
 
