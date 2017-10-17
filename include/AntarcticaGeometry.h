@@ -58,7 +58,9 @@ class AntarcticCoord
       z= zval; 
     }
 
-
+    /** computes the surface distance between two points (i.e. ignoring altitude) */ 
+    static double surfaceDistance(const AntarcticCoord & a, const AntarcticCoord & b); 
+    static double surfaceDistance(double lat0, double lat1, double lon0, double lon1); 
 
     /* Get a copy of this AntarcticCoord with the chosen coord system */  
     const AntarcticCoord as(CoordType new_type) const { AntarcticCoord c(*this); c.to(new_type); return c; }

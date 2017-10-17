@@ -861,4 +861,37 @@ double CartesianSurfaceMap::metersAboveIce(double x, double y, double z) const
 
 
 
+#ifndef USE_GEOGRAPHIC_LIB
+static int nagged_about_surface = 0; 
+static double hav(double phi) { return ((1-cos(phi)/2)); }
+#endif
+
+double AntarcticCoord::surfaceDistance(const AntarcticCoord & a, const AntarcticCoord & b) 
+{
+  AntarcticCoord A = a.as(WGS84); 
+  AntarcticCoord B = b.as(WGS84); 
+  return surfaceDistance(A.x, B.x, A.y, B.y); 
+
+
+}
+double AntarcticCoord::surfaceDistance(double lat0 , double lat1, double lon0, double lon1) 
+{
+  if (lat0 < -90 || lat0 < -90 || lon0 < -180 || lon1 < -180) return -999; 
+#ifndef USE_GEOGRAPHIC_LIB
+
+  if (!nagged_about_surface)
+  {
+    nagged_about_surface++; 
+    fprintf(stderr,"WARNING: compiled without geographic lib support. Using haversine distance between points\n"); 
+  }
+  return 2 * R_EARTH * asin( hav(lat1-lat0) + cos(lat0) * cos(lat1) * hav(lon1-lon0)); 
+#else
+
+  double distance; 
+  GeographicLib::Geodesic::WGS84().Inverse( lat0,lat1,lon0,lon1, distance); 
+  return distance; 
+#endif
+
+}
+
 
