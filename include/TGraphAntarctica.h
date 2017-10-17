@@ -19,7 +19,6 @@
 #include "TCut.h"
 #include "BaseList.h"
 
-
 /**
  * @class TGraphAntarctica
  *
@@ -74,10 +73,22 @@ public:
   void Draw(Option_t* opt = "");
   void ExecuteEvent(Int_t event, Int_t x, Int_t y);
 
+  virtual TAxis* GetXaxis();
+  virtual TAxis* GetYaxis();
+
   ClassDef(TGraphAntarctica,1)
 
 private:
 
+  mutable AntarcticaBackground* fBackground; //! Don't persist
+
+  AntarcticaBackground* getBackground() const{
+    if(!fBackground){
+      fBackground = new AntarcticaBackground();
+    }  
+    return fBackground;
+  }
+  
   void init();
   Bool_t doneConversion; // convert initial array from lat/lon to easting northing
   void convertArrays();
