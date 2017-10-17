@@ -734,7 +734,7 @@ void AntarcticaBackground::ExecuteEvent(Int_t event, Int_t x, Int_t y){
 /** 
  * This is the magic function that makes two 2D histograms plotted on top of one 
  * another have the same dynamic range, by rescaling the background.
- * This is called by TH2DAntarctica using G
+ * This is called by TH2DAntarctica.
  * 
  * @param newMin should be TH2DAntarctica::GetMinimum()
  * @param newMax should be TH2DAntarctica::GetMaximum()

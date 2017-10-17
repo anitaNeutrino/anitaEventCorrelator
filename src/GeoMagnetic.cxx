@@ -1242,7 +1242,15 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
   TVector3 vPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, -80*TMath::DegToRad());
   // The VPol feed is up... (if) the HPol feed is to the right (looking down the boresight) then it points anticlockwise around the payload
   // phi increases anti-clockwise in payload coordinates, therefore
-  TVector3 hPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave + TMath::PiOver2(), -10*TMath::DegToRad());
+  TVector3 hPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave + TMath::PiOver2(), 0);//-10*TMath::DegToRad());
+
+  if(debug){
+    TVector3 antennaAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, 10*TMath::DegToRad());
+    std::cout << "The dot products of any pair of the antenna axis, hPolAxis, vPolAxis should be zero..." << std::endl;
+    std::cout << "antennaAxis dot hPolAxis  = " << antennaAxis.Dot(hPolAxis) << std::endl;
+    std::cout << "antennaAxis dot vPolAxis  = " << antennaAxis.Dot(vPolAxis) << std::endl;
+    std::cout << "hPolAxis dot vPolAxis  = " << hPolAxis.Dot(vPolAxis) << std::endl;
+  }
   
   // Dot the electric field with the antenna polarisation vectors...
   double vPolComponent = EVec.Dot(vPolAxis);
@@ -1392,8 +1400,14 @@ double GeoMagnetic::getExpectedPolarisationUpgoing(UsefulAdu5Pat& usefulPat, dou
 
 TCanvas* GeoMagnetic::plotAtmosphere(){
   prepareGeoMagnetics();
-  TCanvas* c1 = new TCanvas();
-  grAtmosDensity.Draw("al");
+
+  static int maxCanvas = 0;
+  TCanvas* c1 = NULL;
+  if(maxCanvas < 10){
+    c1 = new TCanvas();
+    grAtmosDensity.Draw("al");
+    maxCanvas++;
+  }
   return c1;
 }
 
@@ -1510,10 +1524,15 @@ TVector3 GeoMagnetic::getXMaxPosition(const TVector3& initialPosition, const TVe
   }
 
   if(debug){
-    TCanvas* c1 = new TCanvas();
-    grAltPath->SetTitle("Cosmic Ray Altitude vs. distance traversed; Distance through atmosphere (m); Altitude (m)");
-    grAltPath->SetBit(kCanDelete);
-    grAltPath->Draw("al");
+    static int maxCanvas = 0;
+    TCanvas* c1 = NULL;
+    if(maxCanvas < 10){    
+      c1 = new TCanvas();
+      grAltPath->SetTitle("Cosmic Ray Altitude vs. distance traversed; Distance through atmosphere (m); Altitude (m)");
+      grAltPath->SetBit(kCanDelete);
+      grAltPath->Draw("al");
+      maxCanvas++;
+    }
   }
   
   return currentPosition;
