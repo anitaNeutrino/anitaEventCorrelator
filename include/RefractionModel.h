@@ -119,7 +119,7 @@ namespace Refraction
   {
     public: 
 
-      SphRay(const AntarcticAtmosphere::AtmosphericModel * a , double step_size = 10, bool cache_similar = true)  
+      SphRay(const AntarcticAtmosphere::AtmosphericModel * a = &AntarcticAtmosphere::ITURefractivity() , double step_size = 10, bool cache_similar = true)  
         : atm(a), step(step_size), use_cache(cache_similar) 
       {
 

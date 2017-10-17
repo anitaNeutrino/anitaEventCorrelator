@@ -93,6 +93,33 @@ int AntarcticAtmosphere::StandardUS::computeAtmosphere(double h, Pars *p) const
   return ret; 
 }
 
+double AntarcticAtmosphere::ArtificialInversion::correction(double h) const
+{
+  if (h > hmax) return 1; 
+  else return 1 - (hmax - h)/hmax * Amax; 
+
+}
+
+
+int AntarcticAtmosphere::ArtificialInversion::computeAtmosphere(double h, Pars *p) const 
+{
+
+  int ret = m.computeAtmosphere(h,p); 
+  p->T   *= correction(h);
+  p->rho *= correction(h); 
+  p->N   *= correction(h); 
+  return ret; 
+}
+
+double AntarcticAtmosphere::ArtificialInversion::get(double h, Par p)  const
+{
+  //short circuilt easy calculation 
+  if (p == REFRACTIVITY) return m.get(h,p) * correction(h); 
+  else if (p == TEMPERATURE) return m.get(h,p) * correction(h); 
+  else if (p == DENSITY) return m.get(h,p) * correction(h); 
+  else return m.get(h,p) ; 
+}
+
 
 
 int AntarcticAtmosphere::ExponentialRefractivity::computeAtmosphere(double h, Pars *p) const 
@@ -106,18 +133,40 @@ int AntarcticAtmosphere::ExponentialRefractivity::computeAtmosphere(double h, Pa
   return ret; 
 }
 
+double AntarcticAtmosphere::ExponentialRefractivity::get(double h, Par p)  const
+{
+  //short circuilt easy calculation 
+  if (p == REFRACTIVITY) return k_A * exp(-k_B* h) ; 
+  Pars x; 
+  computeAtmosphere(h,&x); 
+  switch (p)
+  {
+    case DENSITY: 
+      return x.rho;
+    case PRESSURE: 
+      return x.P;
+    case TEMPERATURE: 
+      return x.T;
+    case REFRACTIVITY: 
+      return x.N; 
+    default: 
+      return -9999; 
+  }
+}
+
+
 
 #ifdef USE_GEOGRAPHIC_LIB
 
 static const GeographicLib::Geoid & geoid2008_1() 
 {
-  static GeographicLib::Geoid  g("EGM2008-1"); 
+  static GeographicLib::Geoid  g("egm2008-1"); 
   return g; 
 }
 
 static GeographicLib::Geoid & geoid96_5() 
 {
-  static GeographicLib::Geoid  g("EGM96-5"); 
+  static GeographicLib::Geoid  g("egm96-5"); 
   return g; 
 }
 

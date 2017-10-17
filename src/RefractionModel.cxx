@@ -112,7 +112,7 @@ double Refraction::PGFit::getElevationCorrection(double theta, double h, double 
 } 
 
 
-const double REARTH = 6353e3; 
+const double REARTH = 6371e3; 
 const double speed_of_light=299792458; 
 int Refraction::RaytracerSpherical::raytrace(const Setup * setup, Result * result) 
 {
@@ -131,6 +131,7 @@ int Refraction::RaytracerSpherical::raytrace(const Setup * setup, Result * resul
   double x= x0; 
   double y= y0; 
   result->ray_distance = 0; 
+  result->ray_time = 0; 
 
   while (r <= r1) 
   {
@@ -141,10 +142,10 @@ int Refraction::RaytracerSpherical::raytrace(const Setup * setup, Result * resul
     // we want to step in r  dphi 
 
     double dphi = step_size  / r; 
-    double r_step = step_size * tan(theta); 
+    double dr= step_size * tan(theta); 
 
     double N = m->get(r-REARTH, AntarcticAtmosphere::REFRACTIVITY); 
-    double N1 = m->get(r-REARTH+r_step, AntarcticAtmosphere::REFRACTIVITY); 
+    double N1 = m->get(r-REARTH+dr, AntarcticAtmosphere::REFRACTIVITY); 
     double DN = N1-N ;
     double dn = DN * 1e-6; 
     double n = 1 + N * 1e-6; 
@@ -152,12 +153,13 @@ int Refraction::RaytracerSpherical::raytrace(const Setup * setup, Result * resul
     double dtheta = dn/n/tan(theta) + dphi; 
 //    printf("%g %g %g\n", r,theta,dtheta); 
 
-    result->ray_distance += step_size; 
-    result->ray_time += step_size * n / speed_of_light; 
+    double dL = sqrt((r*dphi)*(r*dphi) + dr*dr); 
+    result->ray_distance += dL; 
+    result->ray_time += dL * n / speed_of_light; 
 //    printf("%g %g %g %g\n",dphi,dtheta, phi,theta); 
     theta += dtheta; 
     phi +=  dphi; 
-    r += r_step; 
+    r += dr; 
     x = r* sin(phi); 
     y = r* cos(phi); 
   }
@@ -201,25 +203,25 @@ double Refraction::SphRay::getElevationCorrection(double el, double hSource, dou
   {
     //use a very dumb hash for now, assuming a certain range for the start and end heights and 10 m  / 0.01 degree height / angle precision. 
 
-    //box hSource into (0,5000,nearest multiple of 10) 
+    //box hSource into (0,5000,nearest multiple of 100) 
     hSource = TMath::Max(0., hSource); 
     hSource = TMath::Min(4999., hSource); 
-    hSource = ((int)hSource/10) * 10; 
-    hash += hSource / 10; 
+    hSource = ((int)hSource/100) * 100; 
+    hash += hSource / 100; 
 
-     //box hPayload into (36000,41000,nearest multiple of 10) 
+     //box hPayload into (36000,41000,nearest multiple of 100) 
     hPayload = TMath::Max(36e3, hPayload); 
     hPayload = TMath::Min(40.999e3, hPayload); 
-    hPayload = ((int)hPayload/10) * 10; 
-    hash +=  500 * ((hPayload-36e3) / 10); 
+    hPayload = ((int)hPayload/100) * 100; 
+    hash +=  50 * ((hPayload-36e3) / 100); 
 
     
     // box el into (0,90, nearest hundredth of a degree) 
     el = TMath::Min(90.,el); 
     el = TMath::Max(0.,el); 
     el = ((int) (el * 100)) / 100.; 
-    printf("%g %g %g\n", hSource, hPayload, el); 
-    hash += 500 * 500 * el * 100; 
+//    printf("%g %g %g\n", hSource, hPayload, el); 
+    hash += 50 * 50 * el * 100; 
 
     if (cache.count(hash)) 
     {

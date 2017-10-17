@@ -25,6 +25,7 @@
 #pragma link C++ class AntarcticCoord;
 #pragma link C++ class StereographicGrid;
 #pragma link C++ class PayloadParameters;
+#pragma link C++ class CartesianSurfaceMap;
 #pragma link C++ namespace AntarcticAtmosphere; 
 #pragma link C++ class AntarcticAtmosphere::AtmosphericModel; 
 #pragma link C++ class AntarcticAtmosphere::StandardUS; 
@@ -35,5 +36,6 @@
 #pragma link C++ class Refraction::PGFit; 
 #pragma link C++ class Refraction::RaytracerSpherical; 
 #pragma link C++ class Refraction::SphRay; 
+#pragma link C++ class AntarcticAtmosphere::ArtificialInversion; 
 
 #endif

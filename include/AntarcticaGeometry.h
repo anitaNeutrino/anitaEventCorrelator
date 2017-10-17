@@ -223,6 +223,7 @@ class PayloadParameters
 {
   public: 
     PayloadParameters(const Adu5Pat * pat,  const AntarcticCoord & source_pos, const Refraction::Model * refraction =0); 
+    PayloadParameters () { ; }
     PayloadParameters(const PayloadParameters & other); 
 
     double source_phi;  //the phi of the source, in payload coordinates (degrees). 
@@ -232,16 +233,31 @@ class PayloadParameters
     double distance; //distance between source and payload
 
     /* Checks for collision with the ground */
-    bool checkForCollision(double dx = 100, AntarcticCoord * where = 0, RampdemReader::dataSet d = RampdemReader::rampdem, double grace = 20, bool reverse = false) const;
+    bool checkForCollision(double dx = 100, AntarcticCoord * where = 0, AntarcticCoord * where_exit = 0, RampdemReader::dataSet d = RampdemReader::rampdem, double grace = 20, bool reverse = false) const;
+
     AntarcticCoord payload; 
     AntarcticCoord source; 
 
-    static PayloadParameters*  findSourceOnContinent(double theta, double phi, const Adu5Pat * gps, PayloadParameters * pp = 0, 
-                          double dx = 50, double tol = 0.001, double min_el  = -1, RampdemReader::dataSet d= RampdemReader::rampdem); 
+    /** This is my version of the trace back to continent functions. 
+     * I'm not sure it does exactly the right thing because of the altitude change, but it
+     * follows the geodesic in the phi direction until the payload coordinates match
+     * what they're supposed to. 
+     *
+     * Returns 1 on success, 0 if over horizon (but fills in payload position with the point at the horizon), -1 if doesn't converge to tolerance (but fills in closest) 
+     *
+     */
+
+    static int findSourceOnContinent(double theta, double phi,
+                          const Adu5Pat * gps, PayloadParameters * fillme, 
+                          Refraction::Model * m = 0, 
+                          double collision_check_dx = 0, // 0 to not cehck 
+                          double min_dx = 5,
+                          double tol = 5e-6, 
+                          double min_el  = 0,
+                          RampdemReader::dataSet d= RampdemReader::rampdem); 
 
   private: 
 
-    PayloadParameters();  
     ClassDefNV (PayloadParameters,1); 
 };
 

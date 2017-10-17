@@ -81,11 +81,6 @@ void AntarcticCoord::asString(TString * s) const
 
 }
 
-PayloadParameters::PayloadParameters() 
-{
-  memset(this,0,sizeof(PayloadParameters)); 
-}
-
 PayloadParameters::PayloadParameters(const Adu5Pat * gps, const AntarcticCoord & source_pos, const Refraction::Model * refract) 
   : payload(AntarcticCoord::WGS84, gps->latitude, gps->longitude, gps->altitude), 
     source(source_pos)
@@ -575,14 +570,27 @@ int StereographicGrid::getNeighbors(int segment, std::vector<int> * neighbors) c
 
 
 
+static const CartesianSurfaceMap & cartmap ( RampdemReader::dataSet d ) 
+{
+  if (d == RampdemReader::surface) 
+  {
+    static CartesianSurfaceMap sm(1000, d); 
+    return sm; 
+  }
+
+  static CartesianSurfaceMap sm; 
+  return sm; 
+}
 
 
 
-bool PayloadParameters::checkForCollision(double dx, AntarcticCoord * w,  RampdemReader::dataSet d, double grace, bool reverse) const
+
+bool PayloadParameters::checkForCollision(double dx, AntarcticCoord * w, AntarcticCoord * w_exit,  RampdemReader::dataSet d, double grace, bool reverse) const
 {
 
   AntarcticCoord x = (reverse ? payload: source).as(AntarcticCoord::CARTESIAN); 
   TVector3 v = (reverse ? -1 : 1) * (payload.v() - source.v()).Unit() * dx;  
+
 
   while(true)
   {
@@ -591,20 +599,43 @@ bool PayloadParameters::checkForCollision(double dx, AntarcticCoord * w,  Rampde
     x.y+= v.y();
     x.z+= v.z(); 
  
-    AntarcticCoord s = x.as(AntarcticCoord::STEREOGRAPHIC); 
+    double height_above_surface = cartmap(d).metersAboveIce(x.x, x.y, x.z);
 
-    //break if higher than Mt. Vinson  or, if in reverse, close to source
-    if ( (!reverse && s.z > 5000) || (reverse && (x.v() - source.v()).Mag2() < dx*dx))
+    if ( (!reverse && height_above_surface> 5000) || (reverse && (x.v() - source.v()).Mag2() < dx*dx))
       break; 
 
-    double surface = getSurface<4> (d).compute(s.x,s.y); 
-    if (surface > s.z+grace)
+    if (height_above_surface  + grace < 0 )
     {
-//      printf("BOOM! alt(%g,%g,%g)= %g\n", s.x, s.y, s.z, surface); 
+//      printf("BOOM! alt(%g,%g,%g)= %g\n", x.x, x.y, x.z, cartmap().surface(x.x, x.y)); 
       if (w) 
       {
-        *w  = s; 
+        *w  = x; 
       }
+
+      //figure out where no longer a collision
+      if ( w_exit) 
+      {
+        while (true) 
+        {
+          x.x+= v.x();
+          x.y+= v.y();
+          x.z+= v.z(); 
+          height_above_surface = cartmap(d).metersAboveIce(x.x, x.y, x.z);
+
+          if (height_above_surface + grace >=0 ) 
+          {
+            *w_exit = x; 
+            break; 
+          }
+          else if ( reverse && (x.v() - source.v()).Mag2() < dx*dx)
+          {
+            *w_exit = source; 
+            break; 
+          }
+
+        }
+      }
+
       return true; 
     }
   }
@@ -614,6 +645,7 @@ bool PayloadParameters::checkForCollision(double dx, AntarcticCoord * w,  Rampde
 
 
 }
+
 
 PayloadParameters::PayloadParameters(const PayloadParameters & other) 
 {
@@ -627,21 +659,12 @@ PayloadParameters::PayloadParameters(const PayloadParameters & other)
 }
 
 
-static int first = 1; 
-static const CartesianSurfaceMap & cartmap() 
-{
-  static CartesianSurfaceMap sm; 
-  if (first)
-  {
-    first = 0; 
-    TFile f("cartmap.root","recreate"); 
-    sm.getMap()->Write(); 
-  }
-  return sm; 
-}
 
-
-PayloadParameters * PayloadParameters::findSourceOnContinent(double theta, double phi, const Adu5Pat * gps, PayloadParameters * pp, double dx, double tol, double min_el, RampdemReader::dataSet d) 
+int PayloadParameters::findSourceOnContinent(double theta, double phi, const Adu5Pat * gps, PayloadParameters * p, 
+                                             Refraction::Model * m, 
+                                             double collision_check_dx,
+                                             double min_dx, double tol, double min_el, 
+                                             RampdemReader::dataSet d) 
 {
   //no chance. 
   if (theta < 0 ) 
@@ -656,24 +679,57 @@ PayloadParameters * PayloadParameters::findSourceOnContinent(double theta, doubl
 #ifdef USE_GEOGRAPHIC_LIB
   GeographicLib::GeodesicLine gl(GeographicLib::Geodesic::WGS84(),  gps->latitude,  gps->longitude, gps->heading - phi); 
   
-  int i = 1; 
+  size_t i = 1; 
+  double step = 1000*300;  //start with 300 km step 
+  PayloadParameters ok; 
   while (true) 
   {
     double lat, lon; 
-    gl.Position(i * dx, lat, lon); 
+    gl.Position(i * step, lat, lon); 
     AntarcticCoord c(AntarcticCoord::WGS84, lat, lon, RampdemReader::SurfaceAboveGeoid(lon,lat,d)); 
-    PayloadParameters p(gps, c); 
+    *p = PayloadParameters(gps, c, m); 
 
-//    printf("%f::%f %f::%f::   %f\n", phi, p.source_phi, theta, p.source_theta, p.payload_el); 
+    //printf("%f::%f %f::%f::  %g   %f\n", phi, p->source_phi, theta, p->source_theta, p->payload_el, i * step); 
 
-    if (p.payload_el < min_el) return 0; 
 
-    if (fabs(p.source_phi -phi) < tol && fabs(p.source_theta - theta) < tol) 
+    //we found something that works
+    if (fabs(p->source_phi -phi) < tol && fabs(p->source_theta - theta) < tol && p->payload_el >= min_el) 
     {
-      if (!pp) pp = new PayloadParameters(p); 
-      else *pp = p; 
-      return pp; 
+      //check for a collision? 
+      if (collision_check_dx && p->checkForCollision( collision_check_dx, 0, &c,   d))
+      {
+        step= collision_check_dx ; 
+        double dist = ( c.v() - payload.v()).Mag(); 
+        i = dist/step; 
+        continue; 
+      }
+
+      return 1; 
     }
+
+    //overshot the source, or are over the horizon with too large a step size , we should lower the step size and go back 
+    if (p->source_theta < theta || (p->payload_el < min_el && step > min_dx)) 
+    {
+      step = step / 2; 
+      i = i*2-1; 
+      continue; 
+    }
+    else if (p->payload_el < min_el)  
+    {
+      *p = ok; 
+      return 0; 
+    }
+    else if ( step < min_dx) 
+    {
+      return -1; 
+    }
+
+    //store last ok thing) 
+    if (p->payload_el >= min_el) 
+    {
+      ok = *p; 
+    }
+
     i++; 
   }
 
