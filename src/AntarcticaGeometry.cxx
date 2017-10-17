@@ -695,12 +695,14 @@ int PayloadParameters::findSourceOnContinent(double theta, double phi, const Adu
     //we found something that works
     if (fabs(p->source_phi -phi) < tol && fabs(p->source_theta - theta) < tol && p->payload_el >= min_el) 
     {
-      //check for a collision? 
-      if (collision_check_dx && p->checkForCollision( collision_check_dx, 0, &c,   d))
+      //check for a collision, 
+      //then go to exit point? 
+      if (collision_check_dx && p->checkForCollision( TMath::Min(collision_check_dx,step), 0, &c,   d))
       {
-        step= collision_check_dx ; 
-        double dist = ( c.v() - payload.v()).Mag(); 
+        step= TMath::Min(collision_check_dx, step) ; 
+        double dist = AntarcticCoord::surfaceDistance(payload, c); 
         i = dist/step; 
+        step = dist/i; 
         continue; 
       }
 
