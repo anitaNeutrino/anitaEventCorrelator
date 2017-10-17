@@ -3,6 +3,7 @@
 #include "TVirtualPad.h"
 #include "Adu5Pat.h"
 #include "AnitaDataset.h"
+#include "TVirtualPad.h"
 
 ClassImp(TGraphAntarctica)
 
@@ -164,6 +165,7 @@ void TGraphAntarctica::Draw(Option_t* option){
 void TGraphAntarctica::init(){
   doneConversion = false;
   convertArrays();
+  fBackground = NULL;
 }
 
 
@@ -249,3 +251,25 @@ TGraphAntarctica::TGraphAntarctica(const BaseList::base& b){
 //                     kThermometer=105,     kValentine=106,   kVisibleSpectrum=107,
 //                     kWaterMelon=108,      kCool=109,        kCopper=110,
 //                     kGistEarth=111,       kViridis=112};
+
+
+
+TAxis* TGraphAntarctica::GetXaxis(){
+  AntarcticaBackground* b = getBackground();
+  if(b){
+    return b->GetXaxis();
+  }
+  else{
+    return fHistogram->GetXaxis();
+  }
+}
+
+TAxis* TGraphAntarctica::GetYaxis(){
+  AntarcticaBackground* b = getBackground();
+  if(b){
+    return b->GetYaxis();
+  }
+  else{
+    return fHistogram->GetYaxis();
+  }
+}

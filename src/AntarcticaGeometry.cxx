@@ -695,12 +695,14 @@ int PayloadParameters::findSourceOnContinent(double theta, double phi, const Adu
     //we found something that works
     if (fabs(p->source_phi -phi) < tol && fabs(p->source_theta - theta) < tol && p->payload_el >= min_el) 
     {
-      //check for a collision? 
-      if (collision_check_dx && p->checkForCollision( collision_check_dx, 0, &c,   d))
+      //check for a collision, 
+      //then go to exit point? 
+      if (collision_check_dx && p->checkForCollision( TMath::Min(collision_check_dx,step), 0, &c,   d))
       {
-        step= collision_check_dx ; 
-        double dist = ( c.v() - payload.v()).Mag(); 
+        step= TMath::Min(collision_check_dx, step) ; 
+        double dist = AntarcticCoord::surfaceDistance(payload, c); 
         i = dist/step; 
+        step = dist/i; 
         continue; 
       }
 
@@ -860,5 +862,38 @@ double CartesianSurfaceMap::metersAboveIce(double x, double y, double z) const
 }
 
 
+
+#ifndef USE_GEOGRAPHIC_LIB
+static int nagged_about_surface = 0; 
+static double hav(double phi) { return ((1-cos(phi)/2)); }
+#endif
+
+double AntarcticCoord::surfaceDistance(const AntarcticCoord & a, const AntarcticCoord & b) 
+{
+  AntarcticCoord A = a.as(WGS84); 
+  AntarcticCoord B = b.as(WGS84); 
+  return surfaceDistance(A.x, B.x, A.y, B.y); 
+
+
+}
+double AntarcticCoord::surfaceDistance(double lat0 , double lat1, double lon0, double lon1) 
+{
+  if (lat0 < -90 || lat0 < -90 || lon0 < -180 || lon1 < -180) return -999; 
+#ifndef USE_GEOGRAPHIC_LIB
+
+  if (!nagged_about_surface)
+  {
+    nagged_about_surface++; 
+    fprintf(stderr,"WARNING: compiled without geographic lib support. Using haversine distance between points\n"); 
+  }
+  return 2 * R_EARTH * asin( hav(lat1-lat0) + cos(lat0) * cos(lat1) * hav(lon1-lon0)); 
+#else
+
+  double distance; 
+  GeographicLib::Geodesic::WGS84().Inverse( lat0,lon0,lat1,lon1, distance); 
+  return distance; 
+#endif
+
+}
 
 
