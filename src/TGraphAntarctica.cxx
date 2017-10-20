@@ -275,7 +275,7 @@ void TGraphAntarctica::ExecuteEvent(Int_t event, Int_t x, Int_t y){
 
 TGraphAntarctica::TGraphAntarctica(const BaseList::base& b){
   init();
-  SetPoint(0, b.longitude, b.latitude);
+  SetPoint(0, b.getPosition(0));
   SetNameTitle(makeSanitizedName(b.getName()), b.getName());
 }
 

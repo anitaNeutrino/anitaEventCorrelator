@@ -290,12 +290,7 @@ void AntarcticaBackground::updateBases(){
 
   if(grBases.size()==0){
     for(UInt_t b=0; b < BaseList::getNumBases(); b++){
-      TGraphAntarctica* gr = new TGraphAntarctica();
-      BaseList::base theBase = BaseList::getBase(b);
-      gr->SetPoint(gr->GetN(), theBase.longitude, theBase.latitude);
-      gr->SetTitle(theBase.name);
-      gr->SetName(theBase.name);
-
+      TGraphAntarctica* gr = new TGraphAntarctica(BaseList::getBase(b));
       // gr->SetDrawOption("*");
       gr->SetMarkerStyle(8);
       gr->SetMarkerColor(kMagenta);
