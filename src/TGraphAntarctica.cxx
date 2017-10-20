@@ -56,9 +56,8 @@ void TGraphAntarctica::SetPoint(Int_t i, Double_t lon, Double_t lat){
  */
 void TGraphAntarctica::SetPoint(Int_t i, const AntarcticCoord& coord){
   Double_t easting, northing;
-  AntarcticCoord latLon = coord.as(AntarcticCoord::WGS84);
-  RampdemReader::LonLatToEastingNorthing(latLon.y, latLon.x, easting, northing);
-  TGraph::SetPoint(i, easting, northing);
+  AntarcticCoord stereo = coord.as(AntarcticCoord::STEREOGRAPHIC);
+  TGraph::SetPoint(i, stereo.x, stereo.y);
 }
 
 
