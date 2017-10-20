@@ -251,7 +251,7 @@ class PayloadParameters
 
     static int findSourceOnContinent(double theta, double phi,
                           const Adu5Pat * gps, PayloadParameters * fillme, 
-                          Refraction::Model * m = 0, 
+                          const Refraction::Model * m = 0, 
                           double collision_check_dx = 0, // 0 to not cehck 
                           double min_dx = 5,
                           double tol = 5e-6, 

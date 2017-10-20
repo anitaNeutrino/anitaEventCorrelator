@@ -661,7 +661,7 @@ PayloadParameters::PayloadParameters(const PayloadParameters & other)
 
 
 int PayloadParameters::findSourceOnContinent(double theta, double phi, const Adu5Pat * gps, PayloadParameters * p, 
-                                             Refraction::Model * m, 
+                                             const Refraction::Model * m, 
                                              double collision_check_dx,
                                              double min_dx, double tol, double min_el, 
                                              RampdemReader::dataSet d) 
