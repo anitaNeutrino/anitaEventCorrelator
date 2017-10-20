@@ -32,7 +32,6 @@ namespace BaseList{
       latitude = lat;
       longitude = lon;
       altitude = alt;
-
     }
     base(const TString& theName, double lat, double lon, double alt=0){
       name = theName;
@@ -76,7 +75,14 @@ namespace BaseList{
     virtual const char * getName() const { return dataSource.Data(); } 
     virtual AntarcticCoord  getPosition(unsigned time) const; 
     virtual bool isValid(unsigned time) const { return time >= ts[0] && time < ts[ts.size()-1] ; } 
- 
+
+    /** 
+     * Boolian match function for std::find, checks the call signs match
+     * @return true if the names match
+     */
+    bool operator()(const path& other){
+      return name == other.name;
+    }
 
   }; 
 

@@ -18,6 +18,7 @@
 #include "TChain.h"
 #include "TCut.h"
 #include "BaseList.h"
+#include "AntarcticaGeometry.h" // AntarcticCoord
 
 /**
  * @class TGraphAntarctica
@@ -64,9 +65,11 @@ public:
 
   explicit TGraphAntarctica(const char *filename, const char *format="%lg %lg", Option_t *option="") : TGraph(filename, format, option) {init();}
   TGraphAntarctica(const BaseList::base& b);
+  TGraphAntarctica(const BaseList::path& p, UInt_t interpTime = 0);
 
 
   virtual void SetPoint(Int_t i, Double_t lon, Double_t lat);
+  virtual void SetPoint(Int_t i, const AntarcticCoord& coord);
 
   Double_t* GetEasting(){return GetX();}
   Double_t* GetNorthing(){return GetY();}
