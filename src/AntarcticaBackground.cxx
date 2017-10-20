@@ -290,12 +290,7 @@ void AntarcticaBackground::updateBases(){
 
   if(grBases.size()==0){
     for(UInt_t b=0; b < BaseList::getNumBases(); b++){
-      TGraphAntarctica* gr = new TGraphAntarctica();
-      BaseList::base theBase = BaseList::getBase(b);
-      gr->SetPoint(gr->GetN(), theBase.longitude, theBase.latitude);
-      gr->SetTitle(theBase.name);
-      gr->SetName(theBase.name);
-
+      TGraphAntarctica* gr = new TGraphAntarctica(BaseList::getBase(b));
       // gr->SetDrawOption("*");
       gr->SetMarkerStyle(8);
       gr->SetMarkerColor(kMagenta);
@@ -734,7 +729,7 @@ void AntarcticaBackground::ExecuteEvent(Int_t event, Int_t x, Int_t y){
 /** 
  * This is the magic function that makes two 2D histograms plotted on top of one 
  * another have the same dynamic range, by rescaling the background.
- * This is called by TH2DAntarctica using G
+ * This is called by TH2DAntarctica.
  * 
  * @param newMin should be TH2DAntarctica::GetMinimum()
  * @param newMax should be TH2DAntarctica::GetMaximum()

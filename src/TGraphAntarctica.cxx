@@ -8,10 +8,38 @@
 ClassImp(TGraphAntarctica)
 
 
-// Don't want this to be part of the class when we start writing things to files.
-static AntarcticaBackground* fBackground = NULL;
+/** 
+ * Replace all characters that make it hard to interact with on the root prompt
+ * 
+ * @param name the name to sanitize
+ * 
+ * @return The sanitized name
+ */
+TString makeSanitizedName(const char* name){
+  TString sanitizedName(name);
+
+  // try to remove anything that would confuse getting this name
+  // from a file by typing the name on the command line
+  sanitizedName.ReplaceAll(" ", "_");
+  sanitizedName.ReplaceAll("-", "_");
+  sanitizedName.ReplaceAll("(", "");
+  sanitizedName.ReplaceAll(")", "");
+  sanitizedName.ReplaceAll(")", "");
+  sanitizedName.ReplaceAll(";", "");
+  sanitizedName.ReplaceAll(".", "");
+  return sanitizedName;
+}
 
 
+
+/** 
+ * Set the ith point of the Graph to a longitude/latitude
+ * Handles the conversion to easting/northing internally
+ * 
+ * @param i is the graph point
+ * @param lon is the longitude
+ * @param lat is the latitude
+ */
 void TGraphAntarctica::SetPoint(Int_t i, Double_t lon, Double_t lat){
   Double_t easting, northing;
   RampdemReader::LonLatToEastingNorthing(lon, lat, easting, northing);
@@ -19,6 +47,19 @@ void TGraphAntarctica::SetPoint(Int_t i, Double_t lon, Double_t lat){
 }
 
 
+
+/** 
+ * Set the ith point to the position held in the AntarcticCoord
+ * 
+ * @param i is the point to set 
+ * @param coord is the position (is internally converted to WGS84)
+ */
+void TGraphAntarctica::SetPoint(Int_t i, const AntarcticCoord& coord){
+  Double_t easting, northing;
+  AntarcticCoord latLon = coord.as(AntarcticCoord::WGS84);
+  RampdemReader::LonLatToEastingNorthing(latLon.y, latLon.x, easting, northing);
+  TGraph::SetPoint(i, easting, northing);
+}
 
 
 
@@ -47,7 +88,8 @@ TGraphAntarctica* TGraphAntarctica::makeGpsGraph(int firstRun, int lastRun, int 
       if (run > 256 && run < 264) {
 	std::cout << "makeGpsGraph(): In ANITA3 runs 257 through 263 are broken, skipping to 264..." << std::endl;
 	run = 264;
-      } }
+      }
+    }
 
     AnitaDataset d(run);
     if (!quiet) std::cout << "makeGpsGraph(): starting run" << run << " - d.N()=" << d.N() << std::endl;
@@ -101,6 +143,28 @@ TGraphAntarctica::TGraphAntarctica(TTree* tree, TString lonSelector, TString lat
 
 
 
+/** 
+ * Constructor for BaseList::path
+ * 
+ * @param p is the const reference to the path
+ * @param interpSeconds is a time to interpolate between point, if 0 the raw data is used and no interpolation is done (default=0)
+ */
+TGraphAntarctica::TGraphAntarctica(const BaseList::path& p, UInt_t interpSeconds){
+  init();
+  if(interpSeconds == 0){
+    for(UInt_t i=0; i < p.ps.size(); i++){
+      SetPoint(i, p.ps.at(i));
+    }
+  }
+  else{
+    UInt_t time = p.ts.at(0);
+    while(time < p.ts.back()){
+      SetPoint(GetN(), p.getPosition(time));
+      time += interpSeconds;      
+    }
+  }
+  SetNameTitle(makeSanitizedName(p.getName()), p.getName());
+}
 
 
 
@@ -211,20 +275,8 @@ void TGraphAntarctica::ExecuteEvent(Int_t event, Int_t x, Int_t y){
 
 TGraphAntarctica::TGraphAntarctica(const BaseList::base& b){
   init();
-  SetPoint(0, b.longitude, b.latitude);
-  TString sanitizedName(b.getName());
-
-  // try to remove anything that would confuse getting this name
-  // from a file by typing the name on the command line
-  sanitizedName.ReplaceAll(" ", "_");
-  sanitizedName.ReplaceAll("-", "_");
-  sanitizedName.ReplaceAll("(", "");
-  sanitizedName.ReplaceAll(")", "");
-  sanitizedName.ReplaceAll(")", "");
-  sanitizedName.ReplaceAll(";", "");
-  sanitizedName.ReplaceAll(".", "");
-
-  SetNameTitle(sanitizedName, b.getName());
+  SetPoint(0, b.getPosition(0));
+  SetNameTitle(makeSanitizedName(b.getName()), b.getName());
 }
 
 

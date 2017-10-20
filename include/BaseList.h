@@ -26,30 +26,21 @@ namespace BaseList{
 
   class base : public abstract_base {
   public:
-    base(const TString& theName, const TString& source, double lat, double lon, double alt=0){
-      name = theName;
-      dataSource = source;
-      latitude = lat;
-      longitude = lon;
-      altitude = alt;
-
-    }
-    base(const TString& theName, double lat, double lon, double alt=0){
-      name = theName;
-      latitude = lat;
-      longitude = lon;
-      altitude = alt;
-    }
+    base(const TString& theName, const TString& source, double lat, double lon, double alt=0)
+      : name(theName), dataSource(source), position(AntarcticCoord::WGS84, lat, lon, alt) {;}
+    base(const TString& theName, double lat, double lon, double alt=0)
+      : name(theName), dataSource(""), position(AntarcticCoord::WGS84, lat, lon, alt) {;}
 
     virtual ~base() { ; } 
 
     TString name;
     TString dataSource;
-    double latitude;
-    double longitude;
-    double altitude;
+    AntarcticCoord position;
 
-    virtual AntarcticCoord getPosition(unsigned t) const { (void) t; return AntarcticCoord(AntarcticCoord::WGS84, latitude, longitude, altitude); } 
+    virtual AntarcticCoord getPosition(unsigned t) const {
+      (void) t;
+      return position.as(AntarcticCoord::WGS84);
+    }
     virtual const char * getName() const { return name.Data(); } 
     virtual const char * getSource() const { return dataSource.Data(); } 
   };
@@ -73,10 +64,17 @@ namespace BaseList{
     std::vector<unsigned> ts; 
 
     virtual const char * getSource() const { return dataSource.Data(); } 
-    virtual const char * getName() const { return dataSource.Data(); } 
+    virtual const char * getName() const { return name.Data(); }
     virtual AntarcticCoord  getPosition(unsigned time) const; 
     virtual bool isValid(unsigned time) const { return time >= ts[0] && time < ts[ts.size()-1] ; } 
- 
+
+    /** 
+     * Boolian match function for std::find, checks the call signs match
+     * @return true if the names match
+     */
+    bool operator()(const path& other){
+      return name == other.name;
+    }
 
   }; 
 

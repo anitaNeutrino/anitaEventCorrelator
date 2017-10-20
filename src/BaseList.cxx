@@ -56,7 +56,7 @@ static void fillBases(std::vector<base> & baseList, int anita)
     t->SetBranchAddress("name",&str_name); 
     t->SetBranchAddress("fullLat",&lat); 
     t->SetBranchAddress("fullLong",&lon); 
-    t->SetBranchAddress("alt",&alt); 
+    t->SetBranchAddress("alt",&alt);
 
     for (int i = 0; i < t->GetEntries(); i++) 
     {
@@ -65,6 +65,7 @@ static void fillBases(std::vector<base> & baseList, int anita)
     }
   }
 }
+
 
 static void fillPaths(std::vector<path> & pathList, int anita) 
 {
@@ -100,7 +101,6 @@ static void fillPaths(std::vector<path> & pathList, int anita)
     TTree * t = (TTree*) k->ReadObj(); 
 
     TString source = t->GetName(); 
-    std::string last_callsign = ""; 
     char callsign_buf[1024]; // 
     double lon; 
     double lat; 
@@ -134,32 +134,23 @@ static void fillPaths(std::vector<path> & pathList, int anita)
     for (int i = 0; i < t->GetEntries(); i++) 
     {
       t->GetEntry(i); 
-      std::string callsign = callsign_buf; 
+      TString callsign = callsign_buf;
 
-      if (last_callsign != callsign && v_lat.size()  )
-      {
-        pathList.push_back(path(TString(callsign.c_str()), source, (int) v_lat.size(), &v_lat[0], &v_lon[0], &v_alt[0], &v_t[0])); 
-        v_lat.clear(); 
-        v_lon.clear(); 
-        v_alt.clear(); 
-        v_t.clear(); 
+      // silly type conversion
+      UInt_t unsignedTime = time;
+      Double_t doubleAlt = alt;
+
+      path tempPath(TString(callsign.Data()), source, 1, &lat, &lon, &doubleAlt, &unsignedTime);
+      std::vector<path>::iterator it = std::find_if(pathList.begin(), pathList.end(), tempPath);
+      if(it != pathList.end()){
+	it->ts.push_back(tempPath.ts.at(0));
+        it->ps.push_back(tempPath.ps.at(0));
       }
-
-      last_callsign = callsign; 
-      v_lat.push_back(lat); 
-      v_lon.push_back(lon); 
-      v_alt.push_back(alt); 
-      v_t.push_back(time); 
-
-    }
-
-    //last iteration 
-    if (v_lat.size()) 
-    {
-      pathList.push_back(path(TString(last_callsign.c_str()), source, v_lat.size(), &v_lat[0], &v_lon[0], &v_alt[0], &v_t[0])); 
+      else{
+	pathList.push_back(tempPath);
+      }
     }
   }
-
 }
 
 // some annoying intermediate classes to be able to use magic statics 
