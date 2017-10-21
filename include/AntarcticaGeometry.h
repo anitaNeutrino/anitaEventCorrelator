@@ -92,7 +92,7 @@ class CartesianSurfaceMap
 
   public: 
     CartesianSurfaceMap( double resolution = 1e3, RampdemReader::dataSet d = RampdemReader::rampdem); 
-    ~CartesianSurfaceMap() { delete map; } 
+    ~CartesianSurfaceMap() { map->Delete(); } 
     double surface(double x, double y) const; 
     double z(double x, double y) const; 
     double  metersAboveIce(double x, double y, double z) const; 
