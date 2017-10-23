@@ -55,7 +55,6 @@ void TGraphAntarctica::SetPoint(Int_t i, Double_t lon, Double_t lat){
  * @param coord is the position (is internally converted to WGS84)
  */
 void TGraphAntarctica::SetPoint(Int_t i, const AntarcticCoord& coord){
-  Double_t easting, northing;
   AntarcticCoord stereo = coord.as(AntarcticCoord::STEREOGRAPHIC);
   TGraph::SetPoint(i, stereo.x, stereo.y);
 }
@@ -162,6 +161,7 @@ TGraphAntarctica::TGraphAntarctica(const BaseList::path& p, UInt_t interpSeconds
       time += interpSeconds;      
     }
   }
+  SetEditable(false);
   SetNameTitle(makeSanitizedName(p.getName()), p.getName());
 }
 
@@ -276,6 +276,7 @@ TGraphAntarctica::TGraphAntarctica(const BaseList::base& b){
   init();
   SetPoint(0, b.getPosition(0));
   SetNameTitle(makeSanitizedName(b.getName()), b.getName());
+  SetEditable(false);  
 }
 
 
