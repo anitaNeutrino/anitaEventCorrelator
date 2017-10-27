@@ -175,8 +175,6 @@ void TGraphAntarctica::Draw(Option_t* option){
 
   // I'm going to go for defaulting to pretty-ish points?
   opt = opt.Length() == 0 ? "p" : opt;
-  this->SetMarkerStyle(8);
-
 
   Bool_t drawAntarctica = false;
 
@@ -226,6 +224,7 @@ void TGraphAntarctica::Draw(Option_t* option){
 
 
 void TGraphAntarctica::init(){
+  fMarkerStyle = 8; // big points by default
   doneConversion = false;
   convertArrays();
   fBackground = NULL;
