@@ -140,14 +140,18 @@ static void fillPaths(std::vector<path> & pathList, int anita)
       UInt_t unsignedTime = time;
       Double_t doubleAlt = alt;
 
-      path tempPath(TString(callsign.Data()), source, 1, &lat, &lon, &doubleAlt, &unsignedTime);
-      std::vector<path>::iterator it = std::find_if(pathList.begin(), pathList.end(), tempPath);
-      if(it != pathList.end()){
-	it->ts.push_back(tempPath.ts.at(0));
-        it->ps.push_back(tempPath.ps.at(0));
-      }
-      else{
-	pathList.push_back(tempPath);
+      if(lat >= -90){ // skip unphysical error values
+
+	path tempPath(TString(callsign.Data()), source, 1, &lat, &lon, &doubleAlt, &unsignedTime);
+	std::vector<path>::iterator it = std::find_if(pathList.begin(), pathList.end(), tempPath);
+	if(it != pathList.end()){
+	  it->ts.push_back(tempPath.ts.at(0));
+	  it->ps.push_back(tempPath.ps.at(0));
+	}
+	else{
+	  pathList.push_back(tempPath);
+	}
+	// std::cout << lon << "\t" << lat << "\t" << callsign.Data() << std::endl;
       }
     }
   }
