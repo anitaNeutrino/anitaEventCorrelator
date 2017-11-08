@@ -814,6 +814,7 @@ CartesianSurfaceMap::CartesianSurfaceMap(double resolution , RampdemReader::data
   int nbinsx = (xmax - xmin)/ resolution; 
   int nbinsy = (ymax - ymin)/ resolution; 
   map = new TH2D("cartmap","Cartesian Map", nbinsx, xmin, xmax, nbinsy, ymin,ymax); 
+  map->SetDirectory(0); 
 
   for (int i = 1; i <= nbinsx; i++) 
   {

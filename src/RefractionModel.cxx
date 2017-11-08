@@ -223,6 +223,7 @@ double Refraction::SphRay::getElevationCorrection(double el, double hSource, dou
 //    printf("%g %g %g\n", hSource, hPayload, el); 
     hash += 50 * 50 * el * 100; 
 
+    TLockGuard l(&cache_lock); 
     if (cache.count(hash)) 
     {
       if (correction_at_source) 
@@ -255,7 +256,9 @@ double Refraction::SphRay::getElevationCorrection(double el, double hSource, dou
 
   if (use_cache) 
   {
-    cache[hash] = std::pair<double,double> (answer, correction) ; 
+    TLockGuard l(&cache_lock); 
+    if (!cache.count(hash)) 
+      cache[hash] = std::pair<double,double> (answer, correction) ; 
   }
 
   if (correction_at_source) *correction_at_source = correction; 

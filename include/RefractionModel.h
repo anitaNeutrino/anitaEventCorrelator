@@ -5,6 +5,7 @@
 #include "AntarcticAtmosphere.h" 
 #include <map> 
 #include "Rtypes.h" 
+#include "TMutex.h" 
 
 class Adu5Pat; 
 class AntarcticCoord; 
@@ -132,7 +133,10 @@ namespace Refraction
       const AntarcticAtmosphere::AtmosphericModel * atm; 
       double step;
       bool use_cache; 
+      mutable TMutex cache_lock; 
       mutable std::map<UInt_t, std::pair<double,double> > cache; 
+
+      ClassDef(SphRay,1); 
   }; 
 
 
