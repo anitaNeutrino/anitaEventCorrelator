@@ -40,6 +40,24 @@ TProfile2DAntarctica::TProfile2DAntarctica(const char* name, const char* title, 
 }
 
 
+TProfile2DAntarctica::TProfile2DAntarctica(const char* name, const char* title, const std::vector<Double_t>& x, const std::vector<Double_t>& y)
+  : TProfile2D(), fAntarcticaBackground(NULL){
+
+  SetNameTitle(name, title);
+  if(x.size() > 1 && y.size() > 1){
+    SetBins(x.size()-1, &x[0], y.size()-1, &y[0]);
+  }
+  else{
+    AntarcticaBackground* b = getBackground();
+
+    Int_t nx = b->GetNbinsX();
+    Int_t ny = b->GetNbinsY();
+    SetBins(nx, b->GetXaxis()->GetBinLowEdge(1), b->GetXaxis()->GetBinUpEdge(b->GetNbinsX()),
+	    ny, b->GetYaxis()->GetBinLowEdge(1), b->GetYaxis()->GetBinUpEdge(b->GetNbinsY()));
+
+  }
+}
+
 
 void TProfile2DAntarctica::Draw(Option_t* opt){
 
@@ -209,6 +227,27 @@ TH2DAntarctica::TH2DAntarctica(const char* name, const char* title, Int_t nx, In
   SetBins(nx, b->GetXaxis()->GetBinLowEdge(1), b->GetXaxis()->GetBinUpEdge(b->GetNbinsX()),
           ny, b->GetYaxis()->GetBinLowEdge(1), b->GetYaxis()->GetBinUpEdge(b->GetNbinsY()));
 }
+
+
+
+TH2DAntarctica::TH2DAntarctica(const char* name, const char* title, const std::vector<Double_t>& x, const std::vector<Double_t>& y)
+    : TH2D(), fAntarcticaBackground(NULL){
+
+  SetNameTitle(name, title);
+  if(x.size() > 1 && y.size() > 1){
+    SetBins(x.size()-1, &x[0], y.size()-1, &y[0]);
+  }
+  else{
+    AntarcticaBackground* b = getBackground();
+
+    Int_t nx = b->GetNbinsX();
+    Int_t ny = b->GetNbinsY();
+    SetBins(nx, b->GetXaxis()->GetBinLowEdge(1), b->GetXaxis()->GetBinUpEdge(b->GetNbinsX()),
+	    ny, b->GetYaxis()->GetBinLowEdge(1), b->GetYaxis()->GetBinUpEdge(b->GetNbinsY()));
+
+  }
+}
+
 
 
 

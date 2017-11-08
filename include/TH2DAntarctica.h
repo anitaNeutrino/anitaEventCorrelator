@@ -48,7 +48,7 @@
  * It would be better to do this in a single macro, 
  * but the preprocessor can't do newlines and rootcling
  * attaches the TOGGLE/MENU nonsense to each function defined
- *  on the same line, hence the need for two macros taking 
+ * on the same line, hence the need for two macros taking 
  * identical arguments, and the comment string after SF.
  * @param var_type is the type of the getter/setter function
  * @param FunctionName is the name of the function in AntarcticaBackground
@@ -87,6 +87,11 @@ class TProfile2DAntarctica : public TProfile2D {
  public:
   TProfile2DAntarctica(Int_t nx=-1, Int_t ny=-1);
   TProfile2DAntarctica(const char* name, const char* title, Int_t nx=-1, Int_t ny=-1);
+
+  // This constructor sets x.size()-1 bins along the x-axis
+  // with the first bin LOWER edge at x[0],
+  // and the last bin UPPER edge at x.last() same for y.
+  TProfile2DAntarctica(const char* name, const char* title, const std::vector<Double_t>& x, const std::vector<Double_t>& y);
   virtual ~TProfile2DAntarctica(){
     if(fAntarcticaBackground){
       delete fAntarcticaBackground;
@@ -173,6 +178,11 @@ class TH2DAntarctica : public TH2D {
  public:
   TH2DAntarctica(Int_t nx=-1, Int_t ny=-1);
   TH2DAntarctica(const char* name, const char* title, Int_t nx=-1, Int_t ny=-1);
+
+  // This constructor sets x.size()-1 bins along the x-axis
+  // with the first bin LOWER edge at x[0],
+  // and the last bin UPPER edge at x.last() same for y.
+  TH2DAntarctica(const char* name, const char* title, const std::vector<Double_t>& x, const std::vector<Double_t>& y);
   virtual ~TH2DAntarctica(){
     if(fAntarcticaBackground){
       delete fAntarcticaBackground;
