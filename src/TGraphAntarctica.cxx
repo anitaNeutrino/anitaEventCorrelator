@@ -324,3 +324,14 @@ TAxis* TGraphAntarctica::GetYaxis(){
     return fHistogram->GetYaxis();
   }
 }
+
+/** 
+ * Don't do the conversion from lon/lat to easting/northing
+ * 
+ * @param i 
+ * @param easting 
+ * @param northing 
+ */
+void TGraphAntarctica::SetPointEastingNorthing(Int_t i, Double_t easting, Double_t northing){
+  TGraph::SetPoint(i, easting, northing);
+}

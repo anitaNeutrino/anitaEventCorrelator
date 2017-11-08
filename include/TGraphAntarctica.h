@@ -70,6 +70,7 @@ public:
 
   virtual void SetPoint(Int_t i, Double_t lon, Double_t lat);
   virtual void SetPoint(Int_t i, const AntarcticCoord& coord);
+  virtual void SetPointEastingNorthing(Int_t i, Double_t easting, Double_t northing);
 
   Double_t* GetEasting(){return GetX();}
   Double_t* GetNorthing(){return GetY();}
