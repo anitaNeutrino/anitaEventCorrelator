@@ -79,7 +79,7 @@ namespace AntarcticAtmosphere
   class ExponentialRefractivity : public StandardUS
   {
     public: 
-      ExponentialRefractivity(double a, double b) : StandardUS() {k_A = a ; k_B =b; }
+      ExponentialRefractivity(double a = 315, double b = 0.1361e-3) : StandardUS() {k_A = a ; k_B =b; }
 
       virtual int computeAtmosphere(double h, Pars * p) const; 
       virtual double get(double h, Par p) const; 
