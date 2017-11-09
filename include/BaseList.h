@@ -57,9 +57,9 @@ namespace BaseList{
 
 
     TString name; 
-    TString dataSource; 
+    TString dataSource;
+    Bool_t isFlight; /// true for flight, false for traverse
 
-    //Store in cartesian coordinates so can interpolate easily 
     std::vector<AntarcticCoord> ps; 
     std::vector<unsigned> ts; 
 
@@ -75,8 +75,7 @@ namespace BaseList{
     bool operator()(const path& other){
       return name == other.name;
     }
-
-  }; 
+  };
 
 
   /** Return the ith base . This function knows about the ANITA version */ 

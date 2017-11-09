@@ -24,6 +24,7 @@ static void fillBases(std::vector<base> & baseList, int anita)
   TString fname; 
   fname.Form("%s/share/anitaCalib/baseListA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
 
+  TString oldPwd = gDirectory->GetPath();
   TFile fbase(fname.Data()); 
 
   if (!fbase.IsOpen())
@@ -64,6 +65,8 @@ static void fillBases(std::vector<base> & baseList, int anita)
       baseList.push_back(base(TString(*str_name), source, lat,lon,alt)); 
     }
   }
+  fbase.Close();
+  gDirectory->cd(oldPwd);
 }
 
 
@@ -80,6 +83,7 @@ static void fillPaths(std::vector<path> & pathList, int anita)
     fprintf(stderr,"Couldn't find restricted list for ANITA %d (%s).  Will try to load unrestricted list. \n", anita, fname.Data()); 
     fname.Form("%s/share/anitaCalib/transientListUnrestrictedA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
   }
+  TString oldPwd = gDirectory->GetPath();
 
   TFile fpath(fname.Data()); 
 
@@ -107,9 +111,15 @@ static void fillPaths(std::vector<path> & pathList, int anita)
     int alt = -1000; 
     int time; 
 
-    // well,  I guess these trees are not as nicely normalized as the others. 
+    // Try to figure out whether or not this is a flight, from the tree name.
+    // At the time of writing, the flight trees are:
+    // AADTree, USAPFlightRestrTree, USAPFlightUnrestrTree
+    Int_t isFlight = 0;
+    if(source.Contains("AAD") || source.Contains("Flight")){
+      isFlight = 1;
+    }
 
-
+    // well,  I guess these trees are not as nicely normalized as the others.
     t->SetBranchAddress("callSign",callsign_buf); 
     if (!t->GetBranch("fullLong")) //this tree has no position data. ignore it
     {
@@ -126,11 +136,6 @@ static void fillPaths(std::vector<path> & pathList, int anita)
       t->SetBranchAddress("altitude",&alt); 
     }
 
-    std::vector<double> v_lat; 
-    std::vector<double> v_lon; 
-    std::vector<double> v_alt; 
-    std::vector<unsigned> v_t; 
-
     for (int i = 0; i < t->GetEntries(); i++) 
     {
       t->GetEntry(i); 
@@ -143,6 +148,7 @@ static void fillPaths(std::vector<path> & pathList, int anita)
       if(lat >= -90){ // skip unphysical error values
 
 	path tempPath(TString(callsign.Data()), source, 1, &lat, &lon, &doubleAlt, &unsignedTime);
+	tempPath.isFlight = isFlight;
 	std::vector<path>::iterator it = std::find_if(pathList.begin(), pathList.end(), tempPath);
 	if(it != pathList.end()){
 	  it->ts.push_back(tempPath.ts.at(0));
@@ -155,6 +161,9 @@ static void fillPaths(std::vector<path> & pathList, int anita)
       }
     }
   }
+  fpath.Close();
+  gDirectory->cd(oldPwd);
+  
 }
 
 // some annoying intermediate classes to be able to use magic statics 
