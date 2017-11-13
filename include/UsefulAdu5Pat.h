@@ -54,11 +54,26 @@ class UsefulAdu5Pat: public Adu5Pat
    * @param sourceLon Reference to a Double_t in which the longitude of the source will be stored.
    * @param sourceLat Reference to a Double_t in which the latitude of the source will be stored.
    * @param desiredAlt Call specified altitude of the payload (if not specified, set to 0.0 so that this function would behave the same as getSourceLonAndLatAltZero() function)
-   * @return 1 on successful source localisation, o if the solution does not point to the ground.
+   * @return 1 on successful source localisation, 0 if the solution does not point to the ground.
    */
-
-  int getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat);
   int getSourceLonAndLatAtDesiredAlt(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat, Double_t desiredAlt);
+
+  
+  int getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat);
+
+  
+  /**
+   * 
+   * For a given azimuthal and elevation angle of a plane wave (in payload coordinates) calculates the point on the Earth's surface that the source would come from
+   * Accounts for the ice surface.
+   * 
+   * @param phiWave Azimuthal angle of plane wave (in payload centric coordinates)
+   * @param thetaWave Elevation angle of plane wave (in payload centric coordinates)
+   * @param sourceLon Reference to a Double_t in which the longitude of the source will be stored.
+   * @param sourceLat Reference to a Double_t in which the latitude of the source will be stored.
+   * @param desiredAlt Call specified altitude of the payload (if not specified, set to 0.0 so that this function would behave the same as getSourceLonAndLatAltZero() function)
+   * @return 1 or 2 successful source localisation, -1, 0, or 4 for various failures, all of which set sourceLon/Lat/Alt to -9999 (see comments in source code for explanation)
+   */
   int getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat,Double_t &sourceAltitude);
 
   /** 
@@ -75,7 +90,7 @@ class UsefulAdu5Pat: public Adu5Pat
    *
    * If the pointers are passed, they are filled if we return 1 or 2, but not if we return 0. 
    *
-   * A binary search with up to max_iter iterations  is used to search for the smallest theta that hits the ground
+   * A binary search with up to max_iter iterations is used to search for the smallest theta that hits the ground
    */ 
   int traceBackToContinent(Double_t phiWave, Double_t thetaWave, 
                            Double_t * lon, Double_t * lat, Double_t *alt, Double_t * theta_adjustment_required, 
@@ -84,7 +99,6 @@ class UsefulAdu5Pat: public Adu5Pat
 
 
 
-  //! 
   /**
    * For a given source latitude, longitude and altitude calculates the payload centric azimuthal and elevation angles of the plane wave incident at the payload.
    * 
@@ -133,12 +147,10 @@ class UsefulAdu5Pat: public Adu5Pat
   void getThetaAndPhiWaveWillySeavey(Double_t &thetaWave, Double_t &phiWave);
 
   
-  //! For a the Williams Field borehole antenna calculates the payload centric azimuthal and elevation angles of the plane wave incident at the payload.
-  /*!    
-    @param phiWave Reference to a Double_t in which to store the azimuthal angle of plane wave (in payload centric coordinates with phi equals zero lying in the direction the ADU5 fore antenna)
-    @param thetaWave Reference to a Double_t in which to store the elevation angle of plane wave (in payload centric coordinates with phi equals zero lying in the direction the ADU5 fore antenna)
-
-  */
+  /*  For a the Williams Field borehole antenna calculates the payload centric azimuthal and elevation angles of the plane wave incident at the payload.
+   * @param phiWave Reference to a Double_t in which to store the azimuthal angle of plane wave (in payload centric coordinates with phi equals zero lying in the direction the ADU5 fore antenna)
+   * @param thetaWave Reference to a Double_t in which to store the elevation angle of plane wave (in payload centric coordinates with phi equals zero lying in the direction the ADU5 fore antenna)
+   */
   void getThetaAndPhiWaveWillyBorehole(Double_t &thetaWave,Double_t &phiWave);
 
   
@@ -226,7 +238,7 @@ class UsefulAdu5Pat: public Adu5Pat
    * 
    * @return Returns the last calculated azimuthal angle in radians.
    */
-  Double_t getPhiWave(){
+  Double_t getPhiWave() const {
     return fPhiWave;
   }
 
@@ -234,16 +246,32 @@ class UsefulAdu5Pat: public Adu5Pat
    * Get last calculated elevation angle
    * @return the (payload centric) elevation angle last calculated.
    */
-  Double_t getThetaWave(){
+  Double_t getThetaWave() const {
     return fThetaWave;
   }
 
-  Double_t getSourceLongitude() 
-     { return fSourceLongitude;} /// Returns the last calculated source longitude.
-  Double_t getSourceLatitude() 
-     { return fSourceLatitude;} /// Returns the last calculated source latitude.
-  Double_t getSourceAltitude() 
-     { return fSourceAltitude;} /// Returns the last calculated source altitude.
+  /** 
+   * Get the last calculated source longitude
+   * @return the last calculated longitude
+   */
+  Double_t getSourceLongitude() const {
+    return fSourceLongitude;
+  }
+  /** 
+   * Get the last calculated source latitude
+   * @return the last calculated source latitude
+   */
+  Double_t getSourceLatitude() const{
+    return fSourceLatitude;
+  }
+
+  /** 
+   * Get the last calculated source altitude.
+   * @return the last calculated source altitude
+   */  
+  Double_t getSourceAltitude() const {
+    return fSourceAltitude;
+  }
 
   UInt_t getTaylorDomeTriggerTimeNs(); /// Gets the time of flight to Taylor Dome
   UInt_t getWaisDivideTriggerTimeNs(); /// Gets the time of flight to Wais Divide
@@ -287,21 +315,38 @@ class UsefulAdu5Pat: public Adu5Pat
   Double_t getReflectionAngle(Double_t imageEl, Double_t imageAlt);
 
 
-  
-  /**
+  /** 
    * Gets the astronomical coordinates corresponding to a wave coming from phiWave, thetaWave 
-   *  
-   *  The sign convention for thetaWave is the same as elsewhere, where thetaWave is positive going down. 
-   *
-   *  Computed RA is in hours, dec, l and b in degrees. 
+   * The sign convention for thetaWave is the same as elsewhere, where thetaWave is positive going down. 
+   * Computed RA is in hours, dec, l and b in degrees. 
    * 
-   **/ 
+   * @param phiWave is the plane wave phi
+   * @param thetaWave is the plane wave theta, with the anitaEventCorrelator sign convention
+   * @param RA Right ascention in hours
+   * @param dec declination in degrees
+   * @param l (degrees)
+   * @param b (degrees)
+   * 
+   * @return 
+   */
   int astronomicalCoordinates(Double_t phiWave, Double_t thetaWave, Double_t * RA = 0, Double_t * dec = 0, Double_t * l = 0, Double_t * b = 0) const; 
   int fromRADec (Double_t RA,  Double_t dec, Double_t *phi, Double_t *theta) const; 
-
   
+
+  /** 
+   * Sets whether to print the debug messages
+   * 
+   * @param db true or false
+   */
   void setDebug(bool db){fDebug = db;}
-  bool getDebug() const {return fDebug;}
+
+  /** 
+   * Is the debug output on?
+   * @return the value of fDebug
+   */
+  bool getDebug() const {
+    return fDebug;
+  }
 
  private:
   Int_t		fIncludeGroupDelay;	/// Include group delay in deltaTs? (default is no)
@@ -316,6 +361,9 @@ class UsefulAdu5Pat: public Adu5Pat
   Double_t	fBalloonTheta;		/// The balloon theta
   Double_t	fBalloonPhi;		/// The balloon phi
   Double_t	fBalloonHeight;		/// The balloon height
+  Float_t       fBalloonLonCache;	/// The public member longitude when the rest of the balloon coords were calculated
+  Float_t       fBalloonLatCache;	/// The public member latitude when the rest of the balloon coords were calculated
+  Float_t       fBalloonAltCache;	/// The public member altitude when the rest of the balloon coords were calculated
   Bool_t	fDebug;			/// Print lots of info in complicated methods, for debugging.
   
   ClassDef(UsefulAdu5Pat,0); /// ROOT's magic macro.
@@ -336,6 +384,14 @@ class UsefulAdu5Pat: public Adu5Pat
    * @param phiWave updated after pitch/roll accounted for
    */
   void accountForPitchAndRollInPhiWaveThetaWave(Double_t& thetaWave, Double_t& phiWave) const;
+
+  /** 
+   * Function which checks that public longitude/latitude/altitude hasn't changed
+   * since the fBalloon cartesian stuff was calculated. Updates it as required.
+   */
+  void updateCartesianBalloonInfo();
+
+
 };
 
 

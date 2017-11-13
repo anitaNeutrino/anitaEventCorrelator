@@ -25,6 +25,12 @@ UsefulAdu5Pat::UsefulAdu5Pat()
 {
   //Default Constructor
   fIncludeGroupDelay=0;
+  pitch = AnitaStaticAdu5Offsets::pitch;
+  roll = AnitaStaticAdu5Offsets::roll;
+  heading += AnitaStaticAdu5Offsets::heading;
+  longitude = 0;
+  latitude = 0;
+  altitude = 0;
   fThetaWave=0;
   fPhiWave=0;
   fSourceLongitude=-1;
@@ -33,6 +39,9 @@ UsefulAdu5Pat::UsefulAdu5Pat()
   fBalloonCoords[1]=0;
   fBalloonCoords[2]=0;
   fBalloonHeight=0;
+  fBalloonLonCache=0;
+  fBalloonLatCache=0;
+  fBalloonAltCache=0;
   fDebug = false;
 
 }
@@ -44,8 +53,6 @@ UsefulAdu5Pat::UsefulAdu5Pat(const Adu5Pat *patPtr)
 
   pitch = AnitaStaticAdu5Offsets::pitch;
   roll = AnitaStaticAdu5Offsets::roll;
-  // pitch+=AnitaStaticAdu5Offsets::pitch;
-  // roll+=AnitaStaticAdu5Offsets::roll;
   heading += AnitaStaticAdu5Offsets::heading;
 
   if(heading>=360){
@@ -58,16 +65,11 @@ UsefulAdu5Pat::UsefulAdu5Pat(const Adu5Pat *patPtr)
   fPhiWave=0;
   fSourceLongitude=-1;
   fSourceLatitude=-1;
-  AnitaGeomTool::Instance()->getCartesianCoords(latitude,longitude,altitude,
-						fBalloonCoords);
-  fBalloonPos.SetXYZ(fBalloonCoords[0],fBalloonCoords[1],fBalloonCoords[2]);
-  fBalloonTheta=fBalloonPos.Theta();
-  fBalloonPhi=fBalloonPos.Phi();
-  if(fBalloonPhi<0){
-    fBalloonPhi+=TMath::TwoPi();
-  }
-  fBalloonHeight=fBalloonPos.Mag();
-  fDebug = false;  
+  fBalloonLonCache=0;
+  fBalloonLatCache=0;
+  fBalloonAltCache=0;
+  fDebug = false;
+  updateCartesianBalloonInfo();
 }
 
 
@@ -76,6 +78,30 @@ UsefulAdu5Pat::~UsefulAdu5Pat()
 
 }
 
+
+void UsefulAdu5Pat::updateCartesianBalloonInfo(){
+  
+  if(longitude!=fBalloonLonCache ||
+     latitude!=fBalloonLatCache ||
+     altitude!=fBalloonAltCache){
+
+    AnitaGeomTool::Instance()->getCartesianCoords(latitude,
+						  longitude,
+						  altitude,
+						  fBalloonCoords);
+    fBalloonPos.SetXYZ(fBalloonCoords[0],fBalloonCoords[1],fBalloonCoords[2]);
+    fBalloonTheta=fBalloonPos.Theta();
+    fBalloonPhi=fBalloonPos.Phi();
+    if(fBalloonPhi<0){
+      fBalloonPhi+=TMath::TwoPi();
+    }
+    fBalloonHeight=fBalloonPos.Mag();
+
+    fBalloonLonCache = longitude;
+    fBalloonLatCache = latitude;
+    fBalloonAltCache = altitude;
+  }
+}
 
 
 void UsefulAdu5Pat::getThetaAndPhiWaveWillySeavey(Double_t &thetaWave, Double_t &phiWave)
@@ -151,6 +177,7 @@ void UsefulAdu5Pat::accountForPitchAndRollInPhiWaveThetaWave(Double_t& thetaWave
 
 int UsefulAdu5Pat::getSourceLonAndLatAtDesiredAlt(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat, Double_t desiredAlt = 0.0)
 {
+  updateCartesianBalloonInfo();
 
   if(fPhiWave!=phiWave) fPhiWave=phiWave;
   if(fThetaWave!=thetaWave) fThetaWave=thetaWave;
@@ -221,6 +248,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAtDesiredAlt(Double_t phiWave, Double_t the
 
 int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat,Double_t &sourceAltitude)
 {
+  updateCartesianBalloonInfo();
 
   if(fPhiWave!=phiWave) fPhiWave=phiWave;
   if(fThetaWave!=thetaWave) fThetaWave=thetaWave;
@@ -292,21 +320,18 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
     Double_t sinThetaL = L*sintw/re;
     Double_t sourceTheta = TMath::ASin(sinThetaL);
 
-
     /**
-     * Put the balloon at the south pole at height, re
+     * Put the source at the south pole at height, re
      */
     fSourcePos.SetX(0);
     fSourcePos.SetY(0);
     fSourcePos.SetZ(re);
 
-    /**
-     * Rotate it to the current source position?
-     */
+    /* Move the source to near the balloon? */
     fSourcePos.RotateY(sourceTheta);
     fSourcePos.RotateZ(-1*tempPhiWave);
     fSourcePos.RotateY(fBalloonTheta);
-    fSourcePos.RotateZ(fBalloonPhi);    
+    fSourcePos.RotateZ(fBalloonPhi);
 
     Double_t sourceVec[3];
     fSourcePos.GetXYZ(sourceVec);
@@ -395,7 +420,8 @@ void UsefulAdu5Pat::getThetaAndPhiWaveLDB(Double_t &thetaWave, Double_t &phiWave
 
 
 void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave) {
-
+  updateCartesianBalloonInfo();
+  
   Double_t pSource[3]={0};
   AnitaGeomTool * geom = AnitaGeomTool::Instance();
   geom->getCartesianCoords(TMath::Abs(sourceLat),sourceLon,sourceAlt,pSource);
@@ -474,7 +500,8 @@ Double_t UsefulAdu5Pat::getGroupDelay(Double_t phiToAntBoresight)
 
 
 void UsefulAdu5Pat::getThetaWaveAtBase(Double_t baseLon, Double_t baseLat, Double_t baseAlt, Double_t &thetaWave) {
-
+  updateCartesianBalloonInfo();
+  
   //gets the theta from a base to the balloon - can check if we are beyond horizon
 
   Double_t pSource[3]={0};
@@ -490,40 +517,21 @@ void UsefulAdu5Pat::getThetaWaveAtBase(Double_t baseLon, Double_t baseLat, Doubl
   rotatedBase.RotateZ(-1*fSourcePos.Phi());
   rotatedBase.RotateY(-1*fSourcePos.Theta());
 
-
-  //    std::cout << "rotated balloon\tx " << rotatedBalloonPos.X() << "\ty " << rotatedBalloonPos.Y() << "\tz " << rotatedBalloonPos.Z() << std::endl;
-  //    std::cout << "base\tx " << fSourcePos.X() << "\ty " << fSourcePos.Y() << "\tz " << fSourcePos.Z() << std::endl;
-  //    std::cout << "rotated base\tx " << rotatedBase.X() << "\ty " << rotatedBase.Y() << "\tz " << rotatedBase.Z() << std::endl;
-  //    std::cout << "rotated balloon - base\tx " << rotatedBalloonPos.X()-fSourcePos.X() << "\ty " << rotatedBalloonPos.Y()-fSourcePos.Y() << "\tz " << rotatedBalloonPos.Z()-fSourcePos.Z() << std::endl;
-
   //Now find thetaWave
   thetaWave=TMath::ATan((rotatedBase.Z()-rotatedBalloonPos.Z())/TMath::Sqrt(rotatedBalloonPos.X()*rotatedBalloonPos.X() + rotatedBalloonPos.Y()*rotatedBalloonPos.Y()));
-
-
-
-
-  //    Double_t pSource[3]={0};
-  //    AnitaGeomTool::Instance()->getCartesianCoords(TMath::Abs(sourceLat),sourceLon,sourceAlt,pSource);
-  //    fSourcePos.SetXYZ(pSource[0],pSource[1],pSource[2]);
-
-  //    //std::cout << "SourceLoc: " << pSource[0] << "\t" << pSource[1] << "\t" << pSource[2] << "\n";
-
-  //    //Rotate such that balloon is at 0,0,fBalloonHeight
-  //    fSourcePos.RotateZ(-1*fBalloonPhi);
-  //    fSourcePos.RotateY(-1*fBalloonTheta);
-
-  //    //Now find thetaWave and phiWave
-  //    thetaWave=TMath::ATan((fBalloonHeight-fSourcePos.Z())/TMath::Sqrt(fSourcePos.X()*fSourcePos.X() + fSourcePos.Y()*fSourcePos.Y()));
 
 }
 
 
 Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt)
 {
+  updateCartesianBalloonInfo();
 
   Double_t tempTheta,tempPhi;
-  if(fSourceAltitude!=sourceAlt || fSourceLongitude!=sourceLon || fSourceLatitude!=sourceLat)
-    getThetaAndPhiWave(sourceLon,sourceLat,sourceAlt,tempTheta,tempPhi);
+  if(fSourceAltitude!=sourceAlt || fSourceLongitude!=sourceLon || fSourceLatitude!=sourceLat){
+    getThetaAndPhiWave(sourceLon,sourceLat,sourceAlt,tempTheta,tempPhi);    
+  }
+  
 
   AnitaGeomTool *geom = AnitaGeomTool::Instance();
   //Now fThetaWave and fPhiWave should be correctly set.
@@ -581,7 +589,7 @@ Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1, Int_t ant2,Double_t phiWav
 
 //does not take into account anita's position/heading...
 Double_t UsefulAdu5Pat::getDeltaTExpected(Int_t ant1,Int_t ant2,Double_t cosPhi,Double_t sinPhi,Double_t cosTheta,Double_t sinTheta)
-{
+{  
   Double_t x1,y1,z1;
   AnitaGeomTool *geom = AnitaGeomTool::Instance();
   geom->getAntXYZ(ant1,x1,y1,z1);
@@ -631,6 +639,8 @@ Double_t UsefulAdu5Pat::getDeltaTTaylorOpt(Int_t ant1, Int_t ant2, Double_t *del
 
 Double_t UsefulAdu5Pat::getDeltaTExpectedOpt(Int_t ant1, Int_t ant2,Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t *deltaR, Double_t *deltaZ, Double_t *deltaPhi)
 {
+  updateCartesianBalloonInfo();
+
   Double_t tempTheta,tempPhi;
   if(fSourceAltitude!=sourceAlt || fSourceLongitude!=sourceLon || fSourceLatitude!=sourceLat)
     getThetaAndPhiWave(sourceLon,sourceLat,sourceAlt,tempTheta,tempPhi);
@@ -666,9 +676,12 @@ Double_t UsefulAdu5Pat::getDeltaTSeaveyOpt(Int_t ant1, Int_t ant2, Double_t *del
 
 Double_t UsefulAdu5Pat::getDeltaTExpectedSeaveyOpt(Int_t ant1, Int_t ant2,Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t *deltaR, Double_t *deltaZ, Double_t *deltaPhi)
 {
+  updateCartesianBalloonInfo();
+  
   Double_t tempTheta,tempPhi;
-  if(fSourceAltitude!=sourceAlt || fSourceLongitude!=sourceLon || fSourceLatitude!=sourceLat)
+  if(fSourceAltitude!=sourceAlt || fSourceLongitude!=sourceLon || fSourceLatitude!=sourceLat){
     getThetaAndPhiWave(sourceLon,sourceLat,sourceAlt,tempTheta,tempPhi);
+  }
 
   //Now fThetaWave and fPhiWave should be correctly set.
   AnitaGeomTool *geom = AnitaGeomTool::Instance();
@@ -722,42 +735,15 @@ UInt_t UsefulAdu5Pat::getLDBTriggerTimeNs()
 
 Double_t UsefulAdu5Pat::getDistanceFromSource(Double_t sourceLat, Double_t sourceLong, Double_t sourceAlt)
 {
-
-  //    Double_t thetaBalloon=AnitaGeomTool::Instance()->getThetaFromLat(TMath::Abs(latitude));
-  //    Double_t phiBalloon=AnitaGeomTool::Instance()->getPhiFromLon(longitude);
-  //    Double_t balloonHeight=AnitaGeomTool::Instance()->getGeoid(thetaBalloon)+altitude;
-
-  //    static Double_t thetaTaylor=AnitaGeomTool::Instance()->getThetaFromLat(TMath::Abs(AnitaLocations::LATITUDE_TD));
-  //    static Double_t phiTaylor=AnitaGeomTool::Instance()->getPhiFromLon(AnitaLocations::LONGITUDE_TD);
-  //    static Double_t radiusTaylor=AnitaGeomTool::Instance()->getGeoid(thetaTaylor)+AnitaLocations::ALTITUDE_TD;
-
-
-  //    //Get vector from Earth's centre to taylor
-  //    TVector3 fTaylorPos;
-  //    fTaylorPos.SetX(radiusTaylor*TMath::Sin(thetaTaylor)*TMath::Cos(phiTaylor));
-  //    fTaylorPos.SetY(radiusTaylor*TMath::Sin(thetaTaylor)*TMath::Sin(phiTaylor));
-  //    fTaylorPos.SetZ(radiusTaylor*TMath::Cos(thetaTaylor));
-
+  updateCartesianBalloonInfo();
   static Double_t pTaylor[3]={0};
   AnitaGeomTool::Instance()->getCartesianCoords(TMath::Abs(sourceLat),
 						sourceLong,
 						sourceAlt,
 						pTaylor);
-  //   std::cout << "Old Geoid Model:\t" << fTaylorPos.x() << "\t" << fTaylorPos.y() << "\t" << fTaylorPos.z() << "\n";
-  //    std::cout << "New Model:\t" << pTaylor[0] << "\t" << pTaylor[1] << "\t" << pTaylor << "\n";
-
-
-  //    //Rotate such that balloon is at 0,0,fBalloonHeight
-  //    fTaylorPos.RotateZ(-1*phiBalloon);
-  //    fTaylorPos.RotateY(-1*thetaBalloon);
-  //    Double_t s2=(fTaylorPos.x()*fTaylorPos.x()) + (fTaylorPos.y()*fTaylorPos.y()) + TMath::Power(fBalloonHeight-fTaylorPos.z(),2);
   Double_t s2 = ((pTaylor[0]-fBalloonCoords[0])*(pTaylor[0]-fBalloonCoords[0]) +
 		 (pTaylor[1]-fBalloonCoords[1])*(pTaylor[1]-fBalloonCoords[1]) +
 		 (pTaylor[2]-fBalloonCoords[2])*(pTaylor[2]-fBalloonCoords[2]));
-
-  // std::cout << fBalloonCoords[0] << "\t" << fBalloonCoords[1] << "\t" << fBalloonCoords[2] << std::endl;
-
-
   Double_t distanceToFly=TMath::Sqrt(s2);
   return distanceToFly;
 }
@@ -768,6 +754,7 @@ Double_t UsefulAdu5Pat::getDistanceFromSource(Double_t sourceLat, Double_t sourc
 
 UInt_t UsefulAdu5Pat::getTriggerTimeNsFromSource(Double_t sourceLat, Double_t sourceLong, Double_t sourceAlt)
 {
+  updateCartesianBalloonInfo();  
   Double_t distanceToFly = getDistanceFromSource(sourceLat, sourceLong, sourceAlt);
   Double_t timeOfFlight=distanceToFly/C_LIGHT;
   timeOfFlight*=1e9;
@@ -784,7 +771,7 @@ UInt_t UsefulAdu5Pat::getTriggerTimeNsFromSource(Double_t sourceLat, Double_t so
 
 
 Double_t UsefulAdu5Pat::getAngleBetweenPayloadAndSource(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt){ //ACG additional function
-
+  updateCartesianBalloonInfo();
   AnitaGeomTool * geom = AnitaGeomTool::Instance();
   Double_t thetaBalloon=geom->getThetaFromLat(TMath::Abs(latitude));
   Double_t phiBalloon=geom->getPhiFromLon(longitude);
@@ -816,12 +803,6 @@ Double_t UsefulAdu5Pat::getAngleBetweenPayloadAndSource(Double_t sourceLon, Doub
 }
 
 
-// TProfile2D *UsefulAdu5Pat::rampMap(int coarseness,UInt_t &xBins,UInt_t &yBins){
-//   return rampMap;
-// }
-
-
-
 //---------------------------------------------------------------------------------------------------------
 /**
  * @brief Calculates the azimuth position of the sun if ANITA was facing directly north.
@@ -833,7 +814,7 @@ Double_t UsefulAdu5Pat::getAngleBetweenPayloadAndSource(Double_t sourceLon, Doub
  * The more useful quantity is probably returned by UsefulAdu5Pat::getAzimuthOfSun().
  */
 Double_t UsefulAdu5Pat::getAzimuthOfSunRelativeToNorth(){
-
+  updateCartesianBalloonInfo();
   //work out the angle to the Sun for heading 0
   TTimeStamp theTime = this->realTime;
 
@@ -869,7 +850,7 @@ Double_t UsefulAdu5Pat::getAzimuthOfSunRelativeToNorth(){
  * @return the azimuth position of the sun taking into account ANITA's heading.
  */
 Double_t UsefulAdu5Pat::getAzimuthOfSun(){
-
+  updateCartesianBalloonInfo();
   Double_t sunAngle = UsefulAdu5Pat::getAzimuthOfSunRelativeToNorth();
   Double_t sunAngleAtHeading = sunAngle + this->heading;
 
@@ -893,8 +874,7 @@ Double_t UsefulAdu5Pat::getAzimuthOfSun(){
  * @return the difference between the two angles in Degrees (regardless of whether the input is in radians or degrees).
  */
 Double_t UsefulAdu5Pat::getDifferencePointingToSun(Double_t phiAngle, Bool_t inputInDegrees){
-
-  //radOrDeg==0 is rad, ==1 is deg
+  updateCartesianBalloonInfo();
 
   if(phiAngle>9999 || phiAngle<-9999){
     std::cerr << "UsefulAdu5Pat::getDifferencePointingToSun() " << phiAngle << " ignore\n";
@@ -934,8 +914,7 @@ Double_t UsefulAdu5Pat::getDifferencePointingToSun(Double_t phiAngle, Bool_t inp
  * The meat of this function was taken from here http://www.psa.es/sdg/sunpos.htm
  */
 void UsefulAdu5Pat::getSunPosition(Double_t& phiDeg, Double_t& thetaDeg){
-
-//
+  updateCartesianBalloonInfo();
 
   // Declaration of some constants
   const Double_t dEarthMeanRadius = 6371.01;	// In km
@@ -1073,8 +1052,9 @@ void UsefulAdu5Pat::getSunPosition(Double_t& phiDeg, Double_t& thetaDeg){
 
 int UsefulAdu5Pat::traceBackToContinent(Double_t phiWave, Double_t thetaWave,
                                         Double_t * lon_ptr, Double_t * lat_ptr, Double_t * alt_ptr,
-                                        Double_t * adj_ptr, Double_t max_adjust, Int_t max_iter)
-{
+                                        Double_t * adj_ptr, Double_t max_adjust, Int_t max_iter){
+  updateCartesianBalloonInfo();
+  
   if(fDebug){
     std::cerr << "Debug info in " << __PRETTY_FUNCTION__ << ":\n";
   }
