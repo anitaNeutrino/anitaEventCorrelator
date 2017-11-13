@@ -18,11 +18,7 @@
 
 #include "TVector3.h"
 
-//#define CMINCH 2.54
-
 ClassImp(UsefulAdu5Pat);
-
-
 
 UsefulAdu5Pat::UsefulAdu5Pat()
   : Adu5Pat()
@@ -37,96 +33,121 @@ UsefulAdu5Pat::UsefulAdu5Pat()
   fBalloonCoords[1]=0;
   fBalloonCoords[2]=0;
   fBalloonHeight=0;
+  fDebug = false;
 
 }
-
-/*
-UsefulAdu5Pat::UsefulAdu5Pat(const Adu5Pat *patPtr, double deltaR, double deltaRL, double deltaUD)
-  : Adu5Pat(*patPtr)
-{
-  fIncludeGroupDelay=0;
-  pitch=AnitaStaticAdu5Offsets::pitch;
-  roll=AnitaStaticAdu5Offsets::roll;
-  // pitch+=AnitaStaticAdu5Offsets::pitch;
-  // roll+=AnitaStaticAdu5Offsets::roll;
-  heading+=AnitaStaticAdu5Offsets::heading;
-  if(heading>=360) heading-=360;
-  if(heading<0) heading+=360;
-  fThetaWave=0;
-  fPhiWave=0;
-  fSourceLongitude=-1;
-  fSourceLatitude=-1;
-  if(!AnitaGeomTool::Instance())
-    AnitaGeomTool::Instance()=AnitaGeomTool::Instance();
-  AnitaGeomTool::Instance()->updateAnt(deltaR,deltaRL,deltaUD);
-  AnitaGeomTool::Instance()->getCartesianCoords(latitude,longitude,altitude,
-				  fBalloonCoords);
-  fBalloonPos.SetXYZ(fBalloonCoords[0],fBalloonCoords[1],fBalloonCoords[2]);
-  fBalloonTheta=fBalloonPos.Theta();
-  fBalloonPhi=fBalloonPos.Phi();
-  if(fBalloonPhi<0) fBalloonPhi+=TMath::TwoPi();
-  fBalloonHeight=fBalloonPos.Mag();
-}
-*/
 
 UsefulAdu5Pat::UsefulAdu5Pat(const Adu5Pat *patPtr)
   : Adu5Pat(*patPtr)
 {
   fIncludeGroupDelay=0;
 
-  pitch=AnitaStaticAdu5Offsets::pitch;
-  roll=AnitaStaticAdu5Offsets::roll;
+  pitch = AnitaStaticAdu5Offsets::pitch;
+  roll = AnitaStaticAdu5Offsets::roll;
   // pitch+=AnitaStaticAdu5Offsets::pitch;
   // roll+=AnitaStaticAdu5Offsets::roll;
-  heading+=AnitaStaticAdu5Offsets::heading;
+  heading += AnitaStaticAdu5Offsets::heading;
 
-  if(heading>=360) heading-=360;
-  if(heading<0) heading+=360;
+  if(heading>=360){
+    heading-=360;
+  }
+  if(heading<0){
+    heading+=360;
+  }
   fThetaWave=0;
   fPhiWave=0;
   fSourceLongitude=-1;
   fSourceLatitude=-1;
-  //std::cout << "LatLonAlt: " << latitude << "\t" << longitude << "\t" << altitude << "\n";
   AnitaGeomTool::Instance()->getCartesianCoords(latitude,longitude,altitude,
 						fBalloonCoords);
-  // std::cout << "Balloon Coords: " << fBalloonCoords[0] << "\t" << fBalloonCoords[1] << "\t" << fBalloonCoords[2] << "\n";
   fBalloonPos.SetXYZ(fBalloonCoords[0],fBalloonCoords[1],fBalloonCoords[2]);
   fBalloonTheta=fBalloonPos.Theta();
   fBalloonPhi=fBalloonPos.Phi();
-  if(fBalloonPhi<0) fBalloonPhi+=TMath::TwoPi();
+  if(fBalloonPhi<0){
+    fBalloonPhi+=TMath::TwoPi();
+  }
   fBalloonHeight=fBalloonPos.Mag();
+  fDebug = false;  
 }
 
 
 UsefulAdu5Pat::~UsefulAdu5Pat()
 {
-  //Default Destructor
+
 }
+
 
 
 void UsefulAdu5Pat::getThetaAndPhiWaveWillySeavey(Double_t &thetaWave, Double_t &phiWave)
 {
-  return getThetaAndPhiWave(AnitaLocations::LONGITUDE_SURF_SEAVEY,AnitaLocations::LATITUDE_SURF_SEAVEY,AnitaLocations::ALTITUDE_SURF_SEAVEY,thetaWave,phiWave);
+  return getThetaAndPhiWave(AnitaLocations::LONGITUDE_SURF_SEAVEY,
+			    AnitaLocations::LATITUDE_SURF_SEAVEY,
+			    AnitaLocations::ALTITUDE_SURF_SEAVEY,
+			    thetaWave, phiWave);
 }
 
 void UsefulAdu5Pat::getThetaAndPhiWaveWillyBorehole(Double_t &thetaWave,Double_t &phiWave)
 {
-  return getThetaAndPhiWave(AnitaLocations::LONGITUDE_BH,AnitaLocations::LATITUDE_BH,AnitaLocations::ALTITUDE_BH,thetaWave,phiWave);
+  return getThetaAndPhiWave(AnitaLocations::LONGITUDE_BH,
+			    AnitaLocations::LATITUDE_BH,
+			    AnitaLocations::ALTITUDE_BH,
+			    thetaWave, phiWave);
 }
 
 
 void UsefulAdu5Pat::getThetaAndPhiWaveTaylorDome(Double_t &thetaWave, Double_t &phiWave)
 {
-  return getThetaAndPhiWave(AnitaLocations::LONGITUDE_TD,AnitaLocations::LATITUDE_TD,AnitaLocations::ALTITUDE_TD,thetaWave,phiWave);
+  return getThetaAndPhiWave(AnitaLocations::LONGITUDE_TD,
+			    AnitaLocations::LATITUDE_TD,
+			    AnitaLocations::ALTITUDE_TD,
+			    thetaWave, phiWave);
 }
 
 
 int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat) {
-
-  // std::cout << "getSourceLonAndLatAltZero " << phiWave << "\t" << thetaWave << "\n";
   return getSourceLonAndLatAtDesiredAlt(phiWave, thetaWave, sourceLon, sourceLat, 0.0);
-
 }
+
+
+
+
+
+void UsefulAdu5Pat::accountForPitchAndRollInPhiWaveThetaWave(Double_t& thetaWave, Double_t& phiWave) const {
+
+  AnitaGeomTool * geom = AnitaGeomTool::Instance();
+  Double_t tempPhiWave=phiWave;
+  Double_t tempThetaWave=TMath::PiOver2()-thetaWave;
+
+  TVector3 rollAxis = geom->fRollRotationAxis;
+  TVector3 pitchAxis = geom->fPitchRotationAxis;
+
+  TVector3 arbDir;
+  arbDir.SetMagThetaPhi(1,tempThetaWave,-1*tempPhiWave);
+
+  arbDir.Rotate(heading*TMath::DegToRad(),geom->fHeadingRotationAxis);
+  rollAxis.Rotate((heading)*TMath::DegToRad(),geom->fHeadingRotationAxis);
+  pitchAxis.Rotate((heading)*TMath::DegToRad(),geom->fHeadingRotationAxis);
+
+  arbDir.Rotate(pitch*TMath::DegToRad(),pitchAxis);
+  rollAxis.Rotate(pitch*TMath::DegToRad(),pitchAxis);
+  arbDir.Rotate(roll*TMath::DegToRad(),rollAxis);//roll and pitch
+
+  tempPhiWave=arbDir.Phi();
+  if(tempPhiWave>TMath::TwoPi()) {
+    tempPhiWave-=TMath::TwoPi();
+  }
+  if(tempPhiWave<0) {
+    tempPhiWave+=TMath::TwoPi();
+  }
+  tempThetaWave=arbDir.Theta();
+
+
+  thetaWave = tempThetaWave;
+  phiWave = tempPhiWave;  
+}
+
+
+
 
 int UsefulAdu5Pat::getSourceLonAndLatAtDesiredAlt(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat, Double_t desiredAlt = 0.0)
 {
@@ -134,50 +155,11 @@ int UsefulAdu5Pat::getSourceLonAndLatAtDesiredAlt(Double_t phiWave, Double_t the
   if(fPhiWave!=phiWave) fPhiWave=phiWave;
   if(fThetaWave!=thetaWave) fThetaWave=thetaWave;
 
-  AnitaGeomTool * geom = AnitaGeomTool::Instance();
-  //   Double_t thetaBalloon=AnitaGeomTool::Instance()->getThetaFromLat(TMath::Abs(latitude));
-  //   Double_t phiBalloon=AnitaGeomTool::Instance()->getPhiFromLon(longitude);
-  //   Double_t balloonHeight=AnitaGeomTool::Instance()->getGeoid(thetaBalloon)+altitude;
-
   Double_t tempPhiWave=phiWave;
-  Double_t tempThetaWave=TMath::PiOver2()-thetaWave;
-  //Now need to take account of balloon heading
-
-  TVector3 rollAxis,pitchAxis;
-  rollAxis=geom->fRollRotationAxis;
-  pitchAxis=geom->fPitchRotationAxis;
-
-  //std::cout << "Attitude: " << heading << "\t" << pitch << "\t" << roll
-  //	       << "\n";
+  Double_t tempThetaWave=thetaWave;
 
   if(heading>=0 && heading<=360) {
-    TVector3 arbDir;
-    arbDir.SetMagThetaPhi(1,tempThetaWave,-1*tempPhiWave);
-
-    //std::cout << "tempPhiWave3: " << arbDir.Phi() << "\t" << tempPhiWave << "\n";
-
-    arbDir.Rotate(heading*TMath::DegToRad(),geom->fHeadingRotationAxis);
-    rollAxis.Rotate((heading)*TMath::DegToRad(),geom->fHeadingRotationAxis);
-    pitchAxis.Rotate((heading)*TMath::DegToRad(),geom->fHeadingRotationAxis);
-    //     std::cout << arbDir.Phi() << "\t" << arbDir.Theta() << "\n";
-    //     std::cout << "Pitch Axis\t" << pitchAxis.X() << " "
-    //	       << pitchAxis.Y() << " " << pitchAxis.Z() << "\t" << pitch << "\n";
-
-
-    arbDir.Rotate(pitch*TMath::DegToRad(),pitchAxis);
-    //     std::cout << arbDir.Phi() << "\t" << arbDir.Theta() << "\n";
-    rollAxis.Rotate(pitch*TMath::DegToRad(),pitchAxis);
-    arbDir.Rotate(roll*TMath::DegToRad(),rollAxis);//roll and pitch
-
-    tempPhiWave=arbDir.Phi();
-    //std::cout << "tempPhiWave2: " << tempPhiWave << "\n";
-    if(tempPhiWave>TMath::TwoPi()) {
-      tempPhiWave-=TMath::TwoPi();
-    }
-    if(tempPhiWave<0) {
-      tempPhiWave+=TMath::TwoPi();
-    }
-    tempThetaWave=arbDir.Theta();
+    accountForPitchAndRollInPhiWaveThetaWave(tempPhiWave, tempThetaWave);
   }
   else{
     std::cerr << "Error in " << __PRETTY_FUNCTION__ << ": Bad heading = " << heading << std::endl;
@@ -187,22 +169,23 @@ int UsefulAdu5Pat::getSourceLonAndLatAtDesiredAlt(Double_t phiWave, Double_t the
     return -1;
   }
 
+  AnitaGeomTool* geom = AnitaGeomTool::Instance();
   Double_t reBalloon=geom->getDistanceToCentreOfEarth(latitude)+desiredAlt; // ACG mod
   Double_t re=reBalloon;
   Double_t nextRe=re;
   Double_t reh=reBalloon+altitude;
+
+  const Double_t sintw = TMath::Sin(tempThetaWave);
+  const Double_t costw = TMath::Cos(tempThetaWave);
+
   do {
     //Okay so effectively what we do here is switch to cartesian coords with the balloon at RE_balloon + altitude and then try to find where the line at thetaWave cuts the Earth's surface.
     //This is iterative because the Earth is cruel and isn't flat, and I couldn't be bothered to work out how to do it more elegantly.
     re=nextRe;
 
-    Double_t sintw=TMath::Sin(tempThetaWave);
-    Double_t costw=TMath::Cos(tempThetaWave);
     Double_t sqrtArg(re*re-reh*reh*sintw*sintw);
     if(sqrtArg<0) {
-
       // No solution possible
-      //     std::cout << "No solution possible\n";
       sourceLon = -9999;
       sourceLat = -9999;
       desiredAlt = -9999;
@@ -239,56 +222,14 @@ int UsefulAdu5Pat::getSourceLonAndLatAtDesiredAlt(Double_t phiWave, Double_t the
 int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat,Double_t &sourceAltitude)
 {
 
-  bool debug=false;
-
   if(fPhiWave!=phiWave) fPhiWave=phiWave;
   if(fThetaWave!=thetaWave) fThetaWave=thetaWave;
 
-  AnitaGeomTool * geom = AnitaGeomTool::Instance();
-
-  //   Double_t thetaBalloon=AnitaGeomTool::Instance()->getThetaFromLat(TMath::Abs(latitude));
-  //   Double_t phiBalloon=AnitaGeomTool::Instance()->getPhiFromLon(longitude);
-  //   Double_t balloonHeight=AnitaGeomTool::Instance()->getGeoid(thetaBalloon)+altitude;
-
-  bool endlessLoop = 0;
-  bool endlessMess = 0;
-
   Double_t tempPhiWave=phiWave;
-  Double_t tempThetaWave=TMath::PiOver2()-thetaWave;
-  //Now need to take account of balloon heading
-
-  TVector3 rollAxis,pitchAxis;
-  rollAxis=geom->fRollRotationAxis;
-  pitchAxis=geom->fPitchRotationAxis;
+  Double_t tempThetaWave=thetaWave;
 
   if(heading>=0 && heading<=360) {
-    TVector3 arbDir;
-    arbDir.SetMagThetaPhi(1,tempThetaWave,-1*tempPhiWave);
-
-    //std::cout << "tempPhiWave3: " << arbDir.Phi() << "\t" << tempPhiWave << "\n";
-
-    arbDir.Rotate(heading*TMath::DegToRad(),geom->fHeadingRotationAxis);
-    rollAxis.Rotate((heading)*TMath::DegToRad(),geom->fHeadingRotationAxis);
-    pitchAxis.Rotate((heading)*TMath::DegToRad(),geom->fHeadingRotationAxis);
-    //     std::cout << arbDir.Phi() << "\t" << arbDir.Theta() << "\n";
-    //     std::cout << "Pitch Axis\t" << pitchAxis.X() << " "
-    //	       << pitchAxis.Y() << " " << pitchAxis.Z() << "\t" << pitch << "\n";
-
-
-    arbDir.Rotate(pitch*TMath::DegToRad(),pitchAxis);
-    //     std::cout << arbDir.Phi() << "\t" << arbDir.Theta() << "\n";
-    rollAxis.Rotate(pitch*TMath::DegToRad(),pitchAxis);
-    arbDir.Rotate(roll*TMath::DegToRad(),rollAxis);//roll and pitch
-
-    tempPhiWave=arbDir.Phi();
-    //std::cout << "tempPhiWave2: " << tempPhiWave << "\n";
-    if(tempPhiWave>TMath::TwoPi()) {
-      tempPhiWave-=TMath::TwoPi();
-    }
-    if(tempPhiWave<0) {
-      tempPhiWave+=TMath::TwoPi();
-    }
-    tempThetaWave=arbDir.Theta();
+    accountForPitchAndRollInPhiWaveThetaWave(tempPhiWave, tempThetaWave);
   }
   else{
     std::cerr << "Error in " << __PRETTY_FUNCTION__ << ": Bad heading = " << heading << std::endl;
@@ -298,165 +239,143 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
     return -1;
   }
 
-  //   std::cout << "Get source angles: " <<  tempThetaWave << "\t" << tempPhiWave << "\n";
+  AnitaGeomTool* geom = AnitaGeomTool::Instance();
+  
+  Double_t reBalloon = geom->getDistanceToCentreOfEarth(latitude);		// reBalloon, radius of earth where balloon is
+  Double_t chosenAlt = RampdemReader::SurfaceAboveGeoid(longitude,latitude);	// ChosenAlt, the ice surface below balloon
+  Double_t re = reBalloon+chosenAlt;						// re, radius of earth at balloon plus ice height above geoid
+  Double_t nextRe = re;								// nextRe, radius of geoid+ice at next iteration
+  Double_t reh = reBalloon+altitude;						// reh, radius of earth at balloon plus balloon altitude
 
-  //Double_t re=balloonHeight-altitude+2000;
-  //   Double_t re=fBalloonHeight-altitude;
+  if(fDebug){
+    std::cout << "balloon: lat = " << latitude << ", lon = " << longitude << ", re = " << reBalloon+chosenAlt << ", surface elevation = " << chosenAlt << std::endl;
+    std::cout << "phiWave = " << phiWave << ", thetaWave = " << thetaWave << ", fPhiWave = " << fPhiWave << ", fThetaWave = " << fThetaWave << std::endl;
+    std::cout << "heading = " << heading << ", pitch = " << pitch << ", roll = " << roll << std::endl;
+  }
 
-  Double_t reBalloon=geom->getDistanceToCentreOfEarth(latitude);
-  //   std::cout << "Radius difference: " << re-re2 << "\t" << re << "\t" << re2 << "\n";
-  Double_t chosenAlt = RampdemReader::SurfaceAboveGeoid(longitude,latitude);
+  int inTheLoop = 0;
+  Double_t lastButOneRe   = 0;	// in case we get stuck in the while loop - this is a bad method and needs to be improved!
+  Double_t lastButTwoRe   = 0;	// in case we get stuck in the while loop - this is a bad method and needs to be improved!
+  Double_t lastButThreeRe = 0;	// in case we get stuck in the while loop - this is a bad method and needs to be improved!
+  Double_t lastButFourRe  = 0;	// in case we get stuck in the while loop - this is a bad method and needs to be improved!
 
-  Double_t re=reBalloon+chosenAlt;
-  Double_t nextRe=re;
-  Double_t reh=reBalloon+altitude;
+  const int maxLoopIterations = 50; // maybe make this configurable?
+  const double deltaReCloseEnough = 1.0;  
+  Bool_t ocillatingAroundSolution = false;  
+  Bool_t tooManyLoops = false;
 
-  //    if(debug){
-  //      std::cout << "balloon lat " << latitude << " lon " << longitude << " re " << reBalloon+chosenAlt << " surface elevation " << chosenAlt << std::endl;
-  //      std::cout << "phiW " << phiWave << " thetaW " << thetaWave << " fPhiW " << fPhiWave << " fPhiWave " << " fThetaWave " << fThetaWave << std::endl;
-  //      std::cout << "head " << heading << " p " << pitch << " r " << roll << std::endl;
-  //    }
-
-  int inTheLoop=0;
-  Double_t lastButOneRe=0; //in case we get stuck in the while loop - this is a bad method and needs to be improved!
-  Double_t lastButTwoRe=0; //in case we get stuck in the while loop - this is a bad method and needs to be improved!
-  Double_t lastButThreeRe=0; //in case we get stuck in the while loop - this is a bad method and needs to be improved!
-  Double_t lastButFourRe=0; //in case we get stuck in the while loop - this is a bad method and needs to be improved!
-
+  const Double_t sintw = TMath::Sin(tempThetaWave);
+  const Double_t costw = TMath::Cos(tempThetaWave);
+  
   do {
-    //Okay so effectively what we do here is switch to cartesian coords with the balloon at RE_balloon + altitude and then try to fins where the line at thetaWave cuts the Earth's surface.
-    //This is iterative because the Earth is cruel and isn't flat, and I couldn't be bothered to work out how to do it more elegantly.
-    if(inTheLoop>2) lastButFourRe = lastButThreeRe;
-    if(inTheLoop>2) lastButThreeRe = lastButTwoRe;
-    if(inTheLoop>1) lastButTwoRe = lastButOneRe;
-    if(inTheLoop>0) lastButOneRe = re;
-    re=nextRe;
+    /**
+     * Okay so effectively what we do here is switch to cartesian coords
+     * with the balloon at RE_balloon + altitude and then try to find where the line at thetaWave cuts the Earth's surface.
+     * This is iterative because the Earth is cruel and isn't flat, and I couldn't be bothered to work out how to do it more elegantly.
+     */
+    if(inTheLoop>3){lastButFourRe = lastButThreeRe;}
+    if(inTheLoop>2){lastButThreeRe = lastButTwoRe;}
+    if(inTheLoop>1){lastButTwoRe = lastButOneRe;}
+    if(inTheLoop>0){lastButOneRe = re;}
+    re = nextRe;
     inTheLoop++;
-
-    Double_t sintw=TMath::Sin(tempThetaWave);
-    Double_t costw=TMath::Cos(tempThetaWave);
-    //     Double_t sqrtArg=(reh*reh*costw*costw - (reh*reh-re*re));
-    Double_t sqrtArg(re*re-reh*reh*sintw*sintw);
+    
+    Double_t sqrtArg = re*re - reh*reh*sintw*sintw;
     if(sqrtArg<0) {
-      // No solution possible
-      //     std::cout << "No solution possible\n";
+      if(fDebug){
+	std::cerr << "Error in " << __PRETTY_FUNCTION__ << ", no solution possible! Returning 0" << std::endl;
+      }
       return 0;
     }
-    Double_t L=reh*costw - TMath::Sqrt(sqrtArg);
-    Double_t sinThetaL=L*sintw/re;
-    Double_t sourceTheta=TMath::ASin(sinThetaL);
 
-    //std::cout << "Source Theta: " << sourceTheta*TMath::RadToDeg() << "\t" << tempThetaWave << "\t" << reh << "\t" << re << "\t" << AnitaGeomTool::Instance()->getDistanceToCentreOfEarth(latitude) << "\n";
-
-    //One possible improvement is to reiterate using the radius at the source location.
+    Double_t L = reh*costw - TMath::Sqrt(sqrtArg);
+    Double_t sinThetaL = L*sintw/re;
+    Double_t sourceTheta = TMath::ASin(sinThetaL);
 
 
-    //   Double_t sinSquiggle=(fBalloonHeight/tempRE)*TMath::Sin(tempThetaWave);
-    //   Double_t squiggle=TMath::ASin(sinSquiggle);
-    //   if(squiggle<0) squiggle+=TMath::Pi();
-
-    //   Double_t sourceTheta=TMath::Pi()-tempThetaWave-squiggle;
-    //   std::cout << thetaWave*TMath::RadToDeg() << "\t" << L << "\t" << sourceTheta*TMath::RadToDeg() << "\t" << phiWave*TMath::RadToDeg() << std::endl;
-    //Start at ground below balloon
+    /**
+     * Put the balloon at the south pole at height, re
+     */
     fSourcePos.SetX(0);
     fSourcePos.SetY(0);
     fSourcePos.SetZ(re);
 
-    //std::cout << "00ReLoc: " << fSourcePos.X() << "\t" << fSourcePos.Y() << "\t" << fSourcePos.Z() << "\n";
-
-    //Rotate to latitude relative to balloon
+    /**
+     * Rotate it to the current source position?
+     */
     fSourcePos.RotateY(sourceTheta);
-    //Rotate to longitude relative to balloon
     fSourcePos.RotateZ(-1*tempPhiWave);
-
-    //std::cout << "RelBalloonLoc: " << fSourcePos.X() << "\t" << fSourcePos.Y() << "\t" << fSourcePos.Z() << "\n";
-
-    //Rotate to correct absolute values
-    //std::cout << "Balloon angles: " << fBalloonTheta << "\t" << fBalloonPhi << "\n";
     fSourcePos.RotateY(fBalloonTheta);
-    fSourcePos.RotateZ(fBalloonPhi);
-    //Goofy sign thing
-    //   fSourcePos.SetZ(-1*fSourcePos.Z());
+    fSourcePos.RotateZ(fBalloonPhi);    
 
     Double_t sourceVec[3];
     fSourcePos.GetXYZ(sourceVec);
-    //std::cout << "BalloonPos: " << fBalloonPos.X() << "\t" << fBalloonPos.Y() << "\t" << fBalloonPos.Z() << "\n";
-    //std::cout << "ZeroAltLoc: " << sourceVec[0] << "\t" << sourceVec[1] << "\t" << sourceVec[2] << "\n";
     Double_t sourceAlt;
     geom->getLatLonAltFromCartesian(sourceVec,sourceLat,sourceLon,sourceAlt);
-    //std::cout << "SourceLatLonAlt: " << sourceLat << "\t" << sourceLon << "\t"
-    //	       << sourceAlt << "\n";
     chosenAlt = RampdemReader::SurfaceAboveGeoid(sourceLon,sourceLat);
-    nextRe=geom->getDistanceToCentreOfEarth(sourceLat)+chosenAlt;
-    //std::cout << "Earth radius: " << nextRe << "\t" << re << "\n";
-    //     break;
+    nextRe = geom->getDistanceToCentreOfEarth(sourceLat) + chosenAlt;
 
-    if(debug)
-      if(inTheLoop>30 && inTheLoop<50) std::cout << "loop " << inTheLoop << " sourceLat " << sourceLat << " long " << sourceLon << " alt " << chosenAlt << " re " << re << " nextRe " << nextRe << " lastButOneRe " << lastButOneRe << " abs(last-next) " << TMath::Abs(lastButOneRe-nextRe) << std::endl;
-
-
-    if(TMath::Abs(lastButOneRe-nextRe)<1.){
-      if(debug){
-	std::cout << "breaking out nextRe " << nextRe << " lastButTwoRe " << lastButOneRe << std::endl;
-      }
-      endlessLoop=1;
-      break;//WAY OF MAKING SURE WE DON'T GET STUCK IN THE LOOP WITH ALTERNATING RE VALUES - THIS IS NOT THE WAY TO DO THINGS!
-    }
-    if(TMath::Abs(lastButTwoRe-nextRe)<1.){
-      if(debug){
-	std::cout << "breaking out nextRe " << nextRe << " lastButOneRe " << lastButTwoRe << std::endl;
-      }
-      endlessLoop=1;
-      break;//WAY OF MAKING SURE WE DON'T GET STUCK IN THE LOOP WITH ALTERNATING RE VALUES - THIS IS NOT THE WAY TO DO THINGS!
-    }
-    if(TMath::Abs(lastButThreeRe-nextRe)<1.){
-      if(debug){
-	std::cout << "breaking out nextRe " << nextRe << " lastButThreeRe " << lastButThreeRe << std::endl;
-      }
-      endlessLoop=1;
-      break;//WAY OF MAKING SURE WE DON'T GET STUCK IN THE LOOP WITH ALTERNATING RE VALUES - THIS IS NOT THE WAY TO DO THINGS!
-    }
-    if(TMath::Abs(lastButFourRe-nextRe)<1.){
-      if(debug){
-	std::cout << "breaking out nextRe " << nextRe << " lastButFourRe " << lastButFourRe << std::endl;
-      }
-      endlessLoop=1;
-      break;//WAY OF MAKING SURE WE DON'T GET STUCK IN THE LOOP WITH ALTERNATING RE VALUES - THIS IS NOT THE WAY TO DO THINGS!
+    if(fDebug){
+      std::cerr << "Debug in " << __PRETTY_FUNCTION__ << "inTheLoop = " << inTheLoop
+		<< ", sourceLon = " << sourceLon << ", sourceLat = " << sourceLat << ", sourceAlt = " << sourceAlt
+		<< ", re = " << re << ", lastButOneRe = " << lastButOneRe << ", lastButTwoRe = " << lastButTwoRe
+		<< ", lastButThreeRe = " << lastButThreeRe << ", lastButFourRe = " << lastButFourRe
+		<< ", TMath::Abs(lastButOneRe-nextRe) = " << TMath::Abs(lastButOneRe-nextRe) << "\n";
     }
 
-    //fuck it, no sodding loops that go on too long!
-    if(inTheLoop>50){
-      endlessMess=1;
+
+    const int numLoopChecks = 4;
+    const double deltaRes[numLoopChecks] = {TMath::Abs(lastButOneRe-nextRe),
+					    TMath::Abs(lastButTwoRe-nextRe),
+					    TMath::Abs(lastButThreeRe-nextRe),
+					    TMath::Abs(lastButFourRe-nextRe)};
+    int smallestRe = TMath::LocMin(numLoopChecks, deltaRes);
+    if(deltaRes[smallestRe] <= deltaReCloseEnough){
+      if(fDebug){
+	const double Res[numLoopChecks]    = {lastButOneRe,    lastButTwoRe,   lastButThreeRe,   lastButFourRe};
+	const char* whichRe[numLoopChecks] = {"lastButOneRe", "lastButTwoRe", "lastButThreeRe", "lastButFourRe"};
+	std::cerr << "Breaking out due to small enough difference over several loop iterations, nextRe = "
+		  << nextRe << ", " << whichRe[smallestRe] << " = " << Res[smallestRe]
+		  << ", abs(" << whichRe[smallestRe] << " - nextRe) = " << deltaRes[smallestRe] << std::endl;
+      }
+      ocillatingAroundSolution = true;
       break;
     }
 
-  } while(TMath::Abs(nextRe-re)>1);
+    
+    if(inTheLoop>maxLoopIterations){
+      if(fDebug){
+	std::cerr << "Debug in " << __PRETTY_FUNCTION__ << ": Breaking out due to too many loop iterations! inTheLoop > " << maxLoopIterations << std::endl;	
+      }
+      tooManyLoops=1;
+      break;
+    }
 
-  //    if(debug)
-  //      std::cout << "sourceLat " << sourceLat << " long " << sourceLon << " alt " << chosenAlt << " re " << re << " nextRe " << nextRe << std::endl;
+  } while(TMath::Abs(nextRe-re)>deltaReCloseEnough);
+
   sourceAltitude = chosenAlt;
-  //   AnitaGeomTool::Instance()->getLonLat(fSourcePos,sourceLon,sourceLat);
-  //   sourceLat*=-1;
 
-  if(endlessLoop==1){
-    sourceLon = -9999;
-    sourceLat = -9999;
-    sourceAltitude = -9999;
+  if(ocillatingAroundSolution){
+    // It converged although the loop oscillated around the true solution a bit,
+    // so let's trust this one and not overwrite the source lon/lat/alt
     return 2;
   }
-  else if(endlessMess==1){
+  else if(tooManyLoops){
+    // We couldn't get to the true answer in quite a lot of iterations, so we probably don't trust the answer in this case.
     sourceLon = -9999;
     sourceLat = -9999;
     sourceAltitude = -9999;
     return 3;
   }
-  else if(int(chosenAlt)==-9999){
+  else if(TMath::Nint(chosenAlt)==-9999){
+    // I think this means the source altitude is off the edge of the Rampdem map, so it's probably nonsense
     sourceLon = -9999;
     sourceLat = -9999;
     sourceAltitude = -9999;
     return 4;
   }
   else{
+    // It converged on the first attempt
     return 1;
   }
 }
@@ -466,7 +385,6 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
 void UsefulAdu5Pat::getThetaAndPhiWaveWaisDivide(Double_t &thetaWave, Double_t &phiWave)
 {  
   return getThetaAndPhiWave(AnitaLocations::getWaisLongitude(), AnitaLocations::getWaisLatitude(),AnitaLocations::getWaisAltitude(),thetaWave,phiWave);
-  // return getThetaAndPhiWave(AnitaLocations::LONGITUDE_WAIS,AnitaLocations::LATITUDE_WAIS,AnitaLocations::ALTITUDE_WAIS,thetaWave,phiWave);  
 }
 
 void UsefulAdu5Pat::getThetaAndPhiWaveLDB(Double_t &thetaWave, Double_t &phiWave)
@@ -477,75 +395,44 @@ void UsefulAdu5Pat::getThetaAndPhiWaveLDB(Double_t &thetaWave, Double_t &phiWave
 
 
 void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave) {
-  // Double_t thetaBalloon=AnitaGeomTool::Instance()->getThetaFromLat(TMath::Abs(latitude));
-  // Double_t phiBalloon=AnitaGeomTool::Instance()->getPhiFromLon(longitude);
-  // Double_t balloonHeight=AnitaGeomTool::Instance()->getGeoid(thetaBalloon)+altitude;
-  // std::cout << "Theta " << thetaBalloon << "\t" << fBalloonTheta << "\n";
-  // std::cout << "Phi " << phiBalloon << "\t" << fBalloonPhi << "\n";
-
-  //    Double_t thetaSource=AnitaGeomTool::Instance()->getThetaFromLat(TMath::Abs(sourceLat));
-  //    Double_t phiSource=AnitaGeomTool::Instance()->getPhiFromLon(sourceLon);
-  //    Double_t radiusSource=AnitaGeomTool::Instance()->getGeoid(thetaSource)+sourceAlt;
-
-  //    //Get vector from Earth's centre to source
-  //    fSourcePos.SetX(radiusSource*TMath::Sin(thetaSource)*TMath::Cos(phiSource));
-  //    fSourcePos.SetY(radiusSource*TMath::Sin(thetaSource)*TMath::Sin(phiSource));
-  //    fSourcePos.SetZ(radiusSource*TMath::Cos(thetaSource));
 
   Double_t pSource[3]={0};
   AnitaGeomTool * geom = AnitaGeomTool::Instance();
   geom->getCartesianCoords(TMath::Abs(sourceLat),sourceLon,sourceAlt,pSource);
   fSourcePos.SetXYZ(pSource[0],pSource[1],pSource[2]);
 
-  //std::cout << "SourceLoc: " << pSource[0] << "\t" << pSource[1] << "\t" << pSource[2] << "\n";
-
   //Rotate such that balloon is at 0,0,fBalloonHeight
   fSourcePos.RotateZ(-1*fBalloonPhi);
   fSourcePos.RotateY(-1*fBalloonTheta);
 
-
-  //    std::cout << "rotated source\tx " << fSourcePos.X() << "\ty " << fSourcePos.Y() << "\tz " << fSourcePos.Z() << std::endl;
-  //    std::cout << "balloon\tx " << fBalloonPos.X() << "\ty " << fBalloonPos.Y() << "\tz " << fBalloonPos.Z() << std::endl;
-  //    std::cout << "rotated source - balloon\tx " << fSourcePos.X()-fBalloonPos.X() << "\ty " << fSourcePos.Y()-fBalloonPos.Y() << "\tz " << fSourcePos.Z()-fBalloonPos.Z() << std::endl;
-
   //Now find thetaWave and phiWave
-  thetaWave=TMath::ATan((fBalloonHeight-fSourcePos.Z())/TMath::Sqrt(fSourcePos.X()*fSourcePos.X() + fSourcePos.Y()*fSourcePos.Y()));
+  thetaWave = TMath::ATan((fBalloonHeight-fSourcePos.Z())/TMath::Sqrt(fSourcePos.X()*fSourcePos.X() + fSourcePos.Y()*fSourcePos.Y()));
 
-  //phiWave is just atan(yp/xp) only looks confusing to make sure I get the sign and 0-360 convention
-  phiWave=0;
+  // phiWave is just atan(yp/xp)
+  // It only looks confusing to make sure I get the sign and 0-360 convention
+  phiWave = 0;
   if(fSourcePos.X()==0) {
-    phiWave=TMath::PiOver2();
+    phiWave = TMath::PiOver2();
     if(fSourcePos.Y()<0)
-      phiWave+=TMath::Pi();
+      phiWave += TMath::Pi();
   }
   else if(fSourcePos.X()<0) {
-    phiWave=TMath::Pi()+TMath::ATan(fSourcePos.Y()/fSourcePos.X());
+    phiWave = TMath::Pi()+TMath::ATan(fSourcePos.Y()/fSourcePos.X());
   }
   else {
-    phiWave=TMath::ATan(fSourcePos.Y()/fSourcePos.X());
+    phiWave = TMath::ATan(fSourcePos.Y()/fSourcePos.X());
     if(fSourcePos.Y()<0) {
-      phiWave+=TMath::TwoPi();
+      phiWave += TMath::TwoPi();
     }
   }
 
-  //Now need to take account of balloon heading
-  //   //Will have to check heading at some point
-  //    if(heading>=0 && heading<=360) {
-  //       phiWave+=heading*TMath::DegToRad();
-  //       if(phiWave>TMath::TwoPi())
-  // 	 phiWave-=TMath::TwoPi();
-  //    }
-
-  //   std::cout << "Pre rotate: " << TMath::PiOver2()-thetaWave << "\t" << TMath::TwoPi()-phiWave << "\n";
-
-  TVector3 rollAxis,pitchAxis;
-  rollAxis=geom->fRollRotationAxis;
-  pitchAxis=geom->fPitchRotationAxis;
+  TVector3 rollAxis = geom->fRollRotationAxis;
+  TVector3 pitchAxis = geom->fPitchRotationAxis;
 
   Double_t tempThetaWave=TMath::PiOver2()-thetaWave;
 
   if(heading>=0 && heading<=360) {
-    TVector3 arbDir;
+    TVector3 arbDir; //
     arbDir.SetMagThetaPhi(1,tempThetaWave,-1*phiWave);
 
     rollAxis.Rotate(heading*TMath::DegToRad(),geom->fHeadingRotationAxis);
@@ -554,20 +441,10 @@ void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, D
 
     arbDir.Rotate(-1.*roll*TMath::DegToRad(),rollAxis);
     arbDir.Rotate(-1*pitch*TMath::DegToRad(),pitchAxis);
-
-    // std::cout << roll << "\t" << pitch << "\t in function " << __PRETTY_FUNCTION__ << std::endl;
-
     arbDir.Rotate(-1*heading*TMath::DegToRad(),geom->fHeadingRotationAxis);
 
-    //need to rotate roll and pitch axes - in this function heading has been
-    //chosen as +ve x axis, pitch and roll axes are defined in terms of x and
-    //y axes from ANITA setup document
-    //rollAxis.Rotate(-135.*TMath::DegToRad(),AnitaGeomTool::Instance()->fHeadingRotationAxis);
-    //pitchAxis.Rotate(45.*TMath::DegToRad(),AnitaGeomTool::Instance()->fHeadingRotationAxis);
-    //pitchAxis.Rotate(-1*heading*TMath::DegToRad(),AnitaGeomTool::Instance()->fHeadingRotationAxis);
-
-    phiWave=arbDir.Phi();
-    phiWave*=-1;
+    phiWave = arbDir.Phi();
+    phiWave *= -1;
     if(phiWave>TMath::TwoPi()) {
       phiWave-=TMath::TwoPi();
     }
@@ -575,14 +452,13 @@ void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, D
       phiWave+=TMath::TwoPi();
     }
     thetaWave=TMath::PiOver2()-arbDir.Theta();
-
   }
 
-  fPhiWave=phiWave;
-  fThetaWave=thetaWave;
-  fSourceLongitude=sourceLon;
-  fSourceLatitude=sourceLat;
-  fSourceAltitude=sourceAlt;
+  fPhiWave = phiWave;
+  fThetaWave = thetaWave;
+  fSourceLongitude = sourceLon;
+  fSourceLatitude = sourceLat;
+  fSourceAltitude = sourceAlt;
 }
 
 Double_t UsefulAdu5Pat::getGroupDelay(Double_t phiToAntBoresight)
@@ -1199,8 +1075,17 @@ int UsefulAdu5Pat::traceBackToContinent(Double_t phiWave, Double_t thetaWave,
                                         Double_t * lon_ptr, Double_t * lat_ptr, Double_t * alt_ptr,
                                         Double_t * adj_ptr, Double_t max_adjust, Int_t max_iter)
 {
-
-  if (thetaWave + max_adjust < 0) return 0; //no chance
+  if(fDebug){
+    std::cerr << "Debug info in " << __PRETTY_FUNCTION__ << ":\n";
+  }
+  
+  
+  if (thetaWave + max_adjust < 0){
+    if(fDebug){
+      std::cerr << "thetaWave + max_adjust < 0... no chance! returning 0!" << std::endl;
+    }
+    return 0; // no chance
+  }
 
   Double_t lon,lat,alt;
   Double_t last_theta_tried =0;
@@ -1219,19 +1104,28 @@ int UsefulAdu5Pat::traceBackToContinent(Double_t phiWave, Double_t thetaWave,
                           ? thetaWave+max_adjust
                           : (last_successful_theta + last_failed_theta)/2;
 
-//    printf("%f\n",theta_try);
+    if(fDebug){
+      std::cerr << "theta_try  = " << theta_try << "\n";
+    }
+    
     last_theta_tried = theta_try;
 
     int success = getSourceLonAndLatAtAlt(phiWave, theta_try, lon, lat, alt); 
-
-    if (success == 1) 
+    if(fDebug){
+      std::cerr << "getSourceLonAndLatAtAlt: success  = " << success << "\n";
+    }
+    
+    if (success == 1 || success == 2)
     {
       if (iter == 1) //this was the first try and it was a success
       {
         if (lon_ptr) *lon_ptr = lon; 
         if (lat_ptr) *lat_ptr = lat; 
         if (alt_ptr) *alt_ptr = alt; 
-        if (adj_ptr) *adj_ptr = 0; 
+        if (adj_ptr) *adj_ptr = 0;
+	if(fDebug){
+	  std::cerr << "success on first try! Returning 1" << std::endl;
+	}
         return 1; 
       }
 
@@ -1246,6 +1140,9 @@ int UsefulAdu5Pat::traceBackToContinent(Double_t phiWave, Double_t thetaWave,
     {
       if (theta_try == thetaWave + max_adjust)
       {
+	if(fDebug){	
+	  std::cerr << "theta_try = thetaWave + max_adjust = " << theta_try << "... it's hopeless! returning 0" << std::endl;
+	}
         //it's hopeless. 
         return 0; 
       }
@@ -1258,6 +1155,10 @@ int UsefulAdu5Pat::traceBackToContinent(Double_t phiWave, Double_t thetaWave,
   if (lon_ptr) *lon_ptr = last_good_lon;
   if (alt_ptr) *alt_ptr = last_good_alt;
   if (adj_ptr) *adj_ptr = last_successful_theta - thetaWave;
+
+  if(fDebug){
+    std::cerr << "Got here! Returning 2 " << std::endl;
+  }
 
   return 2;
 }
