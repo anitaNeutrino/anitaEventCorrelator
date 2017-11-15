@@ -138,7 +138,8 @@ int UsefulAdu5Pat::getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWav
 
 
 
-void UsefulAdu5Pat::accountForPitchAndRollInPhiWaveThetaWave(Double_t& thetaWave, Double_t& phiWave) const {
+void UsefulAdu5Pat::accountForPitchAndRollInPhiWaveThetaWave(Double_t& phiWave, Double_t& thetaWave) const {
+
 
   AnitaGeomTool * geom = AnitaGeomTool::Instance();
   Double_t tempPhiWave=phiWave;

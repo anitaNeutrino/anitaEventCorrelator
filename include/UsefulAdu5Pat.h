@@ -383,7 +383,7 @@ class UsefulAdu5Pat: public Adu5Pat
    * @param thetaWave updated after pitch/roll accounted for
    * @param phiWave updated after pitch/roll accounted for
    */
-  void accountForPitchAndRollInPhiWaveThetaWave(Double_t& thetaWave, Double_t& phiWave) const;
+  void accountForPitchAndRollInPhiWaveThetaWave(Double_t& phiWave, Double_t& thetaWave) const;
 
   /** 
    * Function which checks that public longitude/latitude/altitude hasn't changed
