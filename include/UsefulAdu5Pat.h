@@ -60,7 +60,6 @@ class UsefulAdu5Pat: public Adu5Pat
 
   
   int getSourceLonAndLatAltZero(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat);
-
   
   /**
    * 
@@ -74,7 +73,7 @@ class UsefulAdu5Pat: public Adu5Pat
    * @param desiredAlt Call specified altitude of the payload (if not specified, set to 0.0 so that this function would behave the same as getSourceLonAndLatAltZero() function)
    * @return 1 or 2 successful source localisation, -1, 0, or 4 for various failures, all of which set sourceLon/Lat/Alt to -9999 (see comments in source code for explanation)
    */
-  int getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat,Double_t &sourceAltitude);
+  int getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat,Double_t &sourceAltitude) const;
 
   /** 
    * Trace back to continent, based a bit on Abby's code. 
@@ -94,7 +93,7 @@ class UsefulAdu5Pat: public Adu5Pat
    */ 
   int traceBackToContinent(Double_t phiWave, Double_t thetaWave, 
                            Double_t * lon, Double_t * lat, Double_t *alt, Double_t * theta_adjustment_required, 
-                           Double_t max_theta_adjustment = TMath::Pi()/180, Int_t max_iter = 10) ; 
+                           Double_t max_theta_adjustment = TMath::Pi()/180, Int_t max_iter = 10) const; 
 
 
 
@@ -278,7 +277,7 @@ class UsefulAdu5Pat: public Adu5Pat
   UInt_t getSipleTriggerTimeNs(); /// Gets the time of flight to Siple
   UInt_t getLDBTriggerTimeNs(); /// Gets the time of flight to LDB camp
   UInt_t getTriggerTimeNsFromSource(Double_t sourceLat, Double_t sourceLong, Double_t sourceAlt); /// Gets time of flight from any source
-  Double_t getDistanceFromSource(Double_t sourceLat, Double_t sourceLong, Double_t sourceAlt); /// Gets distance from any source in meters
+  Double_t getDistanceFromSource(Double_t sourceLat, Double_t sourceLong, Double_t sourceAlt) const; /// Gets distance from any source in meters
   void setIncludeGroupDelay(Int_t flag){fIncludeGroupDelay=flag;} /// Toggles the silly group delay correction on and off
 
   RampdemReader *fRampdemReader;
