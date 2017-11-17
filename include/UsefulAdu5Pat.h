@@ -334,38 +334,73 @@ class UsefulAdu5Pat: public Adu5Pat
 
   /** 
    * Sets whether to print the debug messages
-   * 
    * @param db true or false
    */
-  void setDebug(bool db){fDebug = db;}
+  inline void setDebug(bool db){fDebug = db;}
 
   /** 
    * Is the debug output on?
    * @return the value of fDebug
    */
-  bool getDebug() const {
-    return fDebug;
+  inline bool getDebug() const {return fDebug;}
+
+  /** 
+   * Set whether or not to use to interpolated version of RampdemReader::SurfaceAboveGeoid?
+   * @param i true means use the bilinear interpolated version, false means use the plain old version
+   */
+  inline void setInterpSurfaceAboveGeoid(bool i){fInterpSurfaceAboveGeoid = i;} // *TOGGLE *GETTER=getInterpSurfaceAboveGeoid
+  /** 
+   * Is the flag set to use to bilinear interpolated version of RampdemReader::SurfaceAboveGeoid?
+   * @return the value of fInterpSurfaceAboveGeoid
+   */
+  inline bool getInterpSurfaceAboveGeoid() const {return fInterpSurfaceAboveGeoid;}
+
+  /** 
+   * Sets the epsilon parameter at which the getSourceAtLonAndLatAtAlt thinks it's found a valid solution
+   * 
+   * @param closeEnough epsilon distance in metres (default is 1.0)
+   */
+  inline void setSurfaceCloseEnoughInter(double closeEnough = 1.0){fSurfaceCloseEnoughIter = closeEnough;}
+
+  /** 
+   * What is the currently set value for which getSourceAtLonAndLatAtAlt accepts agreement between source height and surfaceAboveGeoid?
+   * @return the current value of fSurfaceCloseEnoughIter
+   */
+  inline double getSurfaceCloseEnoughInter() const {return fSurfaceCloseEnoughIter;}
+
+  /** 
+   * Get surface above geoid, depending on whether interpolation is requested.
+   * @return surface elevation of the ice, above the geoid
+   */
+  inline double surfaceAboveGeoid(Double_t lon, Double_t lat) const {
+    if(fInterpSurfaceAboveGeoid){
+      return RampdemReader::BilinearInterpolatedSurfaceAboveGeoid(lon, lat);
+    }
+    else{
+      return RampdemReader::SurfaceAboveGeoid(lon, lat);
+    }
   }
 
  private:
-  Int_t		fIncludeGroupDelay;	/// Include group delay in deltaTs? (default is no)
-  TVector3	fSourcePos;		/// Private variable to hold the source location in cartesian coordinates.
-  Double_t	fSourceLongitude;	/// The source longitude.
-  Double_t	fSourceLatitude;	/// The source latitude.
-  Double_t	fSourceAltitude;	/// The source altitude.
-  Double_t	fThetaWave;		/// The elevation angle of the plane wave in payload centric coordinates.
-  Double_t	fPhiWave;		/// The azimuthal angle of the plane wave in payload centric coordinates with phi equals zero lying along the direction of the ADU5 fore antenna.
-  Double_t	fBalloonCoords[3];	/// The balloon position in cartesian coords
-  TVector3	fBalloonPos;		/// The cartesian coords as a TVector3
-  Double_t	fBalloonTheta;		/// The balloon theta
-  Double_t	fBalloonPhi;		/// The balloon phi
-  Double_t	fBalloonHeight;		/// The balloon height
-  Float_t       fBalloonLonCache;	/// The public member longitude when the rest of the balloon coords were calculated
-  Float_t       fBalloonLatCache;	/// The public member latitude when the rest of the balloon coords were calculated
-  Float_t       fBalloonAltCache;	/// The public member altitude when the rest of the balloon coords were calculated
-  Bool_t	fDebug;			/// Print lots of info in complicated methods, for debugging.
-  
-  ClassDef(UsefulAdu5Pat,0); /// ROOT's magic macro.
+  Int_t		fIncludeGroupDelay;		/// Include group delay in deltaTs? (default is no)
+  TVector3	fSourcePos;			/// Private variable to hold the source location in cartesian coordinates.
+  Double_t	fSourceLongitude;		/// The source longitude.
+  Double_t	fSourceLatitude;		/// The source latitude.
+  Double_t	fSourceAltitude;		/// The source altitude.
+  Double_t	fThetaWave;			/// The elevation angle of the plane wave in payload centric coordinates.
+  Double_t	fPhiWave;			/// The azimuthal angle of the plane wave in payload centric coordinates with phi equals zero lying along the direction of the ADU5 fore antenna.
+  Double_t	fBalloonCoords[3];		/// The balloon position in cartesian coords
+  TVector3	fBalloonPos;			/// The cartesian coords as a TVector3
+  Double_t	fBalloonTheta;			/// The balloon theta
+  Double_t	fBalloonPhi;			/// The balloon phi
+  Double_t	fBalloonHeight;			/// The balloon height
+  Float_t       fBalloonLonCache;		/// The public member longitude when the rest of the balloon coords were calculated
+  Float_t       fBalloonLatCache;		/// The public member latitude when the rest of the balloon coords were calculated
+  Float_t       fBalloonAltCache;		/// The public member altitude when the rest of the balloon coords were calculated
+  Bool_t	fDebug;				/// Print lots of info in complicated methods, for debugging.
+  Bool_t        fInterpSurfaceAboveGeoid;	/// Flag to use (bilinear) interpolation version of SurfaceAboveGeoid function
+  Double_t      fSurfaceCloseEnoughIter;	/// How close is close enough in the getSourceLonAndLatAtAlt iteration? (default = 1.0 metres)
+  ClassDef(UsefulAdu5Pat,0);			/// ROOT's magic macro.
 
   //optimisation stuff
   Double_t getDeltaTTaylorOpt(Int_t ant1, Int_t ant2, Double_t *deltaR, Double_t *deltaZ, Double_t *deltaPhi);

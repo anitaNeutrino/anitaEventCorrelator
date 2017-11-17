@@ -43,7 +43,8 @@ UsefulAdu5Pat::UsefulAdu5Pat()
   fBalloonLatCache=0;
   fBalloonAltCache=0;
   fDebug = false;
-
+  fInterpSurfaceAboveGeoid = false;
+  fSurfaceCloseEnoughIter = 1.0;
 }
 
 UsefulAdu5Pat::UsefulAdu5Pat(const Adu5Pat *patPtr)
@@ -69,6 +70,8 @@ UsefulAdu5Pat::UsefulAdu5Pat(const Adu5Pat *patPtr)
   fBalloonLatCache=0;
   fBalloonAltCache=0;
   fDebug = false;
+  fInterpSurfaceAboveGeoid = false;
+  fSurfaceCloseEnoughIter = 1.0;
   updateCartesianBalloonInfo();
 }
 
@@ -267,11 +270,11 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
 
   AnitaGeomTool* geom = AnitaGeomTool::Instance();
   
-  Double_t reBalloon = geom->getDistanceToCentreOfEarth(latitude);		// reBalloon, radius of earth where balloon is
-  Double_t chosenAlt = RampdemReader::SurfaceAboveGeoid(longitude,latitude);	// ChosenAlt, the ice surface below balloon
-  Double_t re = reBalloon+chosenAlt;						// re, radius of earth at balloon plus ice height above geoid
-  Double_t nextRe = re;								// nextRe, radius of geoid+ice at next iteration
-  Double_t reh = reBalloon+altitude;						// reh, radius of earth at balloon plus balloon altitude
+  Double_t reBalloon = geom->getDistanceToCentreOfEarth(latitude); // reBalloon, radius of earth where balloon is
+  Double_t chosenAlt = surfaceAboveGeoid(longitude,latitude);	   // ChosenAlt, the ice surface below balloon
+  Double_t re = reBalloon+chosenAlt;				   // re, radius of earth at balloon plus ice height above geoid
+  Double_t nextRe = re;						   // nextRe, radius of geoid+ice at next iteration
+  Double_t reh = reBalloon+altitude;				   // reh, radius of earth at balloon plus balloon altitude
 
   if(fDebug){
     std::cout << "balloon: lat = " << latitude << ", lon = " << longitude << ", re = " << reBalloon+chosenAlt << ", surface elevation = " << chosenAlt << std::endl;
@@ -285,8 +288,8 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
   Double_t lastButThreeRe = 0;	// in case we get stuck in the while loop - this is a bad method and needs to be improved!
   Double_t lastButFourRe  = 0;	// in case we get stuck in the while loop - this is a bad method and needs to be improved!
 
-  const int maxLoopIterations = 50; // maybe make this configurable?
-  const double deltaReCloseEnough = 1.0;  
+  const int maxLoopIterations = 50;
+  const double deltaReCloseEnough = fSurfaceCloseEnoughIter;
   Bool_t ocillatingAroundSolution = false;  
   Bool_t tooManyLoops = false;
 
@@ -315,10 +318,9 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
     if(sqrtArg<0) {
       if(fDebug){
 	std::cerr << "Error in " << __PRETTY_FUNCTION__ << ", no solution possible! Returning 0\n";
-	std::cerr << "Balloon alt = " << altitude << "\n";	
-	std::cerr << "re = " << re << ",  reh = " << reh << ", sintw = " << sintw << ", tempThetaWave = " << tempThetaWave << "\n";
-        std::cerr << "re*re = " << re*re << ",  reh*reh*sintw*sintw = " << reh*reh*sintw*sintw << "\n";
-        std::cerr << "sqrtArg = " << sqrtArg << std::endl;
+	// std::cerr << "re = " << re << ",  reh = " << reh << ", sintw = " << sintw << ", tempThetaWave = " << tempThetaWave << "\n";
+        // std::cerr << "re*re = " << re*re << ",  reh*reh*sintw*sintw = " << reh*reh*sintw*sintw << "\n";
+        // std::cerr << "sqrtArg = " << sqrtArg << std::endl;
       }
       return 0;
     }
@@ -339,7 +341,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
     sourcePos.GetXYZ(sourceVec);
     Double_t sourceAlt;
     geom->getLatLonAltFromCartesian(sourceVec,sourceLat,sourceLon,sourceAlt);
-    chosenAlt = RampdemReader::SurfaceAboveGeoid(sourceLon,sourceLat);
+    chosenAlt = surfaceAboveGeoid(sourceLon,sourceLat);
     nextRe = geom->getDistanceToCentreOfEarth(sourceLat) + chosenAlt;
 
     if(fDebug){
@@ -383,7 +385,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
 
   if(ocillatingAroundSolution){
     // It converged although the loop oscillated around the true solution a bit,
-    // so let's trust this one and not overwrite the source lon/lat/alt
+    // so let's trust this one and not overwrite the source lon/lat/alt with error values
     return 2;
   }
   else if(tooManyLoops){
@@ -1087,7 +1089,7 @@ int UsefulAdu5Pat::traceBackToContinent(Double_t phiWave, Double_t thetaWave,
                           : (last_successful_theta + last_failed_theta)/2;
 
     if(fDebug){
-      std::cerr << "theta_try  = " << theta_try << "\n";
+      std::cerr << "iter = " << iter << ", theta_try  = " << theta_try << "\n";
     }
     
     last_theta_tried = theta_try;
