@@ -21,8 +21,10 @@
 #include "TProfile2D.h"
 #include "TTimeStamp.h"
 
-// For ANITA-3
-
+/**
+ * @namespace AnitaStaticAdu5Offsets
+ * @brief Static value to which the pitch/roll variables are set in UsefulAdu5Pat, currently for ANITA-3
+ */
 namespace AnitaStaticAdu5Offsets{
   const Double_t heading = 0;
   const Double_t pitch = 0;
@@ -73,7 +75,12 @@ class UsefulAdu5Pat: public Adu5Pat
    * @param desiredAlt Call specified altitude of the payload (if not specified, set to 0.0 so that this function would behave the same as getSourceLonAndLatAltZero() function)
    * @return 1 or 2 successful source localisation, -1, 0, or 4 for various failures, all of which set sourceLon/Lat/Alt to -9999 (see comments in source code for explanation)
    */
-  int getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat,Double_t &sourceAltitude) const;
+  int getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat,Double_t &sourceAltitude);
+
+  /**
+   * Const version of getSourceLonAndLatAtAlt, all params and return values are the same.
+   */
+  int getSourceLonAndLatAtAlt2(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat,Double_t &sourceAltitude, TVector3* sourcePosOptional = NULL) const;
 
   /** 
    * Trace back to continent, based a bit on Abby's code. 
@@ -272,23 +279,22 @@ class UsefulAdu5Pat: public Adu5Pat
     return fSourceAltitude;
   }
 
-  UInt_t getTaylorDomeTriggerTimeNs(); /// Gets the time of flight to Taylor Dome
-  UInt_t getWaisDivideTriggerTimeNs(); /// Gets the time of flight to Wais Divide
-  UInt_t getSipleTriggerTimeNs(); /// Gets the time of flight to Siple
-  UInt_t getLDBTriggerTimeNs(); /// Gets the time of flight to LDB camp
-  UInt_t getTriggerTimeNsFromSource(Double_t sourceLat, Double_t sourceLong, Double_t sourceAlt); /// Gets time of flight from any source
-  Double_t getDistanceFromSource(Double_t sourceLat, Double_t sourceLong, Double_t sourceAlt) const; /// Gets distance from any source in meters
-  void setIncludeGroupDelay(Int_t flag){fIncludeGroupDelay=flag;} /// Toggles the silly group delay correction on and off
+  UInt_t getTaylorDomeTriggerTimeNs() const;								/// Gets the time of flight to Taylor Dome
+  UInt_t getWaisDivideTriggerTimeNs() const;								/// Gets the time of flight to Wais Divide
+  UInt_t getSipleTriggerTimeNs() const;									/// Gets the time of flight to Siple
+  UInt_t getLDBTriggerTimeNs() const;									/// Gets the time of flight to LDB camp
+  UInt_t getTriggerTimeNsFromSource(Double_t sourceLat, Double_t sourceLong, Double_t sourceAlt) const; /// Gets time of flight from any source
+  Double_t getDistanceFromSource(Double_t sourceLat, Double_t sourceLong, Double_t sourceAlt) const;	/// Gets distance from any source in meters
+  void setIncludeGroupDelay(Int_t flag){fIncludeGroupDelay=flag;}					/// Toggles the silly group delay correction on and off
 
   RampdemReader *fRampdemReader;
   AnitaGeomTool * fUPGeomTool; 
 
-  Double_t getAngleBetweenPayloadAndSource(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt); //ACG additional function
-
-  void getSunPosition(Double_t& phiDeg, Double_t& thetaDeg);
-  Double_t getAzimuthOfSunRelativeToNorth();
-  Double_t getAzimuthOfSun();
-  Double_t getDifferencePointingToSun(Double_t phiAngle, Bool_t inputInDegrees=true);
+  Double_t getAngleBetweenPayloadAndSource(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt); //ACG additional 
+  void getSunPosition(Double_t& phiDeg, Double_t& thetaDeg) const;
+  Double_t getAzimuthOfSunRelativeToNorth() const;
+  Double_t getAzimuthOfSun() const;
+  Double_t getDifferencePointingToSun(Double_t phiAngle, Bool_t inputInDegrees=true) const;
 
   /** 
    * Returns a source elevation angle, assuming the image is a specular reflection of a source at infinity
@@ -311,7 +317,7 @@ class UsefulAdu5Pat: public Adu5Pat
    * 
    * @return Source elevation angle assuming specular reflection
    */  
-  Double_t getReflectionAngle(Double_t imageEl, Double_t imageAlt);
+  Double_t getReflectionAngle(Double_t imageEl, Double_t imageAlt) const;
 
 
   /** 
@@ -368,6 +374,8 @@ class UsefulAdu5Pat: public Adu5Pat
    */
   inline double getSurfaceCloseEnoughInter() const {return fSurfaceCloseEnoughIter;}
 
+
+
   /** 
    * Get surface above geoid, depending on whether interpolation is requested.
    * @return surface elevation of the ice, above the geoid
@@ -380,6 +388,15 @@ class UsefulAdu5Pat: public Adu5Pat
       return RampdemReader::SurfaceAboveGeoid(lon, lat);
     }
   }
+
+
+  /**
+   * Call this function if you update the payload lon/lat/alt after construction.
+   * This function checks whether public longitude/latitude/altitude has changed
+   * since the fBalloon cartesian stuff was calculated. Updates it if it has.
+   */
+  void updateCartesianBalloonInfo();
+
 
  private:
   Int_t		fIncludeGroupDelay;		/// Include group delay in deltaTs? (default is no)
@@ -419,11 +436,6 @@ class UsefulAdu5Pat: public Adu5Pat
    */
   void accountForPitchAndRollInPhiWaveThetaWave(Double_t& phiWave, Double_t& thetaWave) const;
 
-  /** 
-   * Function which checks that public longitude/latitude/altitude hasn't changed
-   * since the fBalloon cartesian stuff was calculated. Updates it as required.
-   */
-  void updateCartesianBalloonInfo();
 
 
 };
