@@ -8,15 +8,8 @@
 
 #include "AnitaVersion.h"
 #include "UsefulAdu5Pat.h"
-#include "AnitaGeomTool.h"
-#include "AnitaConventions.h"
-#include "BedmapReader.h"
-#include "RampdemReader.h"
-#include "TProfile2D.h"
 #include <iostream>
-#include <fstream>
-
-#include "TVector3.h"
+#include "TTimeStamp.h"
 
 ClassImp(UsefulAdu5Pat);
 

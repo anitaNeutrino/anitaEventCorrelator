@@ -193,19 +193,28 @@ Double_t RampdemReader::BilinearInterpolatedSurfaceAboveGeoidEastingNorthing(Dou
   Int_t e2 = e1 + 1;
   Int_t n2 = n1 + 1;
 
+  // std::cout << e1 << "\t" << e2 << "\t\t" << n1 << "\t" << n2 << std::endl;
+
   double q11, q12, q21, q22;
-  
+
+  Int_t nCols_surface = dataSet == rampdem ? numYs[dataSet] : numXs[dataSet];
+  Int_t nRows_surface = dataSet == rampdem ? numXs[dataSet] : numYs[dataSet];
+  bool e1Good = e1 >= 0 && e1 <nCols_surface;
+  bool e2Good = e2 >= 0 && e2 <nCols_surface;
+  bool n1Good = n1 >= 0 && n1 <nRows_surface;
+  bool n2Good = n2 >= 0 && n2 <nRows_surface;
+
   if(dataSet==rampdem){
-    q11 = double(surface_elevation[e1][n1]);
-    q12 = double(surface_elevation[e1][n2]);
-    q21 = double(surface_elevation[e2][n1]);
-    q22 = double(surface_elevation[e2][n2]);
+    q11 = e1Good && n1Good ? double(surface_elevation[e1][n1]) : -9999;
+    q12 = e1Good && n2Good ? double(surface_elevation[e1][n2]) : -9999;
+    q21 = e2Good && n1Good ? double(surface_elevation[e2][n1]) : -9999;
+    q22 = e2Good && n2Good ? double(surface_elevation[e2][n2]) : -9999;
   }
   else{
-    q11 = double(surface_elevation[e1][n1]);
-    q12 = double(surface_elevation[e1][n2]);
-    q21 = double(surface_elevation[e2][n1]);
-    q22 = double(surface_elevation[e2][n2]);    
+    q11 = e1Good && n1Good ? double(surface_elevation[n1][e1]) : -9999;
+    q12 = e1Good && n2Good ? double(surface_elevation[n1][e2]) : -9999;
+    q21 = e2Good && n1Good ? double(surface_elevation[n2][e1]) : -9999;
+    q22 = e2Good && n2Good ? double(surface_elevation[n2][e2]) : -9999;
   }
 
   double easting1 = e1*cell_size + x_min;

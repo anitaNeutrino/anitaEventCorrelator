@@ -15,11 +15,8 @@
 #include <TVector3.h>
 #include "Adu5Pat.h"
 #include "AnitaConventions.h"
-#include "AnitaGeomTool.h"
-#include "BedmapReader.h"
 #include "RampdemReader.h"
-#include "TProfile2D.h"
-#include "TTimeStamp.h"
+#include "AnitaGeomTool.h"
 
 /**
  * @namespace AnitaStaticAdu5Offsets
@@ -415,7 +412,7 @@ class UsefulAdu5Pat: public Adu5Pat
   Float_t       fBalloonLatCache;		/// The public member latitude when the rest of the balloon coords were calculated
   Float_t       fBalloonAltCache;		/// The public member altitude when the rest of the balloon coords were calculated
   Bool_t	fDebug;				/// Print lots of info in complicated methods, for debugging.
-  Bool_t        fInterpSurfaceAboveGeoid;	/// Flag to use (bilinear) interpolation version of SurfaceAboveGeoid function
+  Bool_t        fInterpSurfaceAboveGeoid;	/// Flag to use bilinear interpolation version of SurfaceAboveGeoid function (default = false)
   Double_t      fSurfaceCloseEnoughIter;	/// How close is close enough in the getSourceLonAndLatAtAlt iteration? (default = 1.0 metres)
   ClassDef(UsefulAdu5Pat,0);			/// ROOT's magic macro.
 
