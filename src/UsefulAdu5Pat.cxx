@@ -290,7 +290,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt2(Double_t phiWave, Double_t thetaWave
   Double_t lastButThreeRe = 0;	// in case we get stuck in the while loop - this is a bad method and needs to be improved!
   Double_t lastButFourRe  = 0;	// in case we get stuck in the while loop - this is a bad method and needs to be improved!
 
-  const int maxLoopIterations = 50;
+  const int maxLoopIterations = fMaxLoopIterations;
   const double deltaReCloseEnough = fSurfaceCloseEnoughIter;
   Bool_t ocillatingAroundSolution = false;  
   Bool_t tooManyLoops = false;

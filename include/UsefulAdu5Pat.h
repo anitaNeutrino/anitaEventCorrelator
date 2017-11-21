@@ -372,6 +372,19 @@ class UsefulAdu5Pat: public Adu5Pat
   inline double getSurfaceCloseEnoughInter() const {return fSurfaceCloseEnoughIter;}
 
 
+  /** 
+   * Set how many loop iterations to allow before giving up in getSourceLonAndLatAtAlt
+   * 
+   * @param n the number of loops to allow (default is 50, which should be enough in most instances)
+   */
+  inline void setMaxLoopIterations(Int_t n = 50){fMaxLoopIterations = n;}
+
+  /** 
+   * Get how many loop iterations to allow before giving up in getSourceLonAndLatAtAlt
+   * @return the current value of fMaxLoopIterations 
+   */
+  inline int getMaxLoopIterations() const {return fMaxLoopIterations;}
+  
 
   /** 
    * Get surface above geoid, depending on whether interpolation is requested.
@@ -414,6 +427,7 @@ class UsefulAdu5Pat: public Adu5Pat
   Bool_t	fDebug;				/// Print lots of info in complicated methods, for debugging.
   Bool_t        fInterpSurfaceAboveGeoid;	/// Flag to use bilinear interpolation version of SurfaceAboveGeoid function (default = false)
   Double_t      fSurfaceCloseEnoughIter;	/// How close is close enough in the getSourceLonAndLatAtAlt iteration? (default = 1.0 metres)
+  Int_t         fMaxLoopIterations;             /// How many iterations before giving up in getSourceLonAndLatAtAlt? (default = 50)
   ClassDef(UsefulAdu5Pat,0);			/// ROOT's magic macro.
 
   //optimisation stuff
