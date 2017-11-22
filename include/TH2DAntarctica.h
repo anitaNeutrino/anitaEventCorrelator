@@ -193,6 +193,7 @@ class TH2DAntarctica : public TH2D {
   virtual void Draw(Option_t* opt="");
   virtual Int_t Fill(Double_t lon, Double_t lat, Double_t val=1);
 
+  void setAcceptStereographic(bool accept) { accept_stereographic = accept ; }
   void UnZoom(){getBackground()->UnZoom();} //*MENU
 
   GF(bool,bool,GrayScale)
@@ -240,6 +241,8 @@ class TH2DAntarctica : public TH2D {
   mutable int                   fCoarseness;           //! Don't persist
   mutable int                   fDeltaLat;             //! Don't persist
   mutable int                   fDeltaLon;             //! Don't persist
+
+  bool accept_stereographic; 
   
   AntarcticaBackground* getBackground() const{
     if(!fAntarcticaBackground){

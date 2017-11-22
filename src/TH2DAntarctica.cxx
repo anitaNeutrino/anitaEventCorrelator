@@ -213,6 +213,8 @@ TH2DAntarctica::TH2DAntarctica(Int_t nx, Int_t ny)
   ny = ny <= 0 ? b->GetNbinsY() : ny;
   SetBins(nx, b->GetXaxis()->GetBinLowEdge(1), b->GetXaxis()->GetBinUpEdge(b->GetNbinsX()),
           ny, b->GetYaxis()->GetBinLowEdge(1), b->GetYaxis()->GetBinUpEdge(b->GetNbinsY()));
+
+  accept_stereographic = false;
 }
 
 
@@ -226,6 +228,7 @@ TH2DAntarctica::TH2DAntarctica(const char* name, const char* title, Int_t nx, In
   ny = ny <= 0 ? b->GetNbinsY() : ny;
   SetBins(nx, b->GetXaxis()->GetBinLowEdge(1), b->GetXaxis()->GetBinUpEdge(b->GetNbinsX()),
           ny, b->GetYaxis()->GetBinLowEdge(1), b->GetYaxis()->GetBinUpEdge(b->GetNbinsY()));
+  accept_stereographic = false; 
 }
 
 
@@ -268,7 +271,16 @@ void TH2DAntarctica::Draw(Option_t* opt){
 Int_t TH2DAntarctica::Fill(Double_t lon, Double_t lat, Double_t val){
 
   Double_t easting, northing;
-  RampdemReader::LonLatToEastingNorthing(lon, lat, easting, northing);
+
+  if (accept_stereographic) 
+  {
+    easting = lon; 
+    northing = lat; 
+  }
+  else
+  {
+    RampdemReader::LonLatToEastingNorthing(lon, lat, easting, northing);
+  }
   return TH2D::Fill(easting, northing, val);  
 }
 
