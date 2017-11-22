@@ -425,33 +425,41 @@ void UsefulAdu5Pat::getThetaAndPhiWaveLDB(Double_t &thetaWave, Double_t &phiWave
 
 
 void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave) {
+  getThetaAndPhiWave2(sourceLon, sourceLat, sourceAlt, thetaWave, phiWave, &fSourcePos);
+}
+
+
+
+void UsefulAdu5Pat::getThetaAndPhiWave2(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave, TVector3* sourcePos) const {
   
   Double_t pSource[3]={0};
   AnitaGeomTool * geom = AnitaGeomTool::Instance();
-  geom->getCartesianCoords(TMath::Abs(sourceLat),sourceLon,sourceAlt,pSource);
-  fSourcePos.SetXYZ(pSource[0],pSource[1],pSource[2]);
+  geom->getCartesianCoords(TMath::Abs(sourceLat),sourceLon,sourceAlt,pSource);  
+  TVector3 sourcePosStack;
+  sourcePos  = sourcePos ? sourcePos : &sourcePosStack;
+  sourcePos->SetXYZ(pSource[0],pSource[1],pSource[2]);
 
   //Rotate such that balloon is at 0,0,fBalloonHeight
-  fSourcePos.RotateZ(-1*fBalloonPhi);
-  fSourcePos.RotateY(-1*fBalloonTheta);
+  sourcePos->RotateZ(-1*fBalloonPhi);
+  sourcePos->RotateY(-1*fBalloonTheta);
 
   //Now find thetaWave and phiWave
-  thetaWave = TMath::ATan((fBalloonHeight-fSourcePos.Z())/TMath::Sqrt(fSourcePos.X()*fSourcePos.X() + fSourcePos.Y()*fSourcePos.Y()));
+  thetaWave = TMath::ATan((fBalloonHeight-sourcePos->Z())/TMath::Sqrt(sourcePos->X()*sourcePos->X() + sourcePos->Y()*sourcePos->Y()));
 
   // phiWave is just atan(yp/xp)
   // It only looks confusing to make sure I get the sign and 0-360 convention
   phiWave = 0;
-  if(fSourcePos.X()==0) {
+  if(sourcePos->X()==0) {
     phiWave = TMath::PiOver2();
-    if(fSourcePos.Y()<0)
+    if(sourcePos->Y()<0)
       phiWave += TMath::Pi();
   }
-  else if(fSourcePos.X()<0) {
-    phiWave = TMath::Pi()+TMath::ATan(fSourcePos.Y()/fSourcePos.X());
+  else if(sourcePos->X()<0) {
+    phiWave = TMath::Pi()+TMath::ATan(sourcePos->Y()/sourcePos->X());
   }
   else {
-    phiWave = TMath::ATan(fSourcePos.Y()/fSourcePos.X());
-    if(fSourcePos.Y()<0) {
+    phiWave = TMath::ATan(sourcePos->Y()/sourcePos->X());
+    if(sourcePos->Y()<0) {
       phiWave += TMath::TwoPi();
     }
   }
@@ -483,13 +491,10 @@ void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, D
     }
     thetaWave=TMath::PiOver2()-arbDir.Theta();
   }
-
-  // fPhiWave = phiWave;
-  // fThetaWave = thetaWave;
-  // fSourceLongitude = sourceLon;
-  // fSourceLatitude = sourceLat;
-  // fSourceAltitude = sourceAlt;
 }
+
+
+
 
 Double_t UsefulAdu5Pat::getGroupDelay(Double_t phiToAntBoresight)
 {

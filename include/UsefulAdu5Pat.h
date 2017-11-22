@@ -115,6 +115,18 @@ class UsefulAdu5Pat: public Adu5Pat
 
 
   /**
+   * const/thread-safe version of getThetaAndPhiWave, unlike that function the fSourcePos vector is not updated
+   * 
+   * @param sourceLon The longitude of the source.
+   * @param sourceLat The latitude of the source.
+   * @param sourceAlt The altitude of the source.
+   * @param phiWave Reference to a Double_t in which to store the azimuthal angle of plane wave (in payload centric coordinates with phi equals zero lying in the direction the ADU5 fore antenna)
+   * @param thetaWave Reference to a Double_t in which to store the elevation angle of plane wave (in payload centric coordinates with phi equals zero lying in the direction the ADU5 fore antenna)
+   * @param sourcePos optional pointer to vector to store source position in
+   */
+  void getThetaAndPhiWave2(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave, TVector3* sourcePos = NULL) const;
+
+  /**
    * Returns the expected theta and phi expected from WAIS divide
    * 
    * @param phiWave Reference to a Double_t in which to store the azimuthal angle of plane wave (in payload centric coordinates with phi equals zero lying in the direction of the ADU5 fore antenna)
