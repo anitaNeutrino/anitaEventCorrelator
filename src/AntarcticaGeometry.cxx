@@ -506,29 +506,41 @@ AntarcticCoord * StereographicGrid::sampleSegment(int idx, int N, AntarcticCoord
 
 void StereographicGrid::Draw(const char * opt, const double * data, const double * range) const
 {
-  TH2D h("tmp","Stereographic Grid", nx, -max_E, max_E, ny, -max_N, max_N); 
-  for (int i = 1; i <= nx; i++) 
+  TH2 * h = 0; 
+
+  TString stropt(opt); 
+  stropt.ToUpper(); 
+
+  bool do_map = false;
+  if (stropt.Contains("MAP"))
   {
-    for (int j = 1; j <= ny; j++) 
-    {
-      AntarcticCoord c(AntarcticCoord::STEREOGRAPHIC, h.GetXaxis()->GetBinCenter(i), h.GetYaxis()->GetBinCenter(j));
-      int idx = getSegmentIndex(c); 
-      if (data && data[idx] > 0)
-      {
-//        printf("%d %d %d %g\n", i,j,idx,data[idx]); 
-      }
-      h.SetBinContent(i,j,  data ? data[idx] : idx); 
-    }
+    stropt.ReplaceAll("MAP",""); 
+    h = new TH2DAntarctica("tmp","Stereographic Grid", nx, ny); 
+    do_map - true;
   }
-  h.SetStats(0); 
+  else 
+  {
+    h = new TH2D("tmp","Stereographic Grid", nx, -max_E, max_E, ny, -max_N, max_N); 
+  }
+
+  AntarcticCoord c;
+  for (int i = 0; i < NSegments(); i++) 
+  {
+     getSegmentCenter(i,&c,false); 
+     h->Fill(c.x, c.y, data ? data[i]: i); 
+  }
+
+  h->SetStats(0); 
+
   if (range) 
   {
 
-    h.GetXaxis()->SetRangeUser(range[0], range[1]); 
-    h.GetYaxis()->SetRangeUser(range[2], range[3]); 
+    h->GetXaxis()->SetRangeUser(range[0], range[1]); 
+    h->GetYaxis()->SetRangeUser(range[2], range[3]); 
 
   }
-  h.DrawCopy(opt); 
+  h->DrawCopy(opt); 
+  delete h; 
 }
 
 void StereographicGrid::asString(TString * str) const
