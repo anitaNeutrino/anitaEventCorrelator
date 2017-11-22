@@ -69,9 +69,9 @@ static double d_bar = 4279*pow(eccentricity,8)/161280;
 static double c_0 = (2*R_EARTH / sqrt(1-pow(eccentricity,2))) * pow(( (1-eccentricity) / (1+eccentricity) ),eccentricity/2);
 
 // Varies with latitude, defined here for 71 deg S...
-static double R_factor = scale_factor*c_0 * pow(( (1 + eccentricity*sin(71*TMath::RadToDeg())) / (1 - eccentricity*sin(71*TMath::RadToDeg())) ),eccentricity/2) * tan((TMath::Pi()/4) - (71*TMath::RadToDeg())/2);
+// static double R_factor = scale_factor*c_0 * pow(( (1 + eccentricity*sin(71*TMath::RadToDeg())) / (1 - eccentricity*sin(71*TMath::RadToDeg())) ),eccentricity/2) * tan((TMath::Pi()/4) - (71*TMath::RadToDeg())/2);
 
-static double nu_factor = R_factor / cos(71*TMath::RadToDeg());
+// static double nu_factor = R_factor / cos(71*TMath::RadToDeg());
 
 
 
@@ -153,6 +153,89 @@ Double_t RampdemReader::Surface(Double_t lon,Double_t lat) {
 
 
 
+/**
+ * Version of SurfaceAboveGeoid which does bilinear interpolation (in easting/northing) between neighouring cells.
+ * 
+ * @param lon is the longiutde (degrees)
+ * @param lat is the latitude (degrees)
+ *
+ * @return elevation above geoid in metres
+ */
+Double_t RampdemReader::BilinearInterpolatedSurfaceAboveGeoid(Double_t lon, Double_t lat, RampdemReader::dataSet dataSet) {
+
+  Double_t easting, northing;
+  LonLatToEastingNorthing(lon, lat, easting, northing);
+  return BilinearInterpolatedSurfaceAboveGeoidEastingNorthing(easting, northing, dataSet);  
+}
+
+/**
+ * Version of SurfaceAboveGeoid which does bilinear interpolation (in easting/northing) between neighouring cells.
+ * 
+ * @param  is the longiutde (degrees)
+ * @param lat is the latitude (degrees)
+ *
+ * @return elevation above geoid in metres
+ */
+Double_t RampdemReader::BilinearInterpolatedSurfaceAboveGeoidEastingNorthing(Double_t easting, Double_t northing, RampdemReader::dataSet dataSet) {
+
+  getDataIfNeeded(dataSet);
+  const VecVec& surface_elevation = bedMap2Data[dataSet];
+
+  Int_t x_min = minXs[dataSet];
+  Int_t y_min = minYs[dataSet];
+  Int_t cell_size = cellSizes[dataSet];
+
+  Double_t non_integer_e_coord = (easting - x_min) / cell_size;
+  Double_t non_integer_n_coord = (-1*northing - y_min) / cell_size;
+
+  Int_t e1 = floor(non_integer_e_coord);
+  Int_t n1 = floor(non_integer_n_coord);
+  Int_t e2 = e1 + 1;
+  Int_t n2 = n1 + 1;
+
+  // std::cout << e1 << "\t" << e2 << "\t\t" << n1 << "\t" << n2 << std::endl;
+
+  double q11, q12, q21, q22;
+
+  Int_t nCols_surface = dataSet == rampdem ? numYs[dataSet] : numXs[dataSet];
+  Int_t nRows_surface = dataSet == rampdem ? numXs[dataSet] : numYs[dataSet];
+  bool e1Good = e1 >= 0 && e1 <nCols_surface;
+  bool e2Good = e2 >= 0 && e2 <nCols_surface;
+  bool n1Good = n1 >= 0 && n1 <nRows_surface;
+  bool n2Good = n2 >= 0 && n2 <nRows_surface;
+
+  if(dataSet==rampdem){
+    q11 = e1Good && n1Good ? double(surface_elevation[e1][n1]) : -9999;
+    q12 = e1Good && n2Good ? double(surface_elevation[e1][n2]) : -9999;
+    q21 = e2Good && n1Good ? double(surface_elevation[e2][n1]) : -9999;
+    q22 = e2Good && n2Good ? double(surface_elevation[e2][n2]) : -9999;
+  }
+  else{
+    q11 = e1Good && n1Good ? double(surface_elevation[n1][e1]) : -9999;
+    q12 = e1Good && n2Good ? double(surface_elevation[n1][e2]) : -9999;
+    q21 = e2Good && n1Good ? double(surface_elevation[n2][e1]) : -9999;
+    q22 = e2Good && n2Good ? double(surface_elevation[n2][e2]) : -9999;
+  }
+
+  double easting1 = e1*cell_size + x_min;
+  double easting2 = e2*cell_size + x_min;
+  double northing1 = -n1*cell_size - y_min;
+  double northing2 = -n2*cell_size - y_min;
+
+  // this image is very helpful to visualize what's going on here
+  // https://en.wikipedia.org/wiki/Bilinear_interpolation#/media/File:Comparison_of_1D_and_2D_interpolation.svg
+  // need to do three linear interpolations...
+  double dEasting = easting - easting1;
+  double dNorthing = northing - northing1;
+  double deltaEasting = easting2 - easting1;
+  double deltaNorthing = northing2 - northing1;
+
+  double q11_q21_interp = q11 + dEasting*(q21 - q11)/(deltaEasting);
+  double q12_q22_interp = q12 + dEasting*(q22 - q12)/(deltaEasting);
+  double bilinearlyInterpolatedSurface = q11_q21_interp + dNorthing*(q12_q22_interp - q11_q21_interp)/(deltaNorthing);  
+  return bilinearlyInterpolatedSurface;
+}
+
 
 
 /**
@@ -165,44 +248,24 @@ Double_t RampdemReader::Surface(Double_t lon,Double_t lat) {
  */
 Double_t RampdemReader::SurfaceAboveGeoid(Double_t lon, Double_t lat, RampdemReader::dataSet dataSet) {
 
-  getDataIfNeeded(dataSet);
-  VecVec& surface_elevation = bedMap2Data[dataSet];
-
-  Int_t nCols_surface = dataSet == rampdem ? numYs[dataSet] : numXs[dataSet];
-  Int_t nRows_surface = dataSet == rampdem ? numXs[dataSet] : numYs[dataSet];
-
-  Double_t surface=0;
-
-  Int_t e_coord_surface=0;
-  Int_t n_coord_surface=0;
-  LonLattoEN(lon,lat,e_coord_surface,n_coord_surface, dataSet);
-
-  if(e_coord_surface >= nCols_surface || e_coord_surface <0){
-//     std::cerr<<"[RampdemReader::surfaceAboveGeoid]  Error!  Trying to access x-element "<<e_coord_surface<<" of the RAMP DEM data! (Longitude, latitude = "<<lon<<", "<<lat<<")\n";
-    return -9999;
-  }
-  else if(n_coord_surface >= nRows_surface || n_coord_surface <0){
-    //     std::cerr<<"[RampdemReader::surfaceAboveGeoid]  Error!  Trying to access y-element "<<n_coord_surface<<" of the RAMP DEM data! (Longitude, latitude = "<<lon<<", "<<lat<<")\n";
-    return -9999;
-  }
-  else{
-    if(dataSet==rampdem){
-      surface = double(surface_elevation[e_coord_surface][n_coord_surface]);
-    }
-    else{
-      surface = double(surface_elevation[n_coord_surface][e_coord_surface]);
-    }
-  }
-
-  return surface;
+  Double_t easting, northing;
+  LonLatToEastingNorthing(lon, lat, easting, northing);
+  return SurfaceAboveGeoidEN(easting, northing, dataSet);
 }
 
 
-/* this is a copy paste of above more or less :)  */ 
+/**
+ * Returns the elevation above the geoid of the surface of the top of the ice (or bare ground if no ice)
+ * in meters, at a location specified by a latitude and longitude (in degrees).
+ * @param Easting is easting (m)
+ * @param Northing is northing (m)
+ *
+ * @return elevation above geoid in metres
+ */
 Double_t RampdemReader::SurfaceAboveGeoidEN(Double_t Easting, Double_t Northing, RampdemReader::dataSet dataSet)
 {
   getDataIfNeeded(dataSet);
-  VecVec& surface_elevation = bedMap2Data[dataSet];
+  const VecVec& surface_elevation = bedMap2Data[dataSet];
 
   Int_t nCols_surface = dataSet == rampdem ? numYs[dataSet] : numXs[dataSet];
   Int_t nRows_surface = dataSet == rampdem ? numXs[dataSet] : numYs[dataSet];
@@ -461,6 +524,7 @@ void RampdemReader::EastingNorthingToEN(Double_t easting,Double_t northing,Int_t
 
 
 
+
 /**
  * Convert longitude and latitude to easting and northing using the geoid model
  *
@@ -474,7 +538,7 @@ void RampdemReader::LonLatToEastingNorthing(Double_t lon,Double_t lat,Double_t &
   Double_t lon_rad = lon * TMath::DegToRad(); //convert to radians
   Double_t lat_rad = -lat * TMath::DegToRad();
 
-  R_factor = scale_factor*c_0 * pow(( (1 + eccentricity*sin(lat_rad)) / (1 - eccentricity*sin(lat_rad)) ),eccentricity/2) * tan((TMath::Pi()/4) - lat_rad/2);
+  const double R_factor = scale_factor*c_0 * pow(( (1 + eccentricity*sin(lat_rad)) / (1 - eccentricity*sin(lat_rad)) ),eccentricity/2) * tan((TMath::Pi()/4) - lat_rad/2);
 
   easting = R_factor * sin(lon_rad);///(x_max-x_min);
   northing = R_factor * cos(lon_rad);///(y_max-y_min);
@@ -523,7 +587,7 @@ void RampdemReader::ENtoLonLat(Int_t e_coord, Int_t n_coord, Double_t& lon, Doub
     lon += TMath::Pi();
 
   //now find latitude
-
+  double R_factor = 0;
   if (easting != 0)
     R_factor = TMath::Abs(easting/sin(lon));
   else if (easting == 0 && northing != 0)
@@ -560,7 +624,7 @@ void RampdemReader::EastingNorthingToLonLat(Double_t easting,Double_t northing,D
 
   double lon_rad = atan2(easting,northing); 
   lon = lon_rad * TMath::RadToDeg(); 
-  R_factor = sqrt(easting*easting+northing*northing); 
+  double R_factor = sqrt(easting*easting+northing*northing); 
   double isometric_lat = (TMath::Pi()/2) - 2*atan(R_factor/(scale_factor*c_0));
   lat = isometric_lat + a_bar*sin(2*isometric_lat) + b_bar*sin(4*isometric_lat) + c_bar*sin(6*isometric_lat) + d_bar*sin(8*isometric_lat);
   lat =  -lat*TMath::RadToDeg(); //convert to degrees, with -90 degrees at the south pole
