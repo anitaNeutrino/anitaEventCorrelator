@@ -144,11 +144,16 @@ class TProfile2DAntarctica : public TProfile2D {
   virtual TAxis* GetYaxis();
   TGraphAntarctica* findLocalMaxima() const;
 
+  void setAcceptStereographic(bool accept) { accept_stereographic = accept ; } //*TOGGLE *GETTER=getAcceptStereographic
+  bool getAcceptStereographic() const { return accept_stereographic; }
+
  private:
   mutable AntarcticaBackground* fAntarcticaBackground; //! Don't persist
   mutable int                   fCoarseness;           //! Don't persist
   mutable int                   fDeltaLat;             //! Don't persist
   mutable int                   fDeltaLon;             //! Don't persist
+
+  bool accept_stereographic;
   
   AntarcticaBackground* getBackground() const{
     if(!fAntarcticaBackground){
@@ -156,7 +161,7 @@ class TProfile2DAntarctica : public TProfile2D {
     }  
     return fAntarcticaBackground;
   }
-  ClassDef(TProfile2DAntarctica, 1);
+  ClassDef(TProfile2DAntarctica, 2);
 
 };
 
@@ -193,7 +198,6 @@ class TH2DAntarctica : public TH2D {
   virtual void Draw(Option_t* opt="");
   virtual Int_t Fill(Double_t lon, Double_t lat, Double_t val=1);
 
-  void setAcceptStereographic(bool accept) { accept_stereographic = accept ; }
   void UnZoom(){getBackground()->UnZoom();} //*MENU
 
   GF(bool,bool,GrayScale)
@@ -232,6 +236,10 @@ class TH2DAntarctica : public TH2D {
   void RescaleBackground() const {getBackground()->scale(GetMinimum(), GetMaximum());}          //*MENU
   virtual void SetMaximum(Double_t maximum = -1111) { fMaximum = maximum; RescaleBackground();} //*MENU*
   virtual void SetMinimum(Double_t minimum = -1111) { fMinimum = minimum; RescaleBackground();} //*MENU*
+
+  void setAcceptStereographic(bool accept) { accept_stereographic = accept ; } //*TOGGLE *GETTER=getAcceptStereographic
+  bool getAcceptStereographic() const { return accept_stereographic; }
+
   virtual TAxis* GetXaxis();
   virtual TAxis* GetYaxis();
   TGraphAntarctica* findLocalMaxima() const;
@@ -250,7 +258,7 @@ class TH2DAntarctica : public TH2D {
     }  
     return fAntarcticaBackground;
   }
-  ClassDef(TH2DAntarctica, 1);
+  ClassDef(TH2DAntarctica, 2);
 
 };
 

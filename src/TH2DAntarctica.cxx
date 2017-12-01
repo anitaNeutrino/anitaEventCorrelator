@@ -24,6 +24,7 @@ TProfile2DAntarctica::TProfile2DAntarctica(Int_t nx, Int_t ny)
   ny = ny <= 0 ? b->GetNbinsY() : ny;
   SetBins(nx, b->GetXaxis()->GetBinLowEdge(1), b->GetXaxis()->GetBinUpEdge(b->GetNbinsX()),
           ny, b->GetYaxis()->GetBinLowEdge(1), b->GetYaxis()->GetBinUpEdge(b->GetNbinsY()));
+  accept_stereographic = false;
 }
 
 
@@ -37,6 +38,7 @@ TProfile2DAntarctica::TProfile2DAntarctica(const char* name, const char* title, 
   ny = ny <= 0 ? b->GetNbinsY() : ny;
   SetBins(nx, b->GetXaxis()->GetBinLowEdge(1), b->GetXaxis()->GetBinUpEdge(b->GetNbinsX()),
           ny, b->GetYaxis()->GetBinLowEdge(1), b->GetYaxis()->GetBinUpEdge(b->GetNbinsY()));
+  accept_stereographic = false;
 }
 
 
@@ -56,6 +58,7 @@ TProfile2DAntarctica::TProfile2DAntarctica(const char* name, const char* title, 
 	    ny, b->GetYaxis()->GetBinLowEdge(1), b->GetYaxis()->GetBinUpEdge(b->GetNbinsY()));
 
   }
+  accept_stereographic = false;
 }
 
 
@@ -76,7 +79,15 @@ void TProfile2DAntarctica::Draw(Option_t* opt){
 Int_t TProfile2DAntarctica::Fill(Double_t lon, Double_t lat, Double_t val){
 
   Double_t easting, northing;
-  RampdemReader::LonLatToEastingNorthing(lon, lat, easting, northing);
+  if (accept_stereographic)
+  {
+    easting = lon;
+    northing = lat;
+  }
+  else
+  {
+    RampdemReader::LonLatToEastingNorthing(lon, lat, easting, northing);
+  }
   return TProfile2D::Fill(easting, northing, val);
 }
 
@@ -249,6 +260,7 @@ TH2DAntarctica::TH2DAntarctica(const char* name, const char* title, const std::v
 	    ny, b->GetYaxis()->GetBinLowEdge(1), b->GetYaxis()->GetBinUpEdge(b->GetNbinsY()));
 
   }
+  accept_stereographic = false;
 }
 
 
