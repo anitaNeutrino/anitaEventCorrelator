@@ -38,6 +38,7 @@ UsefulAdu5Pat::UsefulAdu5Pat()
   fDebug = false;
   fInterpSurfaceAboveGeoid = false;
   fSurfaceCloseEnoughIter = 1.0;
+  setMaxLoopIterations();
 }
 
 UsefulAdu5Pat::UsefulAdu5Pat(const Adu5Pat *patPtr)
@@ -65,6 +66,7 @@ UsefulAdu5Pat::UsefulAdu5Pat(const Adu5Pat *patPtr)
   fDebug = false;
   fInterpSurfaceAboveGeoid = false;
   fSurfaceCloseEnoughIter = 1.0;
+  setMaxLoopIterations();
   updateCartesianBalloonInfo();
 }
 
