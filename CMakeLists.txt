@@ -175,7 +175,7 @@ installed on your system in a place that can be found easily." OFF)
 if (USE_HEALPIX)
   add_definitions  (-DUSE_HEALPIX )
   # Are these really necessary?!?? 
-  target_link_libraries ( healpix_cxx cxxsupport sharp fftpack c_utils cfitsio)
+  target_link_libraries (${libname} healpix_cxx cxxsupport sharp fftpack c_utils cfitsio)
 endif()
 
 
