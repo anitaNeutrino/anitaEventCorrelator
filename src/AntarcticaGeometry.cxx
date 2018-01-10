@@ -234,7 +234,7 @@ static void stereo2cart(double *x, double *y, double *z)
   double H = sqrt(H2); 
   double Hinv =  1./H; 
   double sin_lon = E*Hinv;
-  double cos_lon = (E!=0.) ? (N/E * sin_lon) : ((E > 0) - (E < 0)); 
+  double cos_lon = N*Hinv; 
 
 
   // Here I'm just taking the equations from EastingNorthingToLonLat and avoiding trig using
