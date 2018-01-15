@@ -305,6 +305,9 @@ class UsefulAdu5Pat: public Adu5Pat
   Double_t getAzimuthOfSun() const;
   Double_t getDifferencePointingToSun(Double_t phiAngle, Bool_t inputInDegrees=true) const;
 
+  void getThetaAndPhiWaveHiCal(Double_t& thetaWave, Double_t& phiWave); /// Currently just does direct events...
+
+
   /** 
    * Returns a source elevation angle, assuming the image is a specular reflection of a source at infinity
    * no refraction is considered
