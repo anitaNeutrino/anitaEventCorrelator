@@ -10,6 +10,8 @@
 #include "UsefulAdu5Pat.h"
 #include <iostream>
 #include "TTimeStamp.h"
+#include "AnitaDataset.h"
+
 
 ClassImp(UsefulAdu5Pat);
 
@@ -1293,4 +1295,23 @@ int UsefulAdu5Pat::fromRADec(Double_t RA, Double_t dec, Double_t * phi, Double_t
   return 0; 
 #endif
 
+}
+
+
+
+
+
+
+void UsefulAdu5Pat::getThetaAndPhiWaveHiCal(Double_t& thetaWave, Double_t& phiWave){
+
+  Double_t hiCalLon, hiCalLat, hiCalAlt;
+  AnitaDataset::hical(realTime, hiCalLon, hiCalLat, hiCalAlt);
+
+  if(hiCalAlt == -9999){
+    thetaWave = -9999;
+    phiWave = -9999;
+  }
+  else {
+    getThetaAndPhiWave(hiCalLon, hiCalLat, hiCalAlt, thetaWave, phiWave);
+  }
 }

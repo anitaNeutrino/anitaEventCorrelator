@@ -829,6 +829,9 @@ void AntarcticaBackground::updateToolTip(Int_t event, Int_t x, Int_t y, const ch
       theToolTipText += TString::Format("\n%s", extraInfo);
     }
 
+    if(!fToolTip){
+      SetToolTip(true);
+    }
     fToolTip->SetText(theToolTipText.Data());
     TCanvas* theCan = gPad->GetCanvas();
     Int_t topX = theCan->GetWindowTopX();
