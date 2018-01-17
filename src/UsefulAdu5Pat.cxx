@@ -1305,7 +1305,7 @@ int UsefulAdu5Pat::fromRADec(Double_t RA, Double_t dec, Double_t * phi, Double_t
 void UsefulAdu5Pat::getThetaAndPhiWaveHiCal(Double_t& thetaWave, Double_t& phiWave){
 
   Double_t hiCalLon, hiCalLat, hiCalAlt;
-  AnitaDataset::hical(realTime, hiCalLon, hiCalLat, hiCalAlt);
+  AnitaDataset::hiCal(realTime, hiCalLon, hiCalLat, hiCalAlt);
 
   if(hiCalAlt == -9999){
     thetaWave = -9999;
