@@ -82,7 +82,7 @@ double testPointing(double dtheta = 0, int run = 332, int event = 55448680)
     double step = 0.001;
     for (double sin_theta = 0.0; sin_theta < 0.9; sin_theta+= step)
     {
-        double theta = asin(sin_theta) * TMath::RadToDeg(); 
+        double theta = asin(sin_theta*sin_theta) * TMath::RadToDeg(); 
         trace = gps.traceBackToContinent(phi*TMath::DegToRad(), theta*TMath::DegToRad(), &lon, &lat,&alt,0); 
         if (trace) 
         {
@@ -115,22 +115,22 @@ double testPointing(double dtheta = 0, int run = 332, int event = 55448680)
 
   TCanvas * cc = new TCanvas; 
   cc->Divide(4,2); 
-  cc->cd(1); 
+  cc->cd(1)->SetLogz(); 
   old_h->Draw("colz"); 
-  cc->cd(2); 
+  cc->cd(2)->SetLogz(); 
   new_h->Draw("colz"); 
-  cc->cd(3); 
+  cc->cd(3)->SetLogz(); 
   new_h_col->Draw("colz"); 
-  cc->cd(4); 
+  cc->cd(4)->SetLogz(); 
   new_h_ref->Draw("colz"); 
 
-  cc->cd(5); 
+  cc->cd(5)->SetLogz(); 
   old_payload_el->Draw("colz"); 
-  cc->cd(6); 
+  cc->cd(6)->SetLogz(); 
   new_payload_el->Draw("colz"); 
-  cc->cd(7); 
+  cc->cd(7)->SetLogz(); 
   new_payload_el_col->Draw("colz"); 
-  cc->cd(8); 
+  cc->cd(8)->SetLogz(); 
   new_payload_el_ref->Draw("colz"); 
 
   cc->SaveAs("refraction.pdf"); 
