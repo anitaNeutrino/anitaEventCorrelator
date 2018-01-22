@@ -1,4 +1,5 @@
-double testPointing(double dtheta = 0, int run = 332, int event = 55448680) 
+double testPointing(double dtheta = 0, int run = 332, int event = 55448680)
+// double testPointing(double dtheta = 0, int run = 352, int event = 60832108)   
 {
 
   AnitaDataset d(run); 
@@ -66,11 +67,13 @@ double testPointing(double dtheta = 0, int run = 332, int event = 55448680)
 
 
   TFile * fout = new TFile("refraction.root","RECREATE"); 
-  TH2I * old_h = new TH2I("traceBack","TraceBack", 1000, x0 - 800e3, x0+800e3, 1000, y0 - 800e3, y0+800e3); 
+  TH2I * old_h = new TH2I("traceBack","TraceBack", 1000, x0 - 800e3, x0+800e3, 1000, y0 - 800e3, y0+800e3);
+  TH2I * new_h3 = new TH2I("traceBack3","TraceBack3", 1000, x0 - 800e3, x0+800e3, 1000, y0 - 800e3, y0+800e3);   
   TH2I * new_h = new TH2I("findSource","FindSource", 1000, x0 - 800e3, x0+800e3, 1000, y0 - 800e3, y0+800e3); 
   TH2I * new_h_col = new TH2I("findSourceColl","FindSourceColl", 1000, x0 - 800e3, x0+800e3, 1000, y0 - 800e3, y0+800e3); 
   TH2I * new_h_ref = new TH2I("findSourceRef","FindSourceRefract", 1000, x0 - 800e3, x0+800e3, 1000, y0 - 800e3, y0+800e3); 
-  TH2 * old_payload_el = new TProfile2D("traceBackPayloadEl","TraceBackPayloadEl", 1000, x0 - 800e3, x0+800e3, 1000, y0 - 800e3, y0+800e3); 
+  TH2 * old_payload_el = new TProfile2D("traceBackPayloadEl","TraceBackPayloadEl", 1000, x0 - 800e3, x0+800e3, 1000, y0 - 800e3, y0+800e3);
+  TH2 * new_h3_payload_el = new TProfile2D("traceBack3PayloadEl","TraceBack3PayloadEl", 1000, x0 - 800e3, x0+800e3, 1000, y0 - 800e3, y0+800e3);   
   TH2 * new_payload_el = new TProfile2D("findSourcePayloadEl","findSourcePayloadEl", 1000, x0 - 800e3, x0+800e3, 1000, y0 - 800e3, y0+800e3); 
   TH2 * new_payload_el_col = new TProfile2D("findSourcePayloadElCol","findSourcePayloadElCol", 1000, x0 - 800e3, x0+800e3, 1000, y0 - 800e3, y0+800e3); 
   TH2 * new_payload_el_ref = new TProfile2D("findSourcePayloadElRef","findSourcePayloadElRef", 1000, x0 - 800e3, x0+800e3, 1000, y0 - 800e3, y0+800e3); 
@@ -94,6 +97,17 @@ double testPointing(double dtheta = 0, int run = 332, int event = 55448680)
 
         }
 
+
+        trace = gps.traceBackToContinent3(phi*TMath::DegToRad(), theta*TMath::DegToRad(), &lon, &lat,&alt,0); 
+        if (trace)
+        {
+          AntarcticCoord w(AntarcticCoord::WGS84,lat,lon,alt);
+          w.to(AntarcticCoord::STEREOGRAPHIC);
+          new_h3->Fill(w.x, w.y);
+          PayloadParameters pw(d.gps(), w);
+          new_h3_payload_el->Fill(w.x,w.y, pw.payload_el);
+        }
+
         PayloadParameters::findSourceOnContinent(theta,phi, d.gps(), &pp3); 
         AntarcticCoord w = pp3.source.as(AntarcticCoord::STEREOGRAPHIC); 
         new_h->Fill(w.x,w.y); 
@@ -114,24 +128,29 @@ double testPointing(double dtheta = 0, int run = 332, int event = 55448680)
   }
 
   TCanvas * cc = new TCanvas; 
-  cc->Divide(4,2); 
-  cc->cd(1)->SetLogz(); 
+  cc->Divide(5,2);
+  cc->cd(1);
   old_h->Draw("colz"); 
-  cc->cd(2)->SetLogz(); 
+  cc->cd(2);
   new_h->Draw("colz"); 
-  cc->cd(3)->SetLogz(); 
+  cc->cd(3);
   new_h_col->Draw("colz"); 
-  cc->cd(4)->SetLogz(); 
+  cc->cd(4);
   new_h_ref->Draw("colz"); 
+  cc->cd(5);
+  new_h3->Draw("colz");
 
-  cc->cd(5)->SetLogz(); 
-  old_payload_el->Draw("colz"); 
-  cc->cd(6)->SetLogz(); 
-  new_payload_el->Draw("colz"); 
-  cc->cd(7)->SetLogz(); 
+  cc->cd(6);
+  old_payload_el->Draw("colz");
+  cc->cd(7);
+  new_payload_el->Draw("colz");
+  cc->cd(8);
   new_payload_el_col->Draw("colz"); 
-  cc->cd(8)->SetLogz(); 
-  new_payload_el_ref->Draw("colz"); 
+  cc->cd(9);
+  new_payload_el_ref->Draw("colz");
+  cc->cd(10);
+  new_h3_payload_el->Draw("colz");
+
 
   cc->SaveAs("refraction.pdf"); 
 

@@ -141,7 +141,10 @@ void TProfile2DAntarctica::ExecuteEvent(int event, int px, int py){
   if(event==kButton1Double){
     this->UnZoom();
   }
-  getBackground()->ExecuteEvent(event, px, py);
+  AntarcticaBackground* b = getBackground();
+  if(b){
+    b->ExecuteEvent(event, px, py);
+  }
   TProfile2D::ExecuteEvent(event, px, py);
 }
 
@@ -345,7 +348,10 @@ void TH2DAntarctica::ExecuteEvent(int event, int px, int py){
   if(event==kButton1Double){
     this->UnZoom();
   }
-  getBackground()->ExecuteEvent(event, px, py);
+  AntarcticaBackground* b = getBackground();
+  if(b){
+    b->ExecuteEvent(event, px, py);
+  }
   TH2D::ExecuteEvent(event, px, py);
 }
 

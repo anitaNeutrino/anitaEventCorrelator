@@ -77,7 +77,33 @@ class UsefulAdu5Pat: public Adu5Pat
   /**
    * Const version of getSourceLonAndLatAtAlt, all params and return values are the same.
    */
-  int getSourceLonAndLatAtAlt2(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat,Double_t &sourceAltitude, TVector3* sourcePosOptional = NULL) const;
+  int getSourceLonAndLatAtAlt2(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat,Double_t &sourceAltitude, Int_t maxLoopIter = -1, TVector3* sourcePosOptional = NULL) const;
+
+
+
+  TVector3 getUnitVectorAlongThetaWavePhiWave(double thetaWave, double phiWave) const;
+  
+  int getSourceLonAndLatAtAlt3(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat,Double_t &sourceAltitude,
+			       double* deltaAltIfNoIntersectection = NULL, bool returnBestPositionIfNoIntersection = false) const;
+  /** 
+   * New version of traceBackToContinent with same arguments as Cosmin's version.
+   * However this one uses the new and lovely getSourceLonAndLatAtAlt3.
+   * 
+   * @param phiWave payload phi in radians (relative to adu5 aft-fore)
+   * @param thetaWave radians, +ve theta is up, the silly EventCorrelator convention
+   * @param lon pointer to the calculated longitude
+   * @param lat pointer to the calculated latitude
+   * @param alt pointer to the calculated altitud
+   * @param theta_adjustment_required if non-null, will encode difference in theta required for intersection with the continent at the returned lon/lat/alt
+   * 
+   * @return same as getSourceLonAndLatAtAlt3
+   */
+  int traceBackToContinent3(Double_t phiWave, Double_t thetaWave, 
+			    Double_t * lon, Double_t * lat, Double_t *alt, Double_t * theta_adjustment_required) const;
+
+
+  
+  
 
   /** 
    * Trace back to continent, based a bit on Abby's code. 
@@ -305,6 +331,9 @@ class UsefulAdu5Pat: public Adu5Pat
   Double_t getAzimuthOfSun() const;
   Double_t getDifferencePointingToSun(Double_t phiAngle, Bool_t inputInDegrees=true) const;
 
+  void getThetaAndPhiWaveHiCal(Double_t& thetaWave, Double_t& phiWave); /// Currently just does direct events...
+
+
   /** 
    * Returns a source elevation angle, assuming the image is a specular reflection of a source at infinity
    * no refraction is considered
@@ -419,6 +448,7 @@ class UsefulAdu5Pat: public Adu5Pat
    */
   void updateCartesianBalloonInfo();
 
+  // mutable std::vector<TGraph*> grTests;
 
  private:
   Int_t		fIncludeGroupDelay;		/// Include group delay in deltaTs? (default is no)
@@ -448,8 +478,8 @@ class UsefulAdu5Pat: public Adu5Pat
 
   Double_t getDeltaTSeaveyOpt(Int_t ant1, Int_t ant2, Double_t *deltaR, Double_t *deltaZ, Double_t *deltaPhi);
   Double_t getDeltaTExpectedSeaveyOpt(Int_t ant1, Int_t ant2,Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t *deltaR, Double_t *deltaZ, Double_t *deltaPhi);
-  Double_t getGroupDelay(Double_t phiToAntBoresight);
-
+  Double_t getGroupDelay(Double_t phiToAntBoresight);  
+  
 
   /** 
    * Rotate the coordinate system so that theta/phi account for payload pitch and roll
@@ -458,9 +488,7 @@ class UsefulAdu5Pat: public Adu5Pat
    * @param phiWave updated after pitch/roll accounted for
    */
   void accountForPitchAndRollInPhiWaveThetaWave(Double_t& phiWave, Double_t& thetaWave) const;
-
-
-
+  
 };
 
 
