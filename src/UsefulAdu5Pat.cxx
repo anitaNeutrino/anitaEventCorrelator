@@ -13,6 +13,9 @@
 #include "AnitaDataset.h"
 
 
+
+
+
 ClassImp(UsefulAdu5Pat);
 
 UsefulAdu5Pat::UsefulAdu5Pat()
@@ -247,15 +250,22 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt(Double_t phiWave, Double_t thetaWave,
 
   if(fPhiWave!=phiWave) fPhiWave=phiWave;
   if(fThetaWave!=thetaWave) fThetaWave=thetaWave;
-  return getSourceLonAndLatAtAlt2(phiWave, thetaWave,  sourceLon, sourceLat, sourceAltitude, &fSourcePos);
+  return getSourceLonAndLatAtAlt2(phiWave, thetaWave,  sourceLon, sourceLat, sourceAltitude, fMaxLoopIterations, &fSourcePos);
 }
 
 
 
 
 // Version of getSourceLonAndLatAtAlt which does not update fThetaWave, fPhiWave, fSourcePos (clears up the output of data race thread safety checks)
-int UsefulAdu5Pat::getSourceLonAndLatAtAlt2(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat,Double_t &sourceAltitude, TVector3* sourcePosOptional) const
+int UsefulAdu5Pat::getSourceLonAndLatAtAlt2(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat,Double_t &sourceAltitude, Int_t maxLoopIterations, TVector3* sourcePosOptional) const
 {
+  // TGraph* grTest = NULL;
+  // if(fDebug){
+  //   grTests.push_back(new TGraph());
+  //   grTest = grTests.back();
+  //   grTest->SetName(TString::Format("grTest_%lu", grTests.size()-1));
+  //   grTest->SetTitle(TString::Format("%luth Graph, #theta = %4.2lf", grTests.size()-1, -thetaWave*TMath::RadToDeg()));
+  // }
 
   Double_t tempPhiWave = phiWave;
   Double_t tempThetaWave = thetaWave;
@@ -294,7 +304,10 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt2(Double_t phiWave, Double_t thetaWave
   Double_t lastButThreeRe = 0;	// in case we get stuck in the while loop - this is a bad method and needs to be improved!
   Double_t lastButFourRe  = 0;	// in case we get stuck in the while loop - this is a bad method and needs to be improved!
 
-  const int maxLoopIterations = fMaxLoopIterations;
+  // default for maxLoopIterations is -1, which means use the member variable value.
+  // here, we force this...
+  maxLoopIterations = maxLoopIterations < 0 ? fMaxLoopIterations : maxLoopIterations;
+  
   const double deltaReCloseEnough = fSurfaceCloseEnoughIter;
   Bool_t ocillatingAroundSolution = false;  
   Bool_t tooManyLoops = false;
@@ -325,8 +338,8 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt2(Double_t phiWave, Double_t thetaWave
       if(fDebug){
 	std::cerr << "Error in " << __PRETTY_FUNCTION__ << ", no solution possible! Returning 0\n";
 	// std::cerr << "re = " << re << ",  reh = " << reh << ", sintw = " << sintw << ", tempThetaWave = " << tempThetaWave << "\n";
-        // std::cerr << "re*re = " << re*re << ",  reh*reh*sintw*sintw = " << reh*reh*sintw*sintw << "\n";
-        // std::cerr << "sqrtArg = " << sqrtArg << std::endl;
+	// std::cerr << "re*re = " << re*re << ",  reh*reh*sintw*sintw = " << reh*reh*sintw*sintw << "\n";
+	// std::cerr << "sqrtArg = " << sqrtArg << std::endl;
       }
       return 0;
     }
@@ -350,11 +363,16 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt2(Double_t phiWave, Double_t thetaWave
     chosenAlt = surfaceAboveGeoid(sourceLon,sourceLat);
     nextRe = geom->getDistanceToCentreOfEarth(sourceLat) + chosenAlt;
 
-    if(fDebug){
+
+    // if(fDebug && grTest){
+    //   grTest->SetPoint(grTest->GetN(), inTheLoop, nextRe-re);
+    // }
+
+    if(fDebug && maxLoopIterations - inTheLoop < 3){
       std::cerr << "Debug in " << __PRETTY_FUNCTION__ << ": inTheLoop = " << inTheLoop
 		<< ", sourceLon = " << sourceLon << ", sourceLat = " << sourceLat << ", sourceAlt = " << sourceAlt
-		<< ", re = " << re << ", lastButOneRe = " << lastButOneRe << ", lastButTwoRe = " << lastButTwoRe
-		<< ", lastButThreeRe = " << lastButThreeRe << ", lastButFourRe = " << lastButFourRe
+		<< ", re = " << re << ", lastButOneRe-re = " << lastButOneRe-re << ", lastButTwoRe-re = " << lastButTwoRe-re
+		<< ", lastButThreeRe-re = " << lastButThreeRe-re << ", lastButFourRe-re = " << lastButFourRe-re
 		<< ", TMath::Abs(lastButOneRe-nextRe) = " << TMath::Abs(lastButOneRe-nextRe) << "\n";
     }
 
@@ -379,7 +397,8 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt2(Double_t phiWave, Double_t thetaWave
     
     if(inTheLoop>maxLoopIterations){
       if(fDebug){
-	std::cerr << "Debug in " << __PRETTY_FUNCTION__ << ": Breaking out due to too many loop iterations! inTheLoop > " << maxLoopIterations << std::endl;	
+	std::cerr << "Debug in " << __PRETTY_FUNCTION__ << ": Breaking out due to too many loop iterations! inTheLoop > " << maxLoopIterations
+		  << " (default value, fMaxLoopIterations = " << fMaxLoopIterations << ")" << std::endl;
       }
       tooManyLoops=1;
       break;
@@ -413,6 +432,301 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt2(Double_t phiWave, Double_t thetaWave
     return 1;
   }
 }
+
+
+
+
+
+
+
+
+
+
+int UsefulAdu5Pat::traceBackToContinent3(Double_t phiWave, Double_t thetaWave,
+					 Double_t * lon, Double_t * lat, Double_t *alt,
+					 Double_t * theta_adjustment_required) const{
+
+  double deltaAlt = 0;
+  bool wantBestPosition = theta_adjustment_required ? true : false;
+
+  if(theta_adjustment_required){
+    *theta_adjustment_required = 0;
+  }
+
+  int success = getSourceLonAndLatAtAlt3(phiWave, thetaWave, *lon, *lat, *alt, &deltaAlt, wantBestPosition);
+
+  if(success==3 && wantBestPosition){ // then we need to figure out 
+
+    double newThetaWave, newPhiWave;
+    getThetaAndPhiWave2(*lon, *lat, *alt, newThetaWave, newPhiWave);
+
+    // a la Cosmin's: defined to be positive if the adjustment is downwards, which is positive.
+    *theta_adjustment_required = newThetaWave - thetaWave;
+  }
+
+  return success;
+}
+
+
+
+
+
+
+
+int UsefulAdu5Pat::getSourceLonAndLatAtAlt3(Double_t phiWave, Double_t thetaWave,
+					    Double_t &sourceLon, Double_t &sourceLat,Double_t &sourceAltitude,
+					    double* deltaAltIfNoIntersectection, bool returnBestPositionIfNoIntersection) const 
+{
+  
+  if(thetaWave <= 0){
+    if(fDebug){
+      std::cout  << "No chance! " << std::endl;
+      return 0;
+    }
+  }
+
+  // TGraph* grTest = NULL;
+  // if(fDebug){
+  //   grTests.push_back(new TGraph());
+  //   grTest = grTests.back();
+  //   grTest->SetName(TString::Format("grTest_%lu", grTests.size()-1));
+  //   grTest->SetTitle(TString::Format("%luth Graph, #theta = %4.2lf", grTests.size()-1, -thetaWave*TMath::RadToDeg()));
+  // }
+  
+  // the hard problem, is to find the unit vector from the payload...
+  // Following that vector to the ground is relatively easy...
+  const TVector3 unitVector = getUnitVectorAlongThetaWavePhiWave(thetaWave, phiWave);
+
+  AnitaGeomTool* geom = AnitaGeomTool::Instance();
+  Double_t anitaPosition[3];
+  geom->getCartesianCoords(latitude, longitude, altitude, anitaPosition);
+  const TVector3 anitaVector(anitaPosition);
+
+
+  // here we scale the delta vector so that it's vertical component is 1m.
+  // This significantly reduces the number of iterations required for near horizon events
+  const TVector3 inwardNorm = anitaVector.Unit();
+  const double scale = TMath::Abs(1./inwardNorm.Dot(unitVector));
+  const TVector3 deltaVector = scale*unitVector;
+  // const TVector3 deltaVector = unitVector;  
+  
+
+  double minAbsDeltaAlt = DBL_MAX;
+  double bestLon, bestLat, bestAlt, bestDeltaAlt;  
+
+  int best_i = -1;
+  int best_last_i = -1;
+
+  for(int precise=0; precise <= 1; precise++){
+
+    int i = precise == 0 ? 0 : best_last_i;
+    int last_i = 0;
+
+    double deltaAlt = DBL_MAX;
+    double firstDeltaAlt = DBL_MAX;
+
+    while(deltaAlt <= firstDeltaAlt){
+
+      const TVector3 rayVector = i*deltaVector + anitaPosition; // ray position
+      double rayLat, rayLon, rayAlt;
+      double rayPosition[3];
+      rayVector.GetXYZ(rayPosition);
+      geom->getLatLonAltFromCartesian(rayPosition, rayLat, rayLon, rayAlt);
+
+      double surfaceAlt = surfaceAboveGeoid(rayLon, rayLat);
+      deltaAlt = rayAlt - surfaceAlt;
+
+      if(firstDeltaAlt==DBL_MAX){
+	firstDeltaAlt = deltaAlt;
+      }
+
+      // if(fDebug && grTest){
+      // 	grTest->SetPoint(grTest->GetN(), i, deltaAlt);
+      // }
+
+
+      // is this the best we've done so far?
+      double absDeltaAlt = fabs(deltaAlt);
+      if(absDeltaAlt < minAbsDeltaAlt){
+	bestLon = rayLon;
+	bestLat = rayLat;
+	bestAlt = surfaceAlt;
+	bestDeltaAlt = deltaAlt;
+	best_i = i;
+	best_last_i = last_i;
+	minAbsDeltaAlt = absDeltaAlt;
+      }
+
+
+      if(deltaAlt <= 0){
+	// Then we cut the surface at this iteration...
+	// Presumably, with a small step size since deltaAlt approached 0.
+	// There's no need to explore the minimum, so set the values and return.
+	sourceLon = rayLon;
+	sourceLat = rayLat;
+	sourceAltitude = surfaceAlt;
+	if(deltaAltIfNoIntersectection){
+	  *deltaAltIfNoIntersectection = deltaAlt;
+	}
+	return 1; // this means successfully cut the surface!
+      }
+
+      last_i = i;
+      i++;
+      if(precise==0){ // if we're a long way off, take bigger steps...
+	if(deltaAlt > 10000){
+	  i+=1999;
+	}
+	if(deltaAlt > 5000){
+	  i+=999;
+	}
+	else if(deltaAlt > 1000){
+	  i+=499;
+	}
+	else if(deltaAlt > 500){
+	  i+=99;
+	}
+	else if(deltaAlt > 100){
+	  i+=19;
+	}
+      }
+    }
+  }
+
+  if(returnBestPositionIfNoIntersection){
+    sourceLon = bestLon;
+    sourceLat = bestLat;
+    sourceAltitude = bestAlt;
+  }
+  else{
+    sourceLon = -9999;
+    sourceLat = -9999;
+    sourceAltitude = -9999;
+  }
+  if(deltaAltIfNoIntersectection){
+    *deltaAltIfNoIntersectection = bestDeltaAlt;
+  }
+
+  // if(grTest){
+  //   grTest->SetTitle(TString::Format("%s: best_i = %d", grTest->GetTitle(), best_i));
+  // }
+  return 3;
+}
+
+
+
+
+/** 
+ * Get a unit length TVector that points along thetaWave and phiWave 
+ * 
+ * @param phiWave is the azimuth direction (radians) in payload coordinates
+ * @param thetaWave is the elevation angle (radians) theta=0 lies along the horizonal with -ve theta being up (the UsefulAdu5Pat convention)
+ * 
+ * @return TVector3 containing a unit vector pointing to thetaWave/phiWave away from ANITA
+ */
+
+TVector3 UsefulAdu5Pat::getUnitVectorAlongThetaWavePhiWave(double thetaWave, double phiWave) const{
+
+  AnitaGeomTool* geom = AnitaGeomTool::Instance();
+  Double_t anitaPosition[3];
+  geom->getCartesianCoords(latitude, longitude, altitude, anitaPosition);
+    
+  // now I need to get a vector pointing along thetaWave and phiWave from ANITA's position
+  // so let's get theta and phi wave from an arbitrary position close to the payload,
+  // evaluate theta/phi expected and rotate that vector around ANITA's position
+  // until it aligns with phiWave...
+
+  // This is just due north of ANITA
+  double testLon = longitude;
+  double testLat = latitude - 0.1; // if ANITA could be at the north pole, this might not work
+  double testAlt = altitude;
+
+  double testThetaWave, testPhiWave;
+  getThetaAndPhiWave2(testLon, testLat, testAlt, testThetaWave, testPhiWave);
+  
+  // if(fDebug){
+  //   std::cout << "testPhiWave from directly due north of ANITA..." << std::endl;
+  //   std::cout << "testPhiWave (Degrees) = " << testPhiWave*TMath::RadToDeg() << ", for reference heading = " << heading << std::endl;
+  // }
+
+  Double_t testPosition[3];
+  geom->getCartesianCoords(testLat, testLon, testAlt, testPosition);
+  
+  TVector3 testVector(testPosition);
+  const TVector3 unitAnita = TVector3(anitaPosition).Unit();
+  testVector.Rotate(-testPhiWave, unitAnita); // if we were to recalculate the phiWave expected, it would now point to 0
+  
+  // if(fDebug){
+  //   testVector.GetXYZ(testPosition);
+  //   geom->getLatLonAltFromCartesian(testPosition, testLat, testLon, testAlt);
+  //   getThetaAndPhiWave2(testLon, testLat, testAlt, testThetaWave, testPhiWave);
+  //   std::cout << "After phi rotation, step 1 , phiWave should equal 0 (or 360)" << std::endl;
+  //   std::cout << "testPhiWave (Degrees) = " << testPhiWave*TMath::RadToDeg()
+  // 	      << ", testThetaWave (Degrees) = " << testThetaWave*TMath::RadToDeg() << std::endl;
+  // }
+  
+  testVector.Rotate(phiWave, unitAnita); // if we were to recalculate the phiWave expected, it would now point to phiWave
+
+  testVector.GetXYZ(testPosition);
+  geom->getLatLonAltFromCartesian(testPosition, testLat, testLon, testAlt);
+  getThetaAndPhiWave2(testLon, testLat, testAlt, testThetaWave, testPhiWave);
+
+  // if(fDebug){
+  //   std::cout << "After phi rotation, step 2, testPhiWave should equal phiWave..." << std::endl;    
+  //   std::cout << "In degrees..." << std::endl;
+  //   std::cout << "phiWave (Degrees) = " << phiWave*TMath::RadToDeg()
+  // 	      << ", thetaWave (Degrees) = " << thetaWave*TMath::RadToDeg() << std::endl;
+  //   std::cout << "testPhiWave (Degrees) = " << testPhiWave*TMath::RadToDeg()
+  // 	      << ", testThetaWave (Degrees) = " << testThetaWave*TMath::RadToDeg() << std::endl;
+  // }
+  
+  // now need to raise/lower the point described by testVector such that thetaWave is correct
+  // i.e. set the magnitude of the testVector such that thetaWave is correct
+  //
+  //                        
+  //                      O   
+  // Earth Centre (Origin) o
+  //                       |\  a 
+  //                     t | \ 
+  //                       |  \
+  //                 ANITA o---o "Test Vector"
+  //                       A    T
+    
+  // O, A, T are the angles
+  // o, a, t are the lengths. I'm trying to find the length a for a given angle A.
+  // a / sin(A) = t / sin(T)
+  //
+  // t = anitaPosition.Mag();
+  // A = (pi/2 - thetaWave);
+  // O = angle between ANITA and the test vector
+  // T = pi - A - O
+  // so...
+  // a = sin(A) * t / (pi - A - O)
+  TVector3 anitaVector(anitaPosition);
+  
+  double A = TMath::PiOver2() - thetaWave;
+  double O = testVector.Angle(anitaPosition); //angle between the vectors
+  double T = TMath::Pi() - A - O;
+  double t = anitaVector.Mag();
+  double a = TMath::Sin(A)*(t/TMath::Sin(T));
+
+  testVector.SetMag(a);
+
+  // if(fDebug){
+  //   testVector.GetXYZ(testPosition);
+  //   geom->getLatLonAltFromCartesian(testPosition, testLat, testLon, testAlt);
+  //   getThetaAndPhiWave2(testLon, testLat, testAlt, testThetaWave, testPhiWave);
+  //   std::cout << "After setting mangitude, testThetaWave should equal thetaWave too!" << std::endl;
+  //   std::cout << "testPhiWave (Degrees) = " << testPhiWave*TMath::RadToDeg()
+  // 	      << ", testThetaWave (Degrees) = " << testThetaWave*TMath::RadToDeg() << std::endl;
+  // }
+  
+  TVector3 deltaVec = testVector - anitaPosition;
+  return deltaVec.Unit();
+}
+
+
+
 
 
 
@@ -1084,12 +1398,31 @@ int UsefulAdu5Pat::traceBackToContinent(Double_t phiWave, Double_t thetaWave,
                           : (last_successful_theta + last_failed_theta)/2;
 
     if(fDebug){
-      std::cerr << "iter = " << iter << ", theta_try  = " << theta_try << "\n";
+      std::cerr << "iter = " << iter << ", theta_try (degrees) = " << theta_try*TMath::RadToDeg()
+		<< ", last_successful_theta (degrees) = " << last_successful_theta*TMath::RadToDeg() << "\n";
     }
     
     last_theta_tried = theta_try;
 
-    int success = getSourceLonAndLatAtAlt2(phiWave, theta_try, lon, lat, alt); 
+    // bool odb = fDebug;
+    // fDebug = false;
+    int success = getSourceLonAndLatAtAlt2(phiWave, theta_try, lon, lat, alt);
+    // fDebug = odb;
+
+    int moarLoops = 0;
+    const int crazyNumberOfPowersOfTen = 2; // if this gets too big, this will get out of hand...
+    while(success==3 && moarLoops < crazyNumberOfPowersOfTen){
+      int maxLoopIter = fMaxLoopIterations * pow(10, 1+moarLoops);
+      if(fDebug){
+	std::cerr << "Got non-convergent solution in getSourceLonAndLatAtAlt2... will try again with " << maxLoopIter << " loops...\n";
+      }
+      // odb = fDebug;
+      // fDebug = false;
+      success = getSourceLonAndLatAtAlt2(phiWave, theta_try, lon, lat, alt, maxLoopIter);
+      // fDebug = odb;
+      moarLoops++;
+    }
+
     if(fDebug){
       std::cerr << "getSourceLonAndLatAtAlt2: success  = " << success << "\n";
     }
@@ -1136,7 +1469,10 @@ int UsefulAdu5Pat::traceBackToContinent(Double_t phiWave, Double_t thetaWave,
   if (adj_ptr) *adj_ptr = last_successful_theta - thetaWave;
 
   if(fDebug){
-    std::cerr << "Got here! Returning 2 " << std::endl;
+    std::cerr << "Got here! Returning 2... iter = " << iter
+	      << ", last_successful_theta (degrees) = " << last_successful_theta*TMath::RadToDeg()
+	      << ", adjustment (degrees) = " << (last_successful_theta - thetaWave)*TMath::RadToDeg()
+	      << std::endl;
   }
 
   return 2;
@@ -1305,7 +1641,7 @@ int UsefulAdu5Pat::fromRADec(Double_t RA, Double_t dec, Double_t * phi, Double_t
 void UsefulAdu5Pat::getThetaAndPhiWaveHiCal(Double_t& thetaWave, Double_t& phiWave){
 
   Double_t hiCalLon, hiCalLat, hiCalAlt;
-  AnitaDataset::hical(realTime, hiCalLon, hiCalLat, hiCalAlt);
+  AnitaDataset::hiCal(realTime, hiCalLon, hiCalLat, hiCalAlt);
 
   if(hiCalAlt == -9999){
     thetaWave = -9999;
@@ -1315,3 +1651,5 @@ void UsefulAdu5Pat::getThetaAndPhiWaveHiCal(Double_t& thetaWave, Double_t& phiWa
     getThetaAndPhiWave(hiCalLon, hiCalLat, hiCalAlt, thetaWave, phiWave);
   }
 }
+
+
