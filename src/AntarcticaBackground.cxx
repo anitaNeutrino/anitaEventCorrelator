@@ -612,7 +612,7 @@ void AntarcticaBackground::ResetColorAxis(bool trigger_redraw){
       zAxis2->SetLabelSize(AntarcticaBackgroundDefaults::zAxisTextSize);
 
       // std::cout << zAxis->GetTitleOffset() << std::endl;
-      // zAxis->SetTitleOffset(0.1);
+      zAxis2->SetTitleOffset(2);
       if(trigger_redraw){
         gPad->Modified();
         gPad->Update();

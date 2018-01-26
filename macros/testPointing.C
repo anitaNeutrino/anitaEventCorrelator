@@ -85,7 +85,7 @@ double testPointing(double dtheta = 0, int run = 332, int event = 55448680)
     double step = 0.001;
     for (double sin_theta = 0.0; sin_theta < 0.9; sin_theta+= step)
     {
-        double theta = asin(sin_theta) * TMath::RadToDeg(); 
+        double theta = asin(sin_theta*sin_theta) * TMath::RadToDeg(); 
         trace = gps.traceBackToContinent(phi*TMath::DegToRad(), theta*TMath::DegToRad(), &lon, &lat,&alt,0); 
         if (trace) 
         {
