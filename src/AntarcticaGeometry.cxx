@@ -517,18 +517,28 @@ void StereographicGrid::Draw(const char * opt, const double * data, const double
     stropt.ReplaceAll("MAP",""); 
     h = new TH2DAntarctica("tmp","Stereographic Grid", nx, ny); 
     do_map - true;
+    AntarcticCoord c;
+    for (int i = 0; i < NSegments(); i++) 
+    {
+       getSegmentCenter(i,&c,false);
+       c.to(AntarcticCoord::WGS84);
+       h->Fill(c.y, c.x, data ? data[i]: i); 
+       // std::cout << c.x<<" "<<c.y<<" "<<data[i]<<std::endl;
+    }
   }
   else 
   {
     h = new TH2D("tmp","Stereographic Grid", nx, -max_E, max_E, ny, -max_N, max_N); 
+    AntarcticCoord c;
+    for (int i = 0; i < NSegments(); i++) 
+    {
+       getSegmentCenter(i,&c,false);
+       h->Fill(c.x, c.y, data ? data[i]: i); 
+       // std::cout << c.x<<" "<<c.y<<" "<<data[i]<<std::endl;
+    }
   }
 
-  AntarcticCoord c;
-  for (int i = 0; i < NSegments(); i++) 
-  {
-     getSegmentCenter(i,&c,false); 
-     h->Fill(c.x, c.y, data ? data[i]: i); 
-  }
+  
 
   h->SetStats(0); 
 
@@ -539,8 +549,10 @@ void StereographicGrid::Draw(const char * opt, const double * data, const double
     h->GetYaxis()->SetRangeUser(range[2], range[3]); 
 
   }
-  h->DrawCopy(opt); 
-  delete h; 
+  // h->DrawCopy(opt);
+  // std::cout<<opt<< " "<< stropt<<std::endl; 
+  h->Draw(stropt); 
+  // delete h; 
 }
 
 void StereographicGrid::asString(TString * str) const
