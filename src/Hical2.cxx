@@ -72,7 +72,7 @@ double Hical2::isHical(AnitaEventSummary *sum, int geomCut){
     //variables for the pointing to HC
     double a4_hc2a, a4_hc2b;  
     whereAreHical(sum->eventNumber, &a4_hc2a, &a4_hc2b);
-    cout<<a4_hc2a<<" "<<a4_hc2b<<" "<<FFTtools::wrap(sum->anitaLocation.heading-sum->peak[0][0].phi, 360)<<endl;
+    //cout<<a4_hc2a<<" "<<a4_hc2b<<" "<<FFTtools::wrap(sum->anitaLocation.heading-sum->peak[0][0].phi, 360)<<endl;
     
     if(abs(a4_hc2a-FFTtools::wrap(sum->anitaLocation.heading-sum->peak[0][0].phi, 360))<2.5&&hc2aOn(sum->realTime)==true){
     
@@ -262,12 +262,15 @@ bool Hical2::hc2aOn(UInt_t triggerTime){
     sprintf(filename,"%s/share/anitaCalib/hc2aruns.root",dir);
     infile = TFile::Open(filename);
   }
-  static TTree * intree = 0;
-  if(!intree)intree=(TTree*)infile->Get("tree");
+  //static TTree * intree = 0;
   UInt_t ontime, offtime;
   bool on=false;
-  intree->SetBranchAddress("ontime", &ontime);
-  intree->SetBranchAddress("offtime", &offtime);
+  // if(!intree){
+   TTree* intree=(TTree*)infile->Get("tree");
+    
+    intree->SetBranchAddress("ontime", &ontime);
+    intree->SetBranchAddress("offtime", &offtime);
+    //  }
   for(int i=0;i<intree->GetEntries();i++){
     intree->GetEntry(i);
     if(triggerTime>=ontime&&triggerTime<=offtime){
@@ -303,12 +306,14 @@ bool Hical2::hc2bOn(UInt_t triggerTime){
     sprintf(filename,"%s/share/anitaCalib/hc2bruns.root",dir);
     infile = TFile::Open(filename);
   }
-  static TTree * intree = 0;
-  if(!intree)intree=(TTree*)infile->Get("tree");
+  //  static TTree * intree = 0;
   UInt_t ontime, offtime;
   bool on=false;
-  intree->SetBranchAddress("ontime", &ontime);
-  intree->SetBranchAddress("offtime", &offtime);
+  //if(!intree){
+    TTree * intree=(TTree*)infile->Get("tree");
+    intree->SetBranchAddress("ontime", &ontime);
+    intree->SetBranchAddress("offtime", &offtime);
+    //  }
   for(int i=0;i<intree->GetEntries();i++){
     intree->GetEntry(i);
     if(triggerTime>=ontime&&triggerTime<=offtime){
