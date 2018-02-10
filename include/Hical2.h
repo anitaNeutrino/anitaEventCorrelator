@@ -27,15 +27,17 @@ public:
 
   Hical2();
   //  ~Hical2();
-  //the main cut function
-  double isHical(UInt_t eventNumber, AnitaEventSummary *sum, int geomCut=1);
+  //the main cut function using event number
+  double isHical(UInt_t eventNumber, int geomCut=1);
+  //using event summary
+  static  double isHical(AnitaEventSummary *sum, int geomCut=1);
   //will return dphi for specified payload for map peaks 1, 2, 3
   double dPhi(int aorb, int peak=0);
   //return the absolute angles to HC
-  int whereAreHical(UInt_t eventNumber, double * angleToA, double *angleToB);
+  static int whereAreHical(UInt_t eventNumber, double * angleToA, double *angleToB);
   //is hical on
-  bool hc2aOn(UInt_t triggerTime);
-  bool hc2bOn(UInt_t triggerTime);
+  static bool hc2aOn(UInt_t triggerTime);
+  static bool hc2bOn(UInt_t triggerTime);
   
 private:
 
@@ -44,17 +46,17 @@ private:
   int INIT_HICAL=0;
 
   //angle things
-  double angleToThing(double lat1, double lon1, double lat2, double lon2);
-  double deg2rad(double deg);
-  double rad2deg(double rad);
+  static double angleToThing(double lat1, double lon1, double lat2, double lon2);
+  static double deg2rad(double deg);
+  static double rad2deg(double rad);
 
   //anitadataset, and trees, and storage stuff to make things faster
-  AnitaDataset *ad =0;
-  TTree * hc2ahk_tree = new TTree();
-  TTree * hc2bhk_tree = new TTree();
+  AnitaDataset *adset =0;
+  //TTree * hc2ahk_tree = new TTree();
+  //TTree * hc2bhk_tree = new TTree();
   
-  HCHKTree *hc2ahk=new HCHKTree();
-  HCHKTree *hc2bhk=new HCHKTree();
+  //HCHKTree *hc2ahk=new HCHKTree();
+  //HCHKTree *hc2bhk=new HCHKTree();
 
 
   ClassDef(Hical2, 1);

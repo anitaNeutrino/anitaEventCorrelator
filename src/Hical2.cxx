@@ -7,7 +7,7 @@ ClassImp(Hical2)
 
 Hical2::Hical2(){}
 
-double Hical2::isHical(UInt_t eventNumber, AnitaEventSummary *sum, int geomCut){
+double Hical2::isHical(UInt_t eventNumber, int geomCut){
   //initialize the hical stuff
   if(INIT_HICAL==0){
     initHical();
@@ -23,8 +23,47 @@ double Hical2::isHical(UInt_t eventNumber, AnitaEventSummary *sum, int geomCut){
     return 0;
   }
   //quick check to see if both payloads are off
-  ad->getEvent(eventNumber);
-  if(hc2aOn(ad->header()->triggerTime)==0&&hc2bOn(ad->header()->triggerTime)==0){
+  adset->getEvent(eventNumber);
+  if(hc2aOn(adset->header()->triggerTime)==0&&hc2bOn(adset->header()->triggerTime)==0){
+    //    cout<<"both are off"<<endl;
+    return 0;
+  }
+
+  if(geomCut==1){
+    //variables for the pointing to HC
+    // double a4_hc2a, a4_hc2b;  
+    // whereAreHical(eventNumber, &a4_hc2a, &a4_hc2b);
+    // cout<<a4_hc2a<<" "<<a4_hc2b<<" "<<FFTtools::wrap(sum->anitaLocation.heading-sum->peak[0][0].phi, 360)<<endl;
+    
+    // if(abs(a4_hc2a-FFTtools::wrap(sum->anitaLocation.heading-sum->peak[0][0].phi, 360))<2.5){
+    
+    //   return 1;
+    // }
+    // else if(abs(a4_hc2b-FFTtools::wrap(sum->anitaLocation.heading-sum->peak[0][0].phi, 360))<2.5){
+    
+    //   return 1;
+    // }
+    // else {
+    //   return 0;
+    // }
+    return 0;
+  }
+
+  return -1;
+}
+double Hical2::isHical(AnitaEventSummary *sum, int geomCut){
+  //quick sanity checks for hical not being in the air
+  if(sum->eventNumber<31059701){
+    //hical is not not in the air yet!
+    return 0;
+  }
+  if(sum->eventNumber>72073425){
+    // hical is dead!;
+    return 0;
+  }
+  //quick check to see if both payloads are off
+  //  ad->getEvent(sum->eventNumber);
+  if(hc2aOn(sum->realTime)==0&&hc2bOn(sum->realTime)==0){
     //    cout<<"both are off"<<endl;
     return 0;
   }
@@ -32,14 +71,14 @@ double Hical2::isHical(UInt_t eventNumber, AnitaEventSummary *sum, int geomCut){
   if(geomCut==1){
     //variables for the pointing to HC
     double a4_hc2a, a4_hc2b;  
-    whereAreHical(eventNumber, &a4_hc2a, &a4_hc2b);
+    whereAreHical(sum->eventNumber, &a4_hc2a, &a4_hc2b);
     cout<<a4_hc2a<<" "<<a4_hc2b<<" "<<FFTtools::wrap(sum->anitaLocation.heading-sum->peak[0][0].phi, 360)<<endl;
     
-    if(abs(a4_hc2a-FFTtools::wrap(sum->anitaLocation.heading-sum->peak[0][0].phi, 360))<2.5){
+    if(abs(a4_hc2a-FFTtools::wrap(sum->anitaLocation.heading-sum->peak[0][0].phi, 360))<2.5&&hc2aOn(sum->realTime)==true){
     
       return 1;
     }
-    else if(abs(a4_hc2b-FFTtools::wrap(sum->anitaLocation.heading-sum->peak[0][0].phi, 360))<2.5){
+    else if(abs(a4_hc2b-FFTtools::wrap(sum->anitaLocation.heading-sum->peak[0][0].phi, 360))<2.5&&hc2bOn(sum->realTime)==true){
     
       return 1;
     }
@@ -52,20 +91,49 @@ double Hical2::isHical(UInt_t eventNumber, AnitaEventSummary *sum, int geomCut){
 }
 
 int Hical2::whereAreHical(UInt_t eventNumber, double * angleToA, double * angleToB){
-  if(INIT_HICAL==0){
-    initHical();
-    INIT_HICAL=1;
-  }
-
   if(eventNumber<31059701){
     //hical is not not in the air yet!
+    *angleToA=-999;
+    *angleToB=-999;
     return 0;
   }
   if(eventNumber>72073425){
+    *angleToA=-999;
+    *angleToB=-999;
     // hical is dead!;
     return 0;
   }
+
+  static AnitaDataset *ad=0;
+  if(!ad)ad=new AnitaDataset(157);
   
+  static TFile *hc2ahk_file = 0;
+  static TTree *hc2ahk_tree = 0;
+  static HCHKTree *hc2ahk=new HCHKTree();
+  if(!hc2ahk_file){
+    char filename[1000];
+    char *dir=getenv("ANITA_UTIL_INSTALL_DIR");
+    sprintf(filename,"%s/share/anitaCalib/hc2ahk.root",dir);
+    hc2ahk_file=TFile::Open(filename);
+    hc2ahk_tree = (TTree*)hc2ahk_file->Get("tree");
+    hc2ahk_tree->SetBranchAddress("hktree", &hc2ahk);
+    hc2ahk_tree->BuildIndex("hktree.time");
+  }
+
+  static TFile *hc2bhk_file = 0;
+  static TTree *hc2bhk_tree = 0;
+  static HCHKTree *hc2bhk = new HCHKTree();
+  if(!hc2bhk_file){
+    char filename[1000];
+    char *dir=getenv("ANITA_UTIL_INSTALL_DIR");
+    sprintf(filename,"%s/share/anitaCalib/hc2bhk.root",dir);
+    hc2bhk_file=TFile::Open(filename);
+    hc2bhk_tree = (TTree*)hc2bhk_file->Get("tree");
+    hc2bhk_tree->SetBranchAddress("hktree", &hc2bhk);
+    hc2bhk_tree->BuildIndex("hktree.time");
+  }
+
+ 
   
   ad->getEvent(eventNumber);
   double atime1, alat1, alon1, aalt1, atime2, alat2, alon2, aalt2;
@@ -138,9 +206,13 @@ double Hical2::dPhi(int aorb, int peak){
 
 int Hical2::initHical(){
   AnitaVersion::set(4);
-  ad = new AnitaDataset(157);
+  adset = new AnitaDataset(157);
+  static TTree *hc2ahk_tree = 0;
+  static HCHKTree *hc2ahk=new HCHKTree();
 
-  
+  static TTree *hc2bhk_tree = 0;
+  static HCHKTree *hc2bhk=new HCHKTree();
+
   char filename[1000];
   char *dir=getenv("ANITA_UTIL_INSTALL_DIR");
 
