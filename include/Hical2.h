@@ -10,7 +10,7 @@ finding/getting rid of hical 2.
 #include "TTree.h"
 #include "TROOT.h"
 #include "TMath.h"
-#include "HCHKTree.h"
+#include "HCTree.h"
 #include "AnitaDataset.h"
 #include "AnitaVersion.h"
 #include "FFTtools.h"
