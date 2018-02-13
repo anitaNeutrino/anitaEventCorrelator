@@ -1,3 +1,5 @@
+# anitaEventCorrelator
+
 //////////////////////////////////////////////////////////////////////////////
 ////    eventCorrelator   -- December 2007                                ////
 ////   Ryan Nichol (rjn@hep.ucl.ac.uk)                                   /////
