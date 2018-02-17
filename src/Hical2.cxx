@@ -152,8 +152,9 @@ int Hical2::angleToHical(UInt_t eventNumber, double * angleToA, double * angleTo
   
   static TFile *hc2ahk_file = 0;
   static TTree *hc2ahk_tree = 0;
-  static HCHKTree *hc2ahk=new HCHKTree();
+  static HCHKTree *hc2ahk=0;
   if(!hc2ahk_file){
+    hc2ahk=new HCHKTree();
     char filename[1000];
     char *dir=getenv("ANITA_UTIL_INSTALL_DIR");
     sprintf(filename,"%s/share/anitaCalib/hc2ahk.root",dir);
@@ -165,8 +166,9 @@ int Hical2::angleToHical(UInt_t eventNumber, double * angleToA, double * angleTo
 
   static TFile *hc2bhk_file = 0;
   static TTree *hc2bhk_tree = 0;
-  static HCHKTree *hc2bhk = new HCHKTree();
+  static HCHKTree *hc2bhk = 0;
   if(!hc2bhk_file){
+    hc2bhk=new HCHKTree();
     char filename[1000];
     char *dir=getenv("ANITA_UTIL_INSTALL_DIR");
     sprintf(filename,"%s/share/anitaCalib/hc2bhk.root",dir);
@@ -274,8 +276,9 @@ int Hical2::whereAreHical(UInt_t eventNumber, double * latA, double * lonA, doub
   
   static TFile *hc2ahk_file = 0;
   static TTree *hc2ahk_tree = 0;
-  static HCHKTree *hc2ahk=new HCHKTree();
+  static HCHKTree *hc2ahk=0;
   if(!hc2ahk_file){
+    hc2ahk=new HCHKTree();
     char filename[1000];
     char *dir=getenv("ANITA_UTIL_INSTALL_DIR");
     sprintf(filename,"%s/share/anitaCalib/hc2ahk.root",dir);
@@ -287,8 +290,9 @@ int Hical2::whereAreHical(UInt_t eventNumber, double * latA, double * lonA, doub
 
   static TFile *hc2bhk_file = 0;
   static TTree *hc2bhk_tree = 0;
-  static HCHKTree *hc2bhk = new HCHKTree();
+  static HCHKTree *hc2bhk = 0;
   if(!hc2bhk_file){
+    hc2bhk=new HCHKTree();
     char filename[1000];
     char *dir=getenv("ANITA_UTIL_INSTALL_DIR");
     sprintf(filename,"%s/share/anitaCalib/hc2bhk.root",dir);
