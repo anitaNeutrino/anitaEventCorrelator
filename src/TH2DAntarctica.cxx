@@ -323,23 +323,24 @@ void TH2DAntarctica::FillRandomly(Int_t nTimes){
  * Helper function which prettifies the z-axis
  */
 void TH2DAntarctica::ResetColorAxis(){
-  gPad->Modified();
-  gPad->Update();
-  TPaletteAxis *palette = (TPaletteAxis*) GetListOfFunctions()->FindObject("palette");
-  if(palette){
-    palette->SetX1NDC(palX1);
-    palette->SetX2NDC(palX2);
-    palette->SetY1NDC(palY1);
-    palette->SetY2NDC(palY2);
-    
-    TAxis* zAxis = GetZaxis();
-    // zAxis->SetTitle();
-    zAxis->SetTitleSize(AntarcticaBackgroundDefaults::zAxisTextSize);
-    zAxis->SetLabelSize(AntarcticaBackgroundDefaults::zAxisTextSize);
-    // std::cout << zAxis->GetTitleOffset() << std::endl;
-    // zAxis->SetTitleOffset(0.1);
+  if(gPad){
     gPad->Modified();
     gPad->Update();
+    TPaletteAxis *palette = (TPaletteAxis*) GetListOfFunctions()->FindObject("palette");
+    if(palette){
+      palette->SetX1NDC(palX1);
+      palette->SetX2NDC(palX2);
+      palette->SetY1NDC(palY1);
+      palette->SetY2NDC(palY2);
+      TAxis* zAxis = GetZaxis();
+      // zAxis->SetTitle();
+      zAxis->SetTitleSize(AntarcticaBackgroundDefaults::zAxisTextSize);
+      zAxis->SetLabelSize(AntarcticaBackgroundDefaults::zAxisTextSize);
+      // std::cout << zAxis->GetTitleOffset() << std::endl;
+      // zAxis->SetTitleOffset(0.1);
+      gPad->Modified();
+      gPad->Update();
+    }
   }
 }
 
