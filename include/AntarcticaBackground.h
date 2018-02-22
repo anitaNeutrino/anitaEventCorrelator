@@ -1,10 +1,10 @@
 /* -*- C++ -*-.*********************************************************************************************
- Author: Ben Strutt
- Email: strutt@physics.ucla.edu
+   Author: Ben Strutt
+   Email: strutt@physics.ucla.edu
 
- Description:
- TProfile2D to contain the map of antarctica for pretty, interactive plotting.
- Honed to "perfection" (well, a functional state) on a flight from London to Los Angeles.
+   Description:
+   TProfile2D to contain the map of antarctica for pretty, interactive plotting.
+   Honed to "perfection" (well, a functional state) on a flight from London to Los Angeles.
 ***********************************************************************************************************/
 
 #ifndef ANTARCTICA_BACKGROUND_H
@@ -21,20 +21,20 @@ class TGraphAntarctica;
 class TPad;
 
 namespace AntarcticaBackgroundDefaults {
-const int defaultCoarseness = 10;  /// 1 is v slow on my laptop maybe set lower to zoom in
-const double zAxisTextSize = 0.02; /// Standard size for the z-axis text
-const double zAxisWidth = 0.03; /// Standard size for z-xaxis
-const double zAxisHeight = 0.4; /// Standard size for z-xaxis
-const double zAxisRightMargin = 0.02; /// Standard position for z-xaxis
-const double zAxisTopBottomMargin = 0.02; /// Standard position for z-xaxis
-const TString drawOpt = "";
+  const int defaultCoarseness = 10;  /// 1 is v slow on my laptop maybe set lower to zoom in
+  const double zAxisTextSize = 0.02; /// Standard size for the z-axis text
+  const double zAxisWidth = 0.03; /// Standard size for z-xaxis
+  const double zAxisHeight = 0.4; /// Standard size for z-xaxis
+  const double zAxisRightMargin = 0.02; /// Standard position for z-xaxis
+  const double zAxisTopBottomMargin = 0.02; /// Standard position for z-xaxis
+  const TString drawOpt = "";
 }
 
 
 class AntarcticaBackground : public TProfile2D {
 
 
- public:
+public:
 
   AntarcticaBackground(RampdemReader::dataSet dataSet = RampdemReader::thickness,
                        Int_t coarseness = AntarcticaBackgroundDefaults::defaultCoarseness);
@@ -104,7 +104,7 @@ class AntarcticaBackground : public TProfile2D {
 #endif
 
   void scale(double newMin, double newMax);
- private:
+private:
 
   Double_t fMinVal;
   Double_t fMaxVal;

@@ -74,6 +74,8 @@ public:
   static void EastingNorthingToLonLat(Double_t easting, Double_t northing, Double_t &lon, Double_t &lat);
 
   static Bool_t isOnContinent(Double_t lon, Double_t lat);
+  static Bool_t isOnIceShelf(Double_t lon, Double_t lat);
+  static Double_t iceThickness(Double_t lon, Double_t lat);
 
   //Data Output methods
 

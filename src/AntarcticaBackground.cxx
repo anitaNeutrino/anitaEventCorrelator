@@ -742,71 +742,78 @@ void AntarcticaBackground::scale(double newMin, double newMax){
     newMin += 1e-15;
   }
 
-  double currentMax = -DBL_MAX;
-  double currentMin = DBL_MAX;
+  if(fScaleMax != newMax || fScaleMin != newMin){
 
-  if(fScaleMax == fScaleMin){
-    // need to discover the current scale max/min
-    // not sure we can get here now?
+    double currentMax = -DBL_MAX;
+    double currentMin = DBL_MAX;
+
+    if(fScaleMax == fScaleMin){
+      // need to discover the current scale max/min
+      // not sure we can get here now?
+
+      for(int by=1; by <= GetNbinsY(); by++){
+	for(int bx=1; bx <= GetNbinsX(); bx++){
+
+	  Int_t bin = GetBin(bx, by);
+	  double binEntries = GetBinEntries(bin);
+	  // cleverer way of checking this was a filled background bin
+	  if(binEntries > 0){
+	    double val = GetBinContent(bx, by);
+
+	    currentMin = val < currentMin ? val : currentMin;
+	    currentMax = val > currentMax ? val : currentMax;
+	  }
+	}
+      }
+    }
+    else{
+      currentMax = fScaleMax;
+      currentMin = fScaleMin;
+    }
+
+    double currentDelta = currentMax - currentMin;
+    double newDelta = newMax - newMin;
 
     for(int by=1; by <= GetNbinsY(); by++){
       for(int bx=1; bx <= GetNbinsX(); bx++){
 
-        Int_t bin = GetBin(bx, by);
-        double binEntries = GetBinEntries(bin);
-        // cleverer way of checking this was a filled background bin
-        if(binEntries > 0){
-          double val = GetBinContent(bx, by);
+	// cleverer way of checking this was a filled background bin
+	Int_t bin = GetBin(bx, by);
+	double binEntries = GetBinEntries(bin);
 
-          currentMin = val < currentMin ? val : currentMin;
-          currentMax = val > currentMax ? val : currentMax;
-        }
+	if(binEntries > 0){
+
+	  double val = GetBinContent(bx, by);
+	  double frac = (val - currentMin)/currentDelta;
+
+	  // if(val != 0 && currentMax - val < 100){
+	  //   std::cerr << val << "\t" << currentMin << "\t" << currentMax << "\t" << frac << std::endl;
+	  // }
+
+	  double newVal = newMin + frac*newDelta;
+	  SetBinContent(bx, by, newVal);
+	  SetBinEntries(bin, 1); // otherwise TProfile scales the value
+
+	}
       }
     }
-  }
-  else{
-    currentMax = fScaleMax;
-    currentMin = fScaleMin;
-  }
+    // record new scale
+    fScaleMax = newMax;
+    fScaleMin = newMin;
 
-  double currentDelta = currentMax - currentMin;
-  double newDelta = newMax - newMin;
+    // set max/min
+    SetMaximum(newMax);
+    SetMinimum(newMin);
 
-  for(int by=1; by <= GetNbinsY(); by++){
-    for(int bx=1; bx <= GetNbinsX(); bx++){
-
-      // cleverer way of checking this was a filled background bin
-      Int_t bin = GetBin(bx, by);
-      double binEntries = GetBinEntries(bin);
-
-      if(binEntries > 0){
-
-        double val = GetBinContent(bx, by);
-        double frac = (val - currentMin)/currentDelta;
-
-        // if(val != 0 && currentMax - val < 100){
-        //   std::cerr << val << "\t" << currentMin << "\t" << currentMax << "\t" << frac << std::endl;
-        // }
-
-        double newVal = newMin + frac*newDelta;
-        SetBinContent(bx, by, newVal);
-        SetBinEntries(bin, 1); // otherwise TProfile scales the value
-
-      }
+    // trigger re-paint of canvas
+    // --------------------------------------
+    // DO NOT CALL gPad->Update() HERE THIS
+    // BROUGHT FORTH DRAGONS FROM THE DEPTHS
+    // --------------------------------------
+    if(gPad){
+      gPad->Modified();
     }
   }
-  // record new scale
-  fScaleMax = newMax;
-  fScaleMin = newMin;
-
-  // set max/min
-  SetMaximum(newMax);
-  SetMinimum(newMin);
-
-  // trigger re-paint of canvas
-  gPad->Modified();
-  gPad->Update();
-
 }
 
 
