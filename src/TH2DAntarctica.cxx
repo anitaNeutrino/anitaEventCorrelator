@@ -64,9 +64,12 @@ TProfile2DAntarctica::TProfile2DAntarctica(const char* name, const char* title, 
 
 void TProfile2DAntarctica::Draw(Option_t* opt){
 
-  AntarcticaBackground* b = getBackground();
-  b->Draw();
-  b->SetBit(kCanDelete, false);
+  TString opt2(opt);
+  if(!opt2.Contains("same")){
+    AntarcticaBackground* b = getBackground();
+    b->Draw();
+    b->SetBit(kCanDelete, false);
+  }
   TString sameOpt = TString::Format("%s same", opt);
   TProfile2D::Draw(sameOpt);
   ResetColorAxis();
@@ -271,9 +274,12 @@ TH2DAntarctica::TH2DAntarctica(const char* name, const char* title, const std::v
 
 void TH2DAntarctica::Draw(Option_t* opt){
 
-  AntarcticaBackground* b = getBackground();
-  b->Draw();
-  b->SetBit(kCanDelete, false);  
+  TString opt2(opt);
+  if(!opt2.Contains("same")){
+    AntarcticaBackground* b = getBackground();
+    b->Draw();
+    b->SetBit(kCanDelete, false);
+  }
   TString sameOpt = TString::Format("%s same", opt);
   TH2D::Draw(sameOpt);
   ResetColorAxis();
