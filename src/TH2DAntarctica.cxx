@@ -64,15 +64,30 @@ TProfile2DAntarctica::TProfile2DAntarctica(const char* name, const char* title, 
 
 void TProfile2DAntarctica::Draw(Option_t* opt){
 
-  AntarcticaBackground* b = getBackground();
-  b->Draw();
-  b->SetBit(kCanDelete, false);
-  TString sameOpt = TString::Format("%s same", opt);
+  TString opt2(opt);
+  if(!opt2.Contains("same")){
+    AntarcticaBackground* b = getBackground();
+    b->Draw();
+    b->SetBit(kCanDelete, false);
+  }
+  else{
+    TList* l = gPad->GetListOfPrimitives();
+    for(int i=0; i < l->GetEntries(); i++){
+      TString objName = l->At(i)->GetName();
+      if(objName.Contains("fAntarctica") && !objName.Contains("PalSetter")){
+	if(fAntarcticaBackground && fAntarcticaBackground != (AntarcticaBackground*) l->At(i)){
+	  delete fAntarcticaBackground;
+	}
+	fAntarcticaBackground = (AntarcticaBackground*) l->At(i);
+	// break;
+      }
+    }
+  }
+  TString sameOpt = opt2.Contains("same") ? opt2 : TString::Format("%s same", opt);
   TProfile2D::Draw(sameOpt);
   ResetColorAxis();
   RescaleBackground();
   gPad->Modified();
-  gPad->Update();
 }
 
 
@@ -271,15 +286,30 @@ TH2DAntarctica::TH2DAntarctica(const char* name, const char* title, const std::v
 
 void TH2DAntarctica::Draw(Option_t* opt){
 
-  AntarcticaBackground* b = getBackground();
-  b->Draw();
-  b->SetBit(kCanDelete, false);  
-  TString sameOpt = TString::Format("%s same", opt);
+  TString opt2(opt);
+  if(!opt2.Contains("same")){
+    AntarcticaBackground* b = getBackground();
+    b->Draw();
+    b->SetBit(kCanDelete, false);
+  }
+  else{
+    TList* l = gPad->GetListOfPrimitives();
+    for(int i=0; i < l->GetEntries(); i++){
+      TString objName = l->At(i)->GetName();
+      if(objName.Contains("fAntarctica") && !objName.Contains("PalSetter")){
+	if(fAntarcticaBackground && fAntarcticaBackground != (AntarcticaBackground*) l->At(i)){
+	  delete fAntarcticaBackground;
+	}
+	fAntarcticaBackground = (AntarcticaBackground*) l->At(i);
+	// break;
+      }
+    }
+  }
+  TString sameOpt = opt2.Contains("same") ? opt2 : TString::Format("%s same", opt);
   TH2D::Draw(sameOpt);
   ResetColorAxis();
   RescaleBackground();
   gPad->Modified();
-  gPad->Update();
 }
 
 
