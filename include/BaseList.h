@@ -21,6 +21,7 @@ namespace BaseList{
       virtual bool isValid(unsigned time) const { (void) time; return true; }
 
       virtual ~abstract_base() { ; } 
+      virtual void Draw(const char *opt = "m")  const= 0; 
   }; 
 
 
@@ -43,6 +44,7 @@ namespace BaseList{
     }
     virtual const char * getName() const { return name.Data(); } 
     virtual const char * getSource() const { return dataSource.Data(); } 
+    virtual void Draw(const char * opt = "p") const; 
   };
 
 
@@ -67,6 +69,7 @@ namespace BaseList{
     virtual const char * getName() const { return name.Data(); }
     virtual AntarcticCoord  getPosition(unsigned time) const; 
     virtual bool isValid(unsigned time) const { return time >= ts[0] && time < ts[ts.size()-1] ; } 
+    virtual void Draw(const char * opt = "lp") const; 
 
     /** 
      * Boolian match function for std::find, checks the call signs match

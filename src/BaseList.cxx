@@ -9,6 +9,9 @@
 #include "TKey.h" 
 #include "AnitaGeomTool.h"
 
+#include "TMarker.h" 
+#include "TText.h" 
+#include "TGraph.h" 
 
 using namespace BaseList;
 
@@ -237,7 +240,7 @@ static std::vector<path> & paths()
   return no_paths; 
 }
 
-const BaseList::base& BaseList::getBase(UInt_t index){
+const BaseList::base& BaseList::getBase(UInt_t index){ 
 
   index = index < bases().size() ? index : 0;
   return bases().at(index);
@@ -411,6 +414,7 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
 
 
 
+
 int BaseList::findBases(const char * query, std::vector<int> * matches, bool include_paths) 
 {
 
@@ -432,3 +436,49 @@ int BaseList::findBases(const char * query, std::vector<int> * matches, bool inc
   return first_found; 
 
 } 
+
+void BaseList::base::Draw(const char * opt) const
+{
+  AntarcticCoord stereo = position.as(AntarcticCoord::STEREOGRAPHIC); 
+
+  if (strchr(opt,'p'))
+  {
+    TMarker * m = new TMarker(stereo.x, stereo.y, 2); 
+    m->SetBit(kCanDelete); 
+    m->AppendPad(); 
+  }
+
+  if (strchr(opt,'t'))
+  {
+    TText * t = new TText(stereo.x + 50e3, stereo.y, getName()); 
+    t->SetBit(kCanDelete); 
+    t->AppendPad(); 
+  }
+
+} 
+
+void BaseList::path::Draw(const char * opt) const
+{
+
+  if (strchr(opt,'p') || strchr(opt,'l'))
+  {
+    TGraph * g = new TGraph; 
+    for (unsigned i = 0; i < ps.size(); i++)
+    {
+      AntarcticCoord stereo = ps[i].as(AntarcticCoord::STEREOGRAPHIC); 
+      g->SetPoint(i, stereo.x, stereo.y); 
+    }
+
+     g->SetBit(kCanDelete); 
+     g->AppendPad(opt); 
+  }
+
+  if (strchr(opt,'t'))
+  {
+    AntarcticCoord stereo = ps[0].as(AntarcticCoord::STEREOGRAPHIC); 
+    TText * t = new TText(stereo.x+50e3, stereo.y, getName()); 
+    t->SetBit(kCanDelete); 
+    t->AppendPad(); 
+  }
+
+}
