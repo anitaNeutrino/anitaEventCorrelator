@@ -516,7 +516,7 @@ void StereographicGrid::Draw(const char * opt, const double * data, const double
   {
     stropt.ReplaceAll("MAP",""); 
     h = new TH2DAntarctica("tmp","Stereographic Grid", nx, ny); 
-    do_map - true;
+    do_map = true;
   }
   else 
   {
