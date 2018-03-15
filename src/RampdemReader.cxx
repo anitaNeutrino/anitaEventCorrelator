@@ -1200,3 +1200,62 @@ Bool_t RampdemReader::isOnContinent(Double_t lon, Double_t lat){
   }
   return isOnContinent;
 }
+
+
+/**
+ * Returns true if a specified latitude or longitude is on an iceshelf
+ * ...according to the RampdemReader::icemask_grounding_and_shelves model
+ *
+ *
+ * @param lon is the longitude (degrees)
+ * @param lat is the latitude (degrees)
+ *
+ * @return true if on the continent, false otherwise
+ */
+Bool_t RampdemReader::isOnIceShelf(Double_t lon, Double_t lat){
+  const VecVec& data = getDataIfNeeded(RampdemReader::icemask_grounded_and_shelves);
+  int e_coord, n_coord;
+  LonLattoEN(lon, lat, e_coord, n_coord, RampdemReader::icemask_grounded_and_shelves);
+  // std::cout << lon << "\t" << lat << e_coord << "\t" << n_coord << std::endl;
+
+  Bool_t iceShelf = false;
+  if(n_coord >= 0 && n_coord < numYs[RampdemReader::icemask_grounded_and_shelves] &&
+     e_coord >= 0 && e_coord < numXs[RampdemReader::icemask_grounded_and_shelves]){
+
+    double val = data.at(n_coord).at(e_coord);
+
+    // if(val!=noDatas[RampdemReader::icemask_grounded_and_shelves] && val!=0){
+    if(val==1){
+      iceShelf = true;
+    }
+  }
+  return iceShelf;
+}
+
+
+
+
+/**
+ * Returns true if a specified latitude or longitude is on an iceshelf
+ * ...according to the RampdemReader::icemask_grounding_and_shelves model
+ *
+ *
+ * @param lon is the longitude (degrees)
+ * @param lat is the latitude (degrees)
+ *
+ * @return true if on the continent, false otherwise
+ */
+Double_t RampdemReader::iceThickness(Double_t lon, Double_t lat){
+  const VecVec& data = getDataIfNeeded(RampdemReader::thickness);
+  int e_coord, n_coord;
+  LonLattoEN(lon, lat, e_coord, n_coord, RampdemReader::thickness);
+  // std::cout << lon << "\t" << lat << e_coord << "\t" << n_coord << std::endl;
+
+  Double_t thickness = 0;
+  if(n_coord >= 0 && n_coord < numYs[RampdemReader::thickness] &&
+     e_coord >= 0 && e_coord < numXs[RampdemReader::thickness]){
+
+    thickness = data.at(n_coord).at(e_coord);
+  }
+  return thickness;
+}

@@ -481,8 +481,8 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt3(Double_t phiWave, Double_t thetaWave
   if(thetaWave <= 0){
     if(fDebug){
       std::cout  << "No chance! " << std::endl;
-      return 0;
     }
+    return 0;
   }
 
   // TGraph* grTest = NULL;
