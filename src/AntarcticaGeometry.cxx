@@ -693,9 +693,11 @@ int PayloadParameters::findSourceOnContinent(double theta, double phi, const Adu
   
   size_t i = 1; 
   double step = 1000*300;  //start with 300 km step 
-  PayloadParameters ok; 
-  while (true) 
+  PayloadParameters ok;
+  int loopCount = 0;
+  while (loopCount<100) //simply hard coded the upper limit of the loop, otherwise it may stuck in the loop forever.
   {
+    loopCount++;
     double lat, lon; 
     gl.Position(i * step, lat, lon); 
     AntarcticCoord c(AntarcticCoord::WGS84, lat, lon, RampdemReader::SurfaceAboveGeoid(lon,lat,d)); 
