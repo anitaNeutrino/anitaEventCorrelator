@@ -506,6 +506,9 @@ AntarcticCoord * StereographicGrid::sampleSegment(int idx, int N, AntarcticCoord
 
 void StereographicGrid::Draw(const char * opt, const double * data, const double * range) const
 {
+  if(gDirectory->Get("tmp")){
+    delete gDirectory->Get("tmp");
+  }
   TH2 * h = 0; 
 
   TString stropt(opt); 
@@ -516,7 +519,7 @@ void StereographicGrid::Draw(const char * opt, const double * data, const double
   {
     stropt.ReplaceAll("MAP",""); 
     h = new TH2DAntarctica("tmp","Stereographic Grid", nx, ny); 
-    do_map - true;
+    do_map = true;
     AntarcticCoord c;
     for (int i = 0; i < NSegments(); i++) 
     {
@@ -581,7 +584,8 @@ int StereographicGrid::getNeighbors(int segment, std::vector<int> * neighbors) c
   {
     for (int j = start_y; j <= end_y; j++)
     {
-      if (i == 0 && j == 0) continue; 
+      if (i == 0 && j == 0) continue;
+      if (i * j != 0) continue; // added by peng, only looking for 4 neighbours instead of 8 neighbours. 
 
       N++; 
       if (neighbors) neighbors->push_back(segment + i + j *nx); 
