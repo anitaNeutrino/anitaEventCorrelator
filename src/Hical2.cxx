@@ -604,7 +604,7 @@ bool Hical2::hc2aOn(UInt_t triggerTime){
      (t>1951615&&t<1953537)||
      (t>1988991&&t<1989121)||
      (t>2012287&&t<2015617)||
-     (t>2042111&&t<2043137))
+     (t>2042111&&t<2095517))//extended to the end of run 240 to catch the death spiral
     on=true;  
   //infile->Close();
   return on;
