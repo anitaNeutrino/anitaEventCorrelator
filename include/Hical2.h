@@ -53,6 +53,10 @@ public:
   static int angleToHical(UInt_t eventNumber, double * angleToA, double *angleToB);
   //same function in case you forget the plurality of hical
   static int anglesToHical(UInt_t eventNumber, double * angleToA, double *angleToB);
+  //find the absolute angles to HC  
+  static int angleToHical(AnitaEventSummary *sum, double * angleToA, double *angleToB);
+  //same function in case you forget the plurality of hical
+  static int anglesToHical(AnitaEventSummary *sum, double * angleToA, double *angleToB);
   //is hical on
   static bool hc2aOn(UInt_t triggerTime);
   static bool hc2bOn(UInt_t triggerTime);

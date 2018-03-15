@@ -60,13 +60,13 @@ double Hical2::isHical(AnitaEventSummary *sum, int peak){
 
   //variables for the pointing to HC
   double a4_hc2a, a4_hc2b;  
-  anglesToHical(sum->eventNumber, &a4_hc2a, &a4_hc2b);
+  anglesToHical(sum, &a4_hc2a, &a4_hc2b);
 
-  if(abs(a4_hc2a-FFTtools::wrap(sum->anitaLocation.heading-sum->peak[0][peak].phi, 360))<2.5&&hc2aOn(sum->realTime)==true){
+  if((abs(a4_hc2a-fmod(sum->anitaLocation.heading-sum->peak[0][peak].phi, 360))<2.5||abs((360.+a4_hc2a)-fmod(sum->anitaLocation.heading-sum->peak[0][peak].phi, 360))<2.5)&&hc2aOn(sum->realTime)==true){
     
     return 1;
   }
-  else if(abs(a4_hc2b-FFTtools::wrap(sum->anitaLocation.heading-sum->peak[0][peak].phi, 360))<2.5&&hc2bOn(sum->realTime)==true){
+  else if((abs(a4_hc2b-fmod(sum->anitaLocation.heading-sum->peak[0][peak].phi, 360))<2.5||abs((360.+a4_hc2b)-fmod(sum->anitaLocation.heading-sum->peak[0][peak].phi, 360))<2.5)&&hc2bOn(sum->realTime)==true){
     
     return 1;
   }
@@ -96,10 +96,10 @@ double Hical2::isHical(UInt_t eventNumber, double peakPhi){
   double a4_hc2a, a4_hc2b;
   anglesToHical(eventNumber, &a4_hc2a, &a4_hc2b);
 
-  if(abs(a4_hc2a-peakPhi)<2.5&&hc2aOn(ad->header()->triggerTime)==1){
+  if((abs(fmod(a4_hc2a-peakPhi, 360))<2.5||abs(fmod(peakPhi-(360.+a4_hc2a), 360))<2.5)&&hc2aOn(ad->header()->triggerTime)==1){
     return 1;
   }
-  else if(abs(a4_hc2b-peakPhi)<2.5&&hc2bOn(ad->header()->triggerTime)==1){
+  else if((abs(fmod(a4_hc2b-peakPhi, 360))<2.5||abs(fmod(peakPhi-(360.+a4_hc2b), 360))<2.5)&&hc2bOn(ad->header()->triggerTime)==1){
     return 1;
   }
   return 0;
@@ -119,12 +119,19 @@ double Hical2::isHical(UInt_t eventNumber, UInt_t triggerTime, double peakPhi){
   double a4_hc2a, a4_hc2b;
   anglesToHical(eventNumber, &a4_hc2a, &a4_hc2b);
 
-  if(abs(a4_hc2a-peakPhi)<2.5&&hc2aOn(triggerTime)==1){
+  if((abs(fmod(a4_hc2a-peakPhi, 360))<2.5||abs(fmod(peakPhi-(360.+a4_hc2a), 360))<2.5)&&hc2aOn(triggerTime)==1){
     return 1;
   }
-  else if(abs(a4_hc2b-peakPhi)<2.5&&hc2bOn(triggerTime)==1){
+  else if((abs(fmod(a4_hc2b-peakPhi, 360))<2.5||abs(fmod(peakPhi-(360.+a4_hc2b), 360))<2.5)&&hc2bOn(triggerTime)==1){
     return 1;
   }
+  
+  // if(abs(a4_hc2a-peakPhi)<2.5&&hc2aOn(triggerTime)==1){
+  //   return 1;
+  // }
+  // else if(abs(a4_hc2b-peakPhi)<2.5&&hc2bOn(triggerTime)==1){
+  //   return 1;
+  // }
   return 0;
 }
 
@@ -244,6 +251,124 @@ int Hical2::angleToHical(UInt_t eventNumber, double * angleToA, double * angleTo
   
   return 1;
 }
+
+
+int Hical2::anglesToHical(AnitaEventSummary *sum, double * angleToA, double * angleToB){
+ return angleToHical(sum, angleToA, angleToB);
+}
+
+int Hical2::angleToHical(AnitaEventSummary *sum, double * angleToA, double * angleToB){
+  UInt_t eventNumber = sum->eventNumber;
+  if(eventNumber<31059701){
+    //hical is not not in the air yet!
+    *angleToA=-999;
+    *angleToB=-999;
+    return 0;
+  }
+  if(eventNumber>72073425){
+    *angleToA=-999;
+    *angleToB=-999;
+    // hical is dead!;
+    return 0;
+  }
+
+  
+  static TFile *hc2ahk_file = 0;
+  static TTree *hc2ahk_tree = 0;
+  static HCHKTree *hc2ahk=0;
+  if(!hc2ahk_file){
+    hc2ahk=new HCHKTree();
+    char filename[1000];
+    char *dir=getenv("ANITA_UTIL_INSTALL_DIR");
+    sprintf(filename,"%s/share/anitaCalib/hc2ahk.root",dir);
+    hc2ahk_file=TFile::Open(filename);
+    hc2ahk_tree = (TTree*)hc2ahk_file->Get("tree");
+    hc2ahk_tree->SetBranchAddress("hktree", &hc2ahk);
+    hc2ahk_tree->BuildIndex("hktree.time");
+  }
+
+  static TFile *hc2bhk_file = 0;
+  static TTree *hc2bhk_tree = 0;
+  static HCHKTree *hc2bhk = 0;
+  if(!hc2bhk_file){
+    hc2bhk=new HCHKTree();
+    char filename[1000];
+    char *dir=getenv("ANITA_UTIL_INSTALL_DIR");
+    sprintf(filename,"%s/share/anitaCalib/hc2bhk.root",dir);
+    hc2bhk_file=TFile::Open(filename);
+    hc2bhk_tree = (TTree*)hc2bhk_file->Get("tree");
+    hc2bhk_tree->SetBranchAddress("hktree", &hc2bhk);
+    hc2bhk_tree->BuildIndex("hktree.time");
+  }
+
+ 
+  
+
+  double atime1, alat1, alon1, aalt1, atime2, alat2, alon2, aalt2;
+  double btime1, blat1, blon1, balt1, btime2, blat2, blon2, balt2;
+  double alat, alon, aalt, blat, blon, balt;
+  double frachk;
+  
+  //for hc2a
+  int aentry = hc2ahk_tree->GetEntryNumberWithBestIndex(sum->realTime, sum->realTime);
+  hc2ahk_tree->GetEntry(aentry);
+  if(aentry==hc2ahk_tree->GetEntries()-1){
+    *angleToA=-999;
+  }
+  else{
+    atime1 = hc2ahk->time;
+    alat1  = hc2ahk->lat;
+    alon1  = hc2ahk->lon;
+    aalt1  = hc2ahk->alt;
+
+    hc2ahk_tree->GetEntry(aentry+1);
+
+    atime2 = hc2ahk->time;
+    alat2  = hc2ahk->lat;
+    alon2  = hc2ahk->lon;
+    aalt2  = hc2ahk->alt;
+
+    frachk = ((double)sum->realTime-atime1)/(atime2-atime1);
+
+    alat = (frachk*(alat2-alat1))+alat1;
+    alon = (frachk*(alon2-alon1))+alon1;
+    aalt = (frachk*(aalt2-aalt1))+aalt1;
+  
+    *angleToA = angleToThing(sum->anitaLocation.latitude, sum->anitaLocation.longitude, alat, alon);
+  }
+  //for hc2b
+  int bentry = hc2bhk_tree->GetEntryNumberWithBestIndex(sum->realTime, sum->realTime);
+  hc2bhk_tree->GetEntry(bentry);
+
+  if(bentry==hc2bhk_tree->GetEntries()-1){
+    *angleToB=-999;
+  }
+  else{
+    btime1 = hc2bhk->time;
+    blat1  = hc2bhk->lat;
+    blon1  = hc2bhk->lon;
+    balt1  = hc2bhk->alt;
+
+    hc2bhk_tree->GetEntry(bentry+1);
+
+    btime2 = hc2bhk->time;
+    blat2  = hc2bhk->lat;
+    blon2  = hc2bhk->lon;
+    balt2  = hc2bhk->alt;
+
+    frachk = ((double)sum->realTime-btime1)/(btime2-btime1);
+
+    blat = (frachk*(blat2-blat1))+blat1;
+    blon = (frachk*(blon2-blon1))+blon1;
+    balt = (frachk*(balt2-balt1))+balt1;
+  
+    *angleToB = angleToThing(sum->anitaLocation.latitude, sum->anitaLocation.longitude, blat, blon);
+  }
+  
+  return 1;
+}
+
+
 
 int Hical2::whereIsHical(UInt_t eventNumber, double * latA, double * lonA, double *altA, double * latB, double *lonB, double *altB){
   return whereAreHical(eventNumber,latA,lonA,altA,latB,lonB,altB);
