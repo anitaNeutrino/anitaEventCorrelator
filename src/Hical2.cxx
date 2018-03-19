@@ -62,12 +62,10 @@ double Hical2::isHical(AnitaEventSummary *sum, int peak){
   double a4_hc2a, a4_hc2b;  
   anglesToHical(sum, &a4_hc2a, &a4_hc2b);
 
-  if((abs(a4_hc2a-fmod(sum->anitaLocation.heading-sum->peak[0][peak].phi, 360))<2.5||abs((360.+a4_hc2a)-fmod(sum->anitaLocation.heading-sum->peak[0][peak].phi, 360))<2.5)&&hc2aOn(sum->realTime)==true){
-    
+  if(abs(FFTtools::wrap(a4_hc2a-sum->anitaLocation.heading+sum->peak[0][peak].phi, 360,0))<2.5 && hc2aOn(sum->realTime)==true){
     return 1;
   }
-  else if((abs(a4_hc2b-fmod(sum->anitaLocation.heading-sum->peak[0][peak].phi, 360))<2.5||abs((360.+a4_hc2b)-fmod(sum->anitaLocation.heading-sum->peak[0][peak].phi, 360))<2.5)&&hc2bOn(sum->realTime)==true){
-    
+  else if(abs(FFTtools::wrap(a4_hc2b-sum->anitaLocation.heading+sum->peak[0][peak].phi, 360,0))<2.5 &&hc2bOn(sum->realTime)==true){
     return 1;
   }
   else {
@@ -96,10 +94,10 @@ double Hical2::isHical(UInt_t eventNumber, double peakPhi){
   double a4_hc2a, a4_hc2b;
   anglesToHical(eventNumber, &a4_hc2a, &a4_hc2b);
 
-  if((abs(fmod(a4_hc2a-peakPhi, 360))<2.5||abs(fmod(peakPhi-(360.+a4_hc2a), 360))<2.5)&&hc2aOn(ad->header()->triggerTime)==1){
+  if( abs(FFTtools::wrap(a4_hc2a-peakPhi,360,0))<2.5 && hc2aOn(ad->header()->triggerTime)==1){
     return 1;
   }
-  else if((abs(fmod(a4_hc2b-peakPhi, 360))<2.5||abs(fmod(peakPhi-(360.+a4_hc2b), 360))<2.5)&&hc2bOn(ad->header()->triggerTime)==1){
+  else if( abs(FFTtools::wrap(a4_hc2b-peakPhi,360,0))<2.5 && hc2bOn(ad->header()->triggerTime)==1){
     return 1;
   }
   return 0;
@@ -119,19 +117,12 @@ double Hical2::isHical(UInt_t eventNumber, UInt_t triggerTime, double peakPhi){
   double a4_hc2a, a4_hc2b;
   anglesToHical(eventNumber, &a4_hc2a, &a4_hc2b);
 
-  if((abs(fmod(a4_hc2a-peakPhi, 360))<2.5||abs(fmod(peakPhi-(360.+a4_hc2a), 360))<2.5)&&hc2aOn(triggerTime)==1){
+  if( abs(FFTtools::wrap(a4_hc2a-peakPhi,360,0))<2.5 && hc2aOn(triggerTime)==1){
     return 1;
   }
-  else if((abs(fmod(a4_hc2b-peakPhi, 360))<2.5||abs(fmod(peakPhi-(360.+a4_hc2b), 360))<2.5)&&hc2bOn(triggerTime)==1){
+  else if( abs(FFTtools::wrap(a4_hc2b-peakPhi,360,0))<2.5 && hc2bOn(triggerTime)==1){
     return 1;
   }
-  
-  // if(abs(a4_hc2a-peakPhi)<2.5&&hc2aOn(triggerTime)==1){
-  //   return 1;
-  // }
-  // else if(abs(a4_hc2b-peakPhi)<2.5&&hc2bOn(triggerTime)==1){
-  //   return 1;
-  // }
   return 0;
 }
 

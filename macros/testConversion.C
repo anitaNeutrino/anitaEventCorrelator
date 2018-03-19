@@ -3,9 +3,9 @@
 void testConversion()
 {
 
-  for (double lat = -90; lat <= -60; lat+=1) 
+  for (double lat = -88; lat <= -88; lat+=1) 
   {
-    for (double lon = -180; lon <= 180; lon+=5) 
+    for (double lon = -1; lon <= 1; lon+=0.1) 
     {
       printf("Lat: %g, Lon: %g\n", lat,lon); 
 
