@@ -756,7 +756,13 @@ void UsefulAdu5Pat::getThetaAndPhiWave2(Double_t sourceLon, Double_t sourceLat, 
   TVector3 sourcePosStack;
   sourcePos  = sourcePos ? sourcePos : &sourcePosStack;
   sourcePos->SetXYZ(pSource[0],pSource[1],pSource[2]);
+  getThetaAndPhiWaveCart(sourcePos, thetaWave, phiWave); 
 
+}
+
+void UsefulAdu5Pat::getThetaAndPhiWaveCart(TVector3 * sourcePos, Double_t & thetaWave, Double_t& phiWave) const 
+{
+  AnitaGeomTool * geom = AnitaGeomTool::Instance();
   //Rotate such that balloon is at 0,0,fBalloonHeight
   sourcePos->RotateZ(-1*fBalloonPhi);
   sourcePos->RotateY(-1*fBalloonTheta);
@@ -1652,4 +1658,36 @@ void UsefulAdu5Pat::getThetaAndPhiWaveHiCal(Double_t& thetaWave, Double_t& phiWa
   }
 }
 
+
+
+
+
+void UsefulAdu5Pat::getThetaAndPhiWaveOfRayAtInfinity(const TVector3 & p0, const TVector3 & v0, Double_t & theta, Double_t & phi, Bool_t plus, Double_t eps, Double_t tstep, TVector3 * testp) const 
+{
+  tstep = fabs(tstep); 
+  if (!plus) tstep *= -1; 
+
+  double last_theta, last_phi; 
+  TVector3 test = p0; 
+  getThetaAndPhiWaveCart(&test, last_theta, last_phi); 
+
+  int istep = 1; 
+  while(true) 
+  {
+//    test.Print(); 
+    test = p0 - v0*tstep*istep; 
+
+    getThetaAndPhiWaveCart(&test, theta, phi); 
+//    printf("%g %g :: %g %g\n",theta,last_theta, phi,last_phi); 
+    if (fabs(theta-last_theta) < eps && fabs(phi-last_phi) < eps)
+    {
+      if (testp) *testp = test; 
+      return; 
+    }
+    last_theta = theta; 
+    last_phi = phi; 
+
+    istep++; 
+  }
+}
 
