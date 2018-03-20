@@ -21,6 +21,9 @@
 #pragma link C++ class TH2DAntarctica+;
 #pragma link C++ class TProfile2DAntarctica+;
 
+#pragma link C++ class Hical2+;
+#pragma link C++ class HCHKTree+;
+
 #pragma link C++ class AntarcticSegmentationScheme;
 #pragma link C++ class AntarcticCoord;
 #pragma link C++ class StereographicGrid;

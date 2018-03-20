@@ -79,11 +79,9 @@ message("ROOT_INCLUDE_DIRS is set to ${ROOT_INCLUDE_DIRS}")
 include_directories(${PROJECT_SOURCE_DIR} ${ROOT_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include ${FFTW_INCLUDES} ${ZLIB_INCLUDES} ${UTIL_INC_DIR})
 add_definitions(${ROOT_CXX_FLAGS})
 
-file(GLOB HEADER_FILES
-    "include/*.h"
-)
+file(GLOB HEADER_FILES ${PROJECT_SOURCE_DIR}/include/*.h ${PROJECT_SOURCE_DIR}/include/*.hh)
 
-file(GLOB_RECURSE SOURCE_FILES src/*.cxx)
+file(GLOB_RECURSE SOURCE_FILES ${PROJECT_SOURCE_DIR}/src/*.cxx ${PROJECT_SOURCE_DIR}/src/*.cc)
 
 set(DICTNAME G__${libname})
 
@@ -161,12 +159,10 @@ if (FORCE_OLD_GPP_ABI)
 endif()
 
 option ( USE_GEOGRAPHIC_LIB "Use GeographicLib for geodesic calculations" ) 
-
-if (USE_GEOGRAPHIC_LIB) 
+if (USE_GEOGRAPHIC_LIB)
   add_definitions  (-DUSE_GEOGRAPHIC_LIB )
   target_link_libraries (${libname} Geographic )
 endif()
-
 
 
 option (USE_HEALPIX "Enable Healpix Segmentation, requires healpix to be
