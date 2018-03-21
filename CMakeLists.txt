@@ -42,7 +42,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${UTIL_SHARE_DIR}/cmake/modules/")
 
 
 #---Locate the ROOT package and defines a number of variables (e.g. ROOT_INCLUDE_DIRS)
-find_package(ROOT REQUIRED COMPONENTS MathMore MathCore RIO Hist Tree Net Minuit Gui)
+find_package(ROOT REQUIRED COMPONENTS MathMore MathCore RIO Hist Tree Net
+  Minuit Gui HistPainter)
 find_package(FFTW REQUIRED)
 find_package(ZLIB REQUIRED)
 
