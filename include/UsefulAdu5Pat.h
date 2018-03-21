@@ -152,6 +152,15 @@ class UsefulAdu5Pat: public Adu5Pat
    */
   void getThetaAndPhiWave2(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave, TVector3* sourcePos = NULL) const;
 
+  /** Cartesian version of above. Note that sourcePos will be modified so that it is rotated to balloon coords, so pass a copy if you don't want to change it */ 
+  void getThetaAndPhiWaveCart(TVector3 * sourcePos, Double_t & thetaWave, Double_t & phiWave) const; 
+
+  /** Find the direction in payload coordinates of a cartesian ray p0 - v0 t as t-> infinity or -infinity
+   * This does it the dumbest possible way, there's probably a smart way to do it. 
+   * */ 
+  void getThetaAndPhiWaveOfRayAtInfinity(const TVector3 & p0, const TVector3 & v0 , Double_t & thetaWave, Double_t & phiWave,
+                                          Bool_t plus_infinity = true, Double_t eps = 0.00001 * TMath::DegToRad(), Double_t step = 10e7, TVector3 * testPosition = 0) const; 
+
   /**
    * Returns the expected theta and phi expected from WAIS divide
    * 
