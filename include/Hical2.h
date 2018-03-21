@@ -40,7 +40,7 @@ public:
   //to be used inside of TTree::Draw, giving it an event number, trigger time, and absolute direction for the peak
   static double isHical(UInt_t eventNumber, UInt_t triggerTime, double peakPhi);
     //to be used inside of TTree::Draw, giving it an event number, trigger time, and absolute direction for the peak
-  static double isHical(UInt_t eventNumber, UInt_t triggerTime, UInt_t triggerTimeNs, double peakPhi);
+  //  static double isHical(UInt_t eventNumber, UInt_t triggerTime, UInt_t triggerTimeNs, double peakPhi);
   
   /* //will return dphi for specified payload for map peaks 1, 2, 3 */
   /* double dPhi(int aorb, int peak=0); */
