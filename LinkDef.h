@@ -23,6 +23,7 @@
 
 #pragma link C++ class Hical2+;
 #pragma link C++ class HCHKTree+;
+#pragma link C++ class SkyMap+;
 
 #pragma link C++ class AntarcticSegmentationScheme;
 #pragma link C++ class AntarcticCoord;
