@@ -1239,13 +1239,13 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
   // getting an off axis response will be more complicated
 
   // Since the antennas points down at -10 degrees, the VPol axis is 80 degrees above the horizontal plane
-  TVector3 vPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, -80*TMath::DegToRad());
+  TVector3 vPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, 80*TMath::DegToRad());
   // The VPol feed is up... (if) the HPol feed is to the right (looking down the boresight) then it points anticlockwise around the payload
   // phi increases anti-clockwise in payload coordinates, therefore
   TVector3 hPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave + TMath::PiOver2(), 0);//-10*TMath::DegToRad());
 
   if(debug){
-    TVector3 antennaAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, 10*TMath::DegToRad());
+    TVector3 antennaAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, -10*TMath::DegToRad());
     std::cout << "The dot products of any pair of the antenna axis, hPolAxis, vPolAxis should be zero..." << std::endl;
     std::cout << "antennaAxis dot hPolAxis  = " << antennaAxis.Dot(hPolAxis) << std::endl;
     std::cout << "antennaAxis dot vPolAxis  = " << antennaAxis.Dot(vPolAxis) << std::endl;
@@ -1368,10 +1368,10 @@ double GeoMagnetic::getExpectedPolarisationUpgoing(UsefulAdu5Pat& usefulPat, dou
   // getting an off axis response will be more complicated
 
   // Since the antennas points down at -10 degrees, the VPol axis is 80 degrees above the horizontal plane
-  TVector3 vPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, -80*TMath::DegToRad());
+  TVector3 vPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, 80*TMath::DegToRad());
   // The VPol feed is up... (if) the HPol feed is to the right (looking down the boresight) then it points anticlockwise around the payload
   // phi increases anti-clockwise in payload coordinates, therefore
-  TVector3 hPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave + TMath::PiOver2(), -10*TMath::DegToRad());
+  TVector3 hPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave + TMath::PiOver2(), 0);
   
   // Dot the electric field with the antenna polarisation vectors...
   double vPolComponent = EVec.Dot(vPolAxis);
