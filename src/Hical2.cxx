@@ -9,6 +9,8 @@ ClassImp(Hical2)
 
 Hical2::Hical2(){}
 
+
+
 double Hical2::isHical(UInt_t eventNumber){
   //initialize the hical stuff
   if(INIT_HICAL==0){
@@ -62,10 +64,10 @@ double Hical2::isHical(AnitaEventSummary *sum, int peak){
   double a4_hc2a, a4_hc2b;  
   anglesToHical(sum, &a4_hc2a, &a4_hc2b);
 
-  if(abs(FFTtools::wrap(a4_hc2a-sum->anitaLocation.heading+sum->peak[0][peak].phi, 360,0))<2.5 && hc2aOn(sum->realTime)==true){
+  if(abs(FFTtools::wrap(a4_hc2a-sum->anitaLocation.heading+sum->peak[0][peak].phi, 360,0))<getPhiCut(sum->deconvolved_filtered[0][peak].snr) && hc2aOn(sum->realTime)==true){
     return 1;
   }
-  else if(abs(FFTtools::wrap(a4_hc2b-sum->anitaLocation.heading+sum->peak[0][peak].phi, 360,0))<2.5 &&hc2bOn(sum->realTime)==true){
+  else if(abs(FFTtools::wrap(a4_hc2b-sum->anitaLocation.heading+sum->peak[0][peak].phi, 360,0))<getPhiCut(sum->deconvolved_filtered[0][peak].snr) &&hc2bOn(sum->realTime)==true){
     return 1;
   }
   else {
@@ -102,7 +104,7 @@ double Hical2::isHical(UInt_t eventNumber, double peakPhi){
   }
   return 0;
 }
-double Hical2::isHical(UInt_t eventNumber, UInt_t triggerTime, double peakPhi){
+double Hical2::isHical(UInt_t eventNumber, UInt_t triggerTime, double peakPhi, double snr){
   
   //quick sanity checks for hical not being in the air
   if(eventNumber<31059701){
@@ -117,10 +119,10 @@ double Hical2::isHical(UInt_t eventNumber, UInt_t triggerTime, double peakPhi){
   double a4_hc2a, a4_hc2b;
   anglesToHical(eventNumber, &a4_hc2a, &a4_hc2b);
 
-  if( abs(FFTtools::wrap(a4_hc2a-peakPhi,360,0))<2.5 && hc2aOn(triggerTime)==1){
+  if( abs(FFTtools::wrap(a4_hc2a-peakPhi,360,0))<getPhiCut(snr) && hc2aOn(triggerTime)==1){
     return 1;
   }
-  else if( abs(FFTtools::wrap(a4_hc2b-peakPhi,360,0))<2.5 && hc2bOn(triggerTime)==1){
+  else if( abs(FFTtools::wrap(a4_hc2b-peakPhi,360,0))<getPhiCut(snr) && hc2bOn(triggerTime)==1){
     return 1;
   }
   return 0;
@@ -564,6 +566,12 @@ double Hical2::deg2rad(double deg) {
 //yup
 double Hical2::rad2deg(double rad) {
   return (rad * 180. / TMath::Pi());
+}
+
+double Hical2::getPhiCut(double snr){
+  double c1 = 40.96, c2 = 1.61, c3 = 0.1766;
+  double factorOfSigma = 6;
+  return factorOfSigma * c1*pow(snr,c2) + c3;
 }
 
 //hc2a runs, known times that the payload is on or off from multiple sources

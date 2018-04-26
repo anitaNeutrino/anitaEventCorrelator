@@ -38,7 +38,7 @@ public:
   //to be used inside of TTree::Draw, giving it an event number and absolute direction for the peak
   static double isHical(UInt_t eventNumber, double peakPhi);
   //to be used inside of TTree::Draw, giving it an event number, trigger time, and absolute direction for the peak
-  static double isHical(UInt_t eventNumber, UInt_t triggerTime, double peakPhi);
+  static double isHical(UInt_t eventNumber, UInt_t triggerTime, double peakPhi, double snr);
     //to be used inside of TTree::Draw, giving it an event number, trigger time, and absolute direction for the peak
   //  static double isHical(UInt_t eventNumber, UInt_t triggerTime, UInt_t triggerTimeNs, double peakPhi);
   
@@ -72,6 +72,9 @@ private:
   static double straightLineDist(double lat1, double lon1, double alt1, double lat2, double lon2, double alt2);
   static double deg2rad(double deg);
   static double rad2deg(double rad);
+
+  // calculated expected phi resoluiton bases on snr. The model is built with WAIS data.
+  static double getPhiCut(double snr);
 
   //anitadataset, and trees, and storage stuff to make things faster
   AnitaDataset *adset =0;
