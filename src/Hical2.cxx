@@ -75,7 +75,7 @@ double Hical2::isHical(AnitaEventSummary *sum, int peak){
   }
 } 
 
-double Hical2::isHical(UInt_t eventNumber, double peakPhi){
+double Hical2::isHical(UInt_t eventNumber, double peakPhi, double snr){
   static AnitaDataset *ad=0;
   if(!ad)ad=new AnitaDataset(157);
   //quick sanity checks for hical not being in the air
@@ -96,10 +96,10 @@ double Hical2::isHical(UInt_t eventNumber, double peakPhi){
   double a4_hc2a, a4_hc2b;
   anglesToHical(eventNumber, &a4_hc2a, &a4_hc2b);
 
-  if( abs(FFTtools::wrap(a4_hc2a-peakPhi,360,0))<2.5 && hc2aOn(ad->header()->triggerTime)==1){
+  if( abs(FFTtools::wrap(a4_hc2a-peakPhi,360,0))<getPhiCut(snr) && hc2aOn(ad->header()->triggerTime)==1){
     return 1;
   }
-  else if( abs(FFTtools::wrap(a4_hc2b-peakPhi,360,0))<2.5 && hc2bOn(ad->header()->triggerTime)==1){
+  else if( abs(FFTtools::wrap(a4_hc2b-peakPhi,360,0))<getPhiCut(snr) && hc2bOn(ad->header()->triggerTime)==1){
     return 1;
   }
   return 0;
@@ -571,7 +571,8 @@ double Hical2::rad2deg(double rad) {
 double Hical2::getPhiCut(double snr){
   double c1 = 40.96, c2 = 1.61, c3 = 0.1766;
   double factorOfSigma = 6;
-  return factorOfSigma * c1*pow(snr,c2) + c3;
+  double sigma = std::min(5.0, c1*pow(snr,c2) + c3);
+  return factorOfSigma * sigma;
 }
 
 //hc2a runs, known times that the payload is on or off from multiple sources

@@ -35,9 +35,9 @@ public:
   
   //using event summary. a purely 5 sigma pointing cut on the indicated HPol peak.
   static double isHical(AnitaEventSummary *sum, int peak=0);
-  //to be used inside of TTree::Draw, giving it an event number and absolute direction for the peak
-  static double isHical(UInt_t eventNumber, double peakPhi);
-  //to be used inside of TTree::Draw, giving it an event number, trigger time, and absolute direction for the peak
+  //to be used inside of TTree::Draw, giving it an event number, absolute direction and the corresponding deconv_filtered snr of that peak
+  static double isHical(UInt_t eventNumber, double peakPhi, double snr);
+  //to be used inside of TTree::Draw, giving it an event number, trigger time, absolute direction and the corresponding deconv_filtered snr of that peak
   static double isHical(UInt_t eventNumber, UInt_t triggerTime, double peakPhi, double snr);
     //to be used inside of TTree::Draw, giving it an event number, trigger time, and absolute direction for the peak
   //  static double isHical(UInt_t eventNumber, UInt_t triggerTime, UInt_t triggerTimeNs, double peakPhi);
