@@ -569,7 +569,7 @@ double Hical2::rad2deg(double rad) {
 }
 
 double Hical2::getPhiCut(double snr){
-  double c1 = 40.96, c2 = 1.61, c3 = 0.1766;
+  double c1 = 40.96, c2 = -1.61, c3 = 0.1766;
   double factorOfSigma = 6;
   double sigma = std::min(5.0, c1*pow(snr,c2) + c3);
   return factorOfSigma * sigma;
