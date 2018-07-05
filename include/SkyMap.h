@@ -33,6 +33,7 @@ class SkyMap : public TObject
     void addGraph(const TGraph * graph); 
     void clearMarkers() { sky_markers.clear() ; }
     void clearGraphs() { sky_graphs.clear() ; } 
+    void ExecuteEvent(Int_t event, Int_t px, Int_t py) { sky_background.ExecuteEvent(event,px,py); } 
 
     virtual ~SkyMap(); 
 
