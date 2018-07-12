@@ -33,7 +33,6 @@ AnitaGeomTool *fCSGeomTool=0;
 
 
 
-
 CorrelationSummary::CorrelationSummary( )
 {
 

@@ -61,6 +61,13 @@ else()
 endif()
 
 
+if(TARGET AntarcticaRoot)
+  message("AntarcticaRoot is a target")
+else()
+ link_directories(${UTIL_LIB_DIR})
+endif()
+
+
 
 
 #---Define useful ROOT functions and macros (e.g. ROOT_GENERATE_DICTIONARY)
@@ -90,7 +97,7 @@ ROOT_GENERATE_DICTIONARY(${DICTNAME} ${HEADER_FILES} LINKDEF LinkDef.h)
 
 #---Create a shared library with geneated dictionary
 add_library(${libname} SHARED ${SOURCE_FILES} ${DICTNAME}.cxx)
-target_link_libraries(${libname} ${ZLIB_LIBRARIES} AnitaEvent RootFftwWrapper ${ROOT_LIBRARIES} ${FFTW_LIBRARIES})
+target_link_libraries(${libname} ${ZLIB_LIBRARIES} AnitaEvent AntarcticaRoot RootFftwWrapper ${ROOT_LIBRARIES} ${FFTW_LIBRARIES})
 
 if( ${ROOT_VERSION} VERSION_GREATER "5.99.99")
     add_custom_target(${DICTNAME}.pcm DEPENDS ${DICTNAME})
@@ -115,12 +122,10 @@ if( ${ROOT_VERSION} VERSION_GREATER "5.99.99")
 #  install (FILES ${PROJECT_BINARY_DIR}/lib${libname}.rootmap DESTINATION ${UTIL_LIB_DIR})
 endif()
 
-install (DIRECTORY data/ DESTINATION ${UTIL_SHARE_DIR}/anitaCalib)
-
-#################################################################################3
+##################################################################################
 ### The default build configuration is INSANE. No optimization? What is this 1971?
 
-message (" Adding new build type")
+message ("Adding new build type")
 
 set(CMAKE_CXX_FLAGS_DEFAULT
   "-Os -g -Wall -march=native"

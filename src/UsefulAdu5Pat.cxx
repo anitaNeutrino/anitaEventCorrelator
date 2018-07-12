@@ -11,9 +11,8 @@
 #include <iostream>
 #include "TTimeStamp.h"
 #include "AnitaDataset.h"
-
-
-
+#include "GeoidModel.h"
+#include "GeoMagnetic.h"
 
 
 ClassImp(UsefulAdu5Pat);
@@ -88,10 +87,10 @@ void UsefulAdu5Pat::updateCartesianBalloonInfo(){
      latitude!=fBalloonLatCache ||
      altitude!=fBalloonAltCache){
 
-    AnitaGeomTool::Instance()->getCartesianCoords(latitude,
-						  longitude,
-						  altitude,
-						  fBalloonCoords);
+    GeoidModel::getCartesianCoords(latitude,
+					 longitude,
+					 altitude,
+					 fBalloonCoords);
     fBalloonPos.SetXYZ(fBalloonCoords[0],fBalloonCoords[1],fBalloonCoords[2]);
     fBalloonTheta=fBalloonPos.Theta();
     fBalloonPhi=fBalloonPos.Phi();
@@ -199,8 +198,8 @@ int UsefulAdu5Pat::getSourceLonAndLatAtDesiredAlt(Double_t phiWave, Double_t the
     return -1;
   }
 
-  AnitaGeomTool* geom = AnitaGeomTool::Instance();
-  Double_t reBalloon=geom->getDistanceToCentreOfEarth(latitude)+desiredAlt; // ACG mod
+  // AnitaGeomTool* geom = AnitaGeomTool::Instance();
+  Double_t reBalloon=GeoidModel::getDistanceToCentreOfEarth(latitude)+desiredAlt; // ACG mod
   Double_t re=reBalloon;
   Double_t nextRe=re;
   Double_t reh=reBalloon+altitude;
@@ -236,8 +235,8 @@ int UsefulAdu5Pat::getSourceLonAndLatAtDesiredAlt(Double_t phiWave, Double_t the
     fSourcePos.GetXYZ(sourceVec);
 
     Double_t sourceAlt;
-    geom->getLatLonAltFromCartesian(sourceVec,sourceLat,sourceLon,sourceAlt);
-    nextRe=geom->getDistanceToCentreOfEarth(sourceLat);
+    GeoidModel::getLatLonAltFromCartesian(sourceVec,sourceLat,sourceLon,sourceAlt);
+    nextRe=GeoidModel::getDistanceToCentreOfEarth(sourceLat);
 
   } while(TMath::Abs(nextRe-re)>1);
 
@@ -284,9 +283,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt2(Double_t phiWave, Double_t thetaWave
     return -1;
   }
 
-  AnitaGeomTool* geom = AnitaGeomTool::Instance();
-  
-  Double_t reBalloon = geom->getDistanceToCentreOfEarth(latitude); // reBalloon, radius of earth where balloon is
+  Double_t reBalloon = GeoidModel::getDistanceToCentreOfEarth(latitude); // reBalloon, radius of earth where balloon is
   Double_t chosenAlt = surfaceAboveGeoid(longitude,latitude);	   // ChosenAlt, the ice surface below balloon
   Double_t re = reBalloon+chosenAlt;				   // re, radius of earth at balloon plus ice height above geoid
   Double_t nextRe = re;						   // nextRe, radius of geoid+ice at next iteration
@@ -359,9 +356,9 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt2(Double_t phiWave, Double_t thetaWave
     Double_t sourceVec[3];
     sourcePos.GetXYZ(sourceVec);
     Double_t sourceAlt;
-    geom->getLatLonAltFromCartesian(sourceVec,sourceLat,sourceLon,sourceAlt);
+    GeoidModel::getLatLonAltFromCartesian(sourceVec,sourceLat,sourceLon,sourceAlt);
     chosenAlt = surfaceAboveGeoid(sourceLon,sourceLat);
-    nextRe = geom->getDistanceToCentreOfEarth(sourceLat) + chosenAlt;
+    nextRe = GeoidModel::getDistanceToCentreOfEarth(sourceLat) + chosenAlt;
 
 
     // if(fDebug && grTest){
@@ -497,9 +494,8 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt3(Double_t phiWave, Double_t thetaWave
   // Following that vector to the ground is relatively easy...
   const TVector3 unitVector = getUnitVectorAlongThetaWavePhiWave(thetaWave, phiWave);
 
-  AnitaGeomTool* geom = AnitaGeomTool::Instance();
   Double_t anitaPosition[3];
-  geom->getCartesianCoords(latitude, longitude, altitude, anitaPosition);
+  GeoidModel::getCartesianCoords(latitude, longitude, altitude, anitaPosition);
   const TVector3 anitaVector(anitaPosition);
 
 
@@ -531,7 +527,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt3(Double_t phiWave, Double_t thetaWave
       double rayLat, rayLon, rayAlt;
       double rayPosition[3];
       rayVector.GetXYZ(rayPosition);
-      geom->getLatLonAltFromCartesian(rayPosition, rayLat, rayLon, rayAlt);
+      GeoidModel::getLatLonAltFromCartesian(rayPosition, rayLat, rayLon, rayAlt);
 
       double surfaceAlt = surfaceAboveGeoid(rayLon, rayLat);
       deltaAlt = rayAlt - surfaceAlt;
@@ -627,10 +623,9 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt3(Double_t phiWave, Double_t thetaWave
 
 TVector3 UsefulAdu5Pat::getUnitVectorAlongThetaWavePhiWave(double thetaWave, double phiWave) const{
 
-  AnitaGeomTool* geom = AnitaGeomTool::Instance();
   Double_t anitaPosition[3];
-  geom->getCartesianCoords(latitude, longitude, altitude, anitaPosition);
-    
+  GeoidModel::getCartesianCoords(latitude, longitude, altitude, anitaPosition);
+
   // now I need to get a vector pointing along thetaWave and phiWave from ANITA's position
   // so let's get theta and phi wave from an arbitrary position close to the payload,
   // evaluate theta/phi expected and rotate that vector around ANITA's position
@@ -650,7 +645,7 @@ TVector3 UsefulAdu5Pat::getUnitVectorAlongThetaWavePhiWave(double thetaWave, dou
   // }
 
   Double_t testPosition[3];
-  geom->getCartesianCoords(testLat, testLon, testAlt, testPosition);
+  GeoidModel::getCartesianCoords(testLat, testLon, testAlt, testPosition);
   
   TVector3 testVector(testPosition);
   const TVector3 unitAnita = TVector3(anitaPosition).Unit();
@@ -668,7 +663,7 @@ TVector3 UsefulAdu5Pat::getUnitVectorAlongThetaWavePhiWave(double thetaWave, dou
   testVector.Rotate(phiWave, unitAnita); // if we were to recalculate the phiWave expected, it would now point to phiWave
 
   testVector.GetXYZ(testPosition);
-  geom->getLatLonAltFromCartesian(testPosition, testLat, testLon, testAlt);
+  GeoidModel::getLatLonAltFromCartesian(testPosition, testLat, testLon, testAlt);
   getThetaAndPhiWave2(testLon, testLat, testAlt, testThetaWave, testPhiWave);
 
   // if(fDebug){
@@ -751,8 +746,7 @@ void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, D
 void UsefulAdu5Pat::getThetaAndPhiWave2(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave, TVector3* sourcePos) const {
   
   Double_t pSource[3]={0};
-  AnitaGeomTool * geom = AnitaGeomTool::Instance();
-  geom->getCartesianCoords(TMath::Abs(sourceLat),sourceLon,sourceAlt,pSource);  
+  GeoidModel::getCartesianCoords(TMath::Abs(sourceLat),sourceLon,sourceAlt,pSource);  
   TVector3 sourcePosStack;
   sourcePos  = sourcePos ? sourcePos : &sourcePosStack;
   sourcePos->SetXYZ(pSource[0],pSource[1],pSource[2]);
@@ -837,7 +831,7 @@ void UsefulAdu5Pat::getThetaWaveAtBase(Double_t baseLon, Double_t baseLat, Doubl
   //gets the theta from a base to the balloon - can check if we are beyond horizon
 
   Double_t pSource[3]={0};
-  AnitaGeomTool::Instance()->getCartesianCoords(TMath::Abs(baseLat),baseLon,baseAlt,pSource);
+  GeoidModel::getCartesianCoords(TMath::Abs(baseLat),baseLon,baseAlt,pSource);
   fSourcePos.SetXYZ(pSource[0], pSource[1], pSource[2]);
 
   //make copy of balloon position and rotate it such that base is at 0,0,baseAlt
@@ -1064,10 +1058,7 @@ Double_t UsefulAdu5Pat::getDistanceFromSource(Double_t sourceLat, Double_t sourc
 {
   // static Double_t pTaylor[3]={0};
   Double_t pTaylor[3]={0};  
-  AnitaGeomTool::Instance()->getCartesianCoords(sourceLat,
-						sourceLong,
-						sourceAlt,
-						pTaylor);
+  GeoidModel::getCartesianCoords(sourceLat, sourceLong, sourceAlt, pTaylor);
   Double_t s2 = ((pTaylor[0]-fBalloonCoords[0])*(pTaylor[0]-fBalloonCoords[0]) +
 		 (pTaylor[1]-fBalloonCoords[1])*(pTaylor[1]-fBalloonCoords[1]) +
 		 (pTaylor[2]-fBalloonCoords[2])*(pTaylor[2]-fBalloonCoords[2]));
@@ -1094,37 +1085,39 @@ UInt_t UsefulAdu5Pat::getTriggerTimeNsFromSource(Double_t sourceLat, Double_t so
 
 }
 
+/**
+ * strutt: I've commented out for now as these inaccurate functions in GeoidModel have been replaced.			       
+ * Those functions assumed geodetic latitude (i.e. latitude) = 90 - theta(degrees) which isn't true. It's close but not true.  
+ * If someone is desparate to  have this functionality back, we can figure out what it was supposed to do and put it back in...
+ */
+// Double_t UsefulAdu5Pat::getAngleBetweenPayloadAndSource(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt) { //ACG additional function
+//   Double_t thetaBalloon=GeoidModel::getThetaFromLat(TMath::Abs(latitude));
+//   Double_t phiBalloon=GeoidModel::getPhiFromLon(longitude);
+//   Double_t balloonHeight=GeoidModel::getGeoidRadius(thetaBalloon)+altitude;
 
+//   Double_t thetaSource=GeoidModel::getThetaFromLat(TMath::Abs(sourceLat));
+//   Double_t phiSource=GeoidModel::getPhiFromLon(sourceLon);
+//   Double_t radiusSource=GeoidModel::getGeoidRadius(thetaSource)+sourceAlt;
 
-Double_t UsefulAdu5Pat::getAngleBetweenPayloadAndSource(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt) { //ACG additional function
-  AnitaGeomTool * geom = AnitaGeomTool::Instance();
-  Double_t thetaBalloon=geom->getThetaFromLat(TMath::Abs(latitude));
-  Double_t phiBalloon=geom->getPhiFromLon(longitude);
-  Double_t balloonHeight=geom->getGeoid(thetaBalloon)+altitude;
+//   //Get vector from Earth's centre to source
+//   fSourcePos.SetX(radiusSource*TMath::Sin(thetaSource)*TMath::Cos(phiSource));
+//   fSourcePos.SetY(radiusSource*TMath::Sin(thetaSource)*TMath::Sin(phiSource));
+//   fSourcePos.SetZ(radiusSource*TMath::Cos(thetaSource));
 
-  Double_t thetaSource=geom->getThetaFromLat(TMath::Abs(sourceLat));
-  Double_t phiSource=geom->getPhiFromLon(sourceLon);
-  Double_t radiusSource=geom->getGeoid(thetaSource)+sourceAlt;
+//   //Rotate such that balloon is at 0,0,balloonHeight
 
-  //Get vector from Earth's centre to source
-  fSourcePos.SetX(radiusSource*TMath::Sin(thetaSource)*TMath::Cos(phiSource));
-  fSourcePos.SetY(radiusSource*TMath::Sin(thetaSource)*TMath::Sin(phiSource));
-  fSourcePos.SetZ(radiusSource*TMath::Cos(thetaSource));
+//   fSourcePos.RotateZ(-1*phiBalloon);
+//   fSourcePos.RotateY(-1*thetaBalloon);
 
-  //Rotate such that balloon is at 0,0,balloonHeight
+//   Double_t dotProduct=balloonHeight*fSourcePos.Z();//+0*X+0*Y
+//   Double_t magSource=TMath::Sqrt(fSourcePos.X()*fSourcePos.X() + fSourcePos.Y()*fSourcePos.Y()+fSourcePos.Z()*fSourcePos.Z());
+//   Double_t magBalloon=balloonHeight;
 
-  fSourcePos.RotateZ(-1*phiBalloon);
-  fSourcePos.RotateY(-1*thetaBalloon);
+//   Double_t phiEarthCenter=TMath::ACos(TMath::Abs(dotProduct/(magSource*magBalloon)));
 
-  Double_t dotProduct=balloonHeight*fSourcePos.Z();//+0*X+0*Y
-  Double_t magSource=TMath::Sqrt(fSourcePos.X()*fSourcePos.X() + fSourcePos.Y()*fSourcePos.Y()+fSourcePos.Z()*fSourcePos.Z());
-  Double_t magBalloon=balloonHeight;
+//   return phiEarthCenter;
 
-  Double_t phiEarthCenter=TMath::ACos(TMath::Abs(dotProduct/(magSource*magBalloon)));
-
-  return phiEarthCenter;
-
-}
+// }
 
 
 //---------------------------------------------------------------------------------------------------------
@@ -1690,4 +1683,254 @@ void UsefulAdu5Pat::getThetaAndPhiWaveOfRayAtInfinity(const TVector3 & p0, const
     istep++; 
   }
 }
+
+
+
+
+
+
+
+/** 
+ * Gets the expected polarisation angle for a 1e19 eV cosmic ray traversing the atmosphere
+ * 
+ * @param phiWave azimith
+ * @param thetaWave elevation angle (radians) in payload coordinates (-ve theta is up, +ve theta is down)
+ * @param xMax 
+ */
+
+double UsefulAdu5Pat::getExpectedGeoMagPolarisation(double phiWave, double thetaWave, double xMax) const {
+
+  if(fDebug){
+    std::cout << __PRETTY_FUNCTION__ << ": Anita position = " << longitude << "\t" << latitude << "\t" << altitude << std::endl;
+  }
+  
+  // use the silly UsefulAdu5Pat convention that -ve theta is down...
+  // phiWave is in radians relative to ADU5 Aft Fore line
+
+  double reflectionLon=0, reflectionLat=0, reflectionAlt=0, deltaTheta=100; // need non-zero deltaTheta when testing whether things intersectg, as theta < 0 returns instantly
+  
+  //histGround==1 or 2 means it hits ground, 0 means it doesn't
+  int hitsGround = traceBackToContinent(phiWave, thetaWave, &reflectionLon, &reflectionLat, &reflectionAlt, &deltaTheta);
+
+  GeoidModel::Vector destination; // ANITA position if direct cosmic ray or surface position if reflected cosmic ray
+  TVector3 destinationToSource; // unit vector from ANITA (if direct) or reflection position (if indirect) which points in the direction the cosmic ray signal came from
+  bool directCosmicRay = hitsGround == 0 ? true : false; // direct cosmic ray?
+
+  GeoidModel::Vector anitaPosition(this);
+
+  // Only used in the reflected case...
+  TVector3 surfaceNormal;
+  TVector3 reflectionToAnita;
+  
+  // here we do the geometry slightly differently for the direct vs. reflected case
+  if(directCosmicRay){
+    if(fDebug){
+      std::cout << "I'm a direct Cosmic Ray! (" << hitsGround << ") " << deltaTheta << "\t" <<  reflectionLon << "\t" << reflectionLat << "\t"  << reflectionAlt  << std::endl;
+    }
+    destination = anitaPosition;
+    destinationToSource = getUnitVectorAlongThetaWavePhiWave(phiWave, thetaWave);
+  }
+  else{ // reflected cosmic ray
+    if(fDebug){
+      std::cout << "I'm a reflected Cosmic Ray! (" << hitsGround << ") " << deltaTheta << "\t" <<  reflectionLon << "\t" << reflectionLat << "\t"  << reflectionAlt  << std::endl;
+    }
+    
+    destination.SetLonLatAlt(reflectionLon, reflectionLat, reflectionAlt); // i.e. the reflection point
+
+    reflectionToAnita = anitaPosition - destination; // from reflection to anita...
+
+    // here I find the normal to  the geoid surface by getting the vector difference between
+    // a point 1 m above the reflection and the reflection
+    GeoidModel::Vector justAbove = destination;
+    justAbove.SetAltitude(justAbove.Altitude()+1);
+    surfaceNormal = (justAbove - destination).Unit();
+
+    // Reflect the incoming vector...
+    TVector3 incomingVector = GeoMagnetic::specularReflection(reflectionToAnita, surfaceNormal);
+
+    // but I want the vector pointing from the reflection out towards where the incoming signal came from
+    destinationToSource = -incomingVector.Unit();
+  }
+
+  // Here we get the position the cosmic ray was on top of the atmosphere...
+  TVector3 cosmicRayAtmosphericEntry = GeoMagnetic::getInitialPosition(destination, destinationToSource);
+
+  // ...And the direction it travelled through the atmosphere...
+  const TVector3 cosmicRayDirection = -destinationToSource.Unit();
+
+  // We integrate along that vector with our atmospheric model until we get to xMax, where the cosmic ray would interact, on average
+  TVector3 xMaxPosition = GeoMagnetic::getXMaxPosition(cosmicRayAtmosphericEntry, cosmicRayDirection, xMax);
+
+  // Calculate the geo-magnetic field field at x-max
+  GeoMagnetic::FieldPoint fp(realTime, xMaxPosition);
+  if (fDebug){
+    std::cout << "FieldPoint position:" << fp.posX() << "," << fp.posY() << ","<< fp.posZ() << std::endl; 
+    std::cout << "FieldPoint vector:" << fp.componentX() << "," << fp.componentY() << ","<< fp.componentZ() << std::endl; 
+  }
+  // This is our electric field vector!
+  // If I cared about getting the magnitude correct in addition to the orientation, there are some missing factors
+  // It should be: B_vec x S_vec = (1/mu0)B^{2} E_vec
+  // But there's no radio cherenkov/geomagnetic shower model or anything so for now just the cross product will do.
+  TVector3 EVec = fp.field().Cross(cosmicRayDirection).Unit();
+  if (fDebug) {
+    std::cout << "EVec: (" << EVec.X() << "," << EVec.Y() << "," << EVec.Z() << ")" << std::endl;
+  }
+  
+  if(!directCosmicRay){
+    // Modifies EVec by applying the Fresnel coefficients during the reflection
+    TVector3 reflectionToAnita2 = GeoMagnetic::fresnelReflection(cosmicRayDirection, surfaceNormal, EVec);
+
+    if(fDebug){
+      double shouldBeZero = reflectionToAnita.Angle(reflectionToAnita2);
+      std::cout << "Doing the reflection on the way back... the angle between reflectionToAnita and reflectionToAnita2 = " << shouldBeZero << std::endl;
+    }
+  }
+
+  // Here I find the VPol and HPol antenna axes.
+  // And I'm going to  pretend that one of ANITA's antennas points exactly at phiWave
+  // getting an off axis response will be more complicated
+
+  // Since the antennas points down at -10 degrees, the VPol axis is 80 degrees above the horizontal plane
+  TVector3 vPolAxis = getUnitVectorAlongThetaWavePhiWave(phiWave, 80*TMath::DegToRad());
+  // The VPol feed is up... (if) the HPol feed is to the right (looking down the boresight) then it points anticlockwise around the payload
+  // phi increases anti-clockwise in payload coordinates, therefore
+  TVector3 hPolAxis = getUnitVectorAlongThetaWavePhiWave(phiWave + TMath::PiOver2(), 0);//-10*TMath::DegToRad());
+
+  if(fDebug){
+    TVector3 antennaAxis = getUnitVectorAlongThetaWavePhiWave(phiWave, -10*TMath::DegToRad());
+    std::cout << "The dot products of any pair of the antenna axis, hPolAxis, vPolAxis should be zero..." << std::endl;
+    std::cout << "antennaAxis dot hPolAxis  = " << antennaAxis.Dot(hPolAxis) << std::endl;
+    std::cout << "antennaAxis dot vPolAxis  = " << antennaAxis.Dot(vPolAxis) << std::endl;
+    std::cout << "hPolAxis dot vPolAxis  = " << hPolAxis.Dot(vPolAxis) << std::endl;
+  }
+  
+  // Dot the electric field with the antenna polarisation vectors...
+  double vPolComponent = EVec.Dot(vPolAxis);
+  double hPolComponent = EVec.Dot(hPolAxis);
+  if (fDebug) {
+    std::cout << "vPolComponent: " << vPolComponent << std::endl;
+    std::cout << "hPolComponent: " << hPolComponent << std::endl;
+  }
+
+  // et voila
+  double polarisationAngle = TMath::ATan(vPolComponent/hPolComponent);
+  
+  return polarisationAngle;
+}
+
+
+/** 
+ * Gets the expected polarisation angle for a 1e19 eV cosmic ray exiting the ice
+ * 
+ * @param usefulPat contains ANITA's position
+ * @param phiWave azimith
+ * @param thetaWave elevation angle (radians) in payload coordinates (-ve theta is up, +ve theta is down)
+ * @param pathLength distance along the upgoing vector that the shower begins, since it isn't well defined 
+ *
+ * @return 
+ */
+
+double UsefulAdu5Pat::getExpectedGeoMagPolarisationUpgoing(double phiWave, double thetaWave, double pathLength) const {
+  if (fDebug) {
+    std::cout << "----------------GeoMagnetic::getExpectedPolarisationUpgoing(): Begin." << std::endl;
+  }
+  
+  // use the silly UsefulAdu5Pat convention that -ve theta is down...
+  // phiWave is in radians relative to ADU5 Aft Fore line
+
+  double reflectionLon=0, reflectionLat=0, reflectionAlt=0, deltaTheta=100; // need non-zero deltaTheta when testing whether things intersectg, as theta < 0 returns instantly
+  int hitsGround = traceBackToContinent(phiWave, thetaWave, &reflectionLon, &reflectionLat, &reflectionAlt, &deltaTheta);
+
+  GeoidModel::Vector destination; // ANITA position if direct cosmic ray or surface position if reflected cosmic ray
+  TVector3 destinationToSource; // unit vector from ANITA (if direct) or reflection position (if indirect) which points in the direction the cosmic ray signal came from
+  bool directCosmicRay = hitsGround == 0 ? true : false; // direct cosmic ray?
+
+  GeoidModel::Vector anitaPosition(this);
+
+  // here we do the geometry slightly differently for the direct vs. reflected case
+  if(directCosmicRay){
+    if (fDebug) {
+      std::cout << "I'm pointed above the horizon!  I can't be an upgoing event!  Exiting..." << std::endl;
+      std::cout << "deltaTheta=" << deltaTheta << " hitsGround=" << hitsGround << std::endl;
+    }
+    return -9999;
+  }
+  if(fDebug){
+    std::cout << "I'm pointed at the continent! " << deltaTheta << "\t" <<  reflectionLon << "\t" << reflectionLat << "\t"  << reflectionAlt  << std::endl;
+  }
+  destination.SetLonLatAlt(reflectionLon, reflectionLat, reflectionAlt); // i.e. the source on the ice
+  destinationToSource = getUnitVectorAlongThetaWavePhiWave(phiWave, thetaWave); // from ANITA to ice
+
+  GeoidModel::Vector justAbove = destination;
+  justAbove.SetAltitude(justAbove.Altitude()+1);
+  const TVector3 surfaceNormal = (justAbove - destination).Unit();
+  
+  //the cosmic ray is traveling in the opposite direction as the direction from ANITA to the ice
+  const TVector3 cosmicRayDirection = -destinationToSource.Unit();
+
+  double emergenceAngle = surfaceNormal.Angle(cosmicRayDirection);
+  if (fDebug) {
+    std::cout << "surfaceNormal: (" << surfaceNormal.X() << "," << surfaceNormal.Y() << "," << surfaceNormal.Z() << ")" << std::endl;
+    std::cout << "cosmicRayDirection: (" << cosmicRayDirection.X() << "," << cosmicRayDirection.Y() << "," << cosmicRayDirection.Z() << ")" << std::endl;
+    std::cout << "Emergence Angle: " << emergenceAngle << std::endl;
+}
+
+  
+
+  //calculate where the shower max is, which is from the ice in the direction of the shower pathLength away
+  TVector3 xMaxPosition = destination+cosmicRayDirection*pathLength;
+
+
+  if (fDebug) {
+    std::cout << "anitaPosition: (" << anitaPosition.X() << "," << anitaPosition.Y() << "," << anitaPosition.Z() << ")" << std::endl;
+    std::cout << "destination: (" << destination.X() << "," << destination.Y() << "," << destination.Z() << ")" << std::endl;
+    std::cout << "destinationToSource: (" << destinationToSource.X() << "," << destinationToSource.Y() << "," << destinationToSource.Z() << ")" << std::endl;
+    std::cout << "cosmicRayDirection: (" << cosmicRayDirection.X() << "," << cosmicRayDirection.Y() << "," << cosmicRayDirection.Z() << ")" << std::endl;
+    std::cout << "xMaxPosition: (" << xMaxPosition.X() << "," << xMaxPosition.Y() << "," << xMaxPosition.Z() << ")" << std::endl;
+  }
+
+
+  // Calculate the geo-magnetic field field at x-max
+  GeoMagnetic::FieldPoint fp(realTime, xMaxPosition);
+  if (fDebug) {
+    std::cout << "FieldPoint: pos=(" << fp.posX() << "," << fp.posY() << "," << fp.posZ() << ")" << std::endl;
+    std::cout << "           comp=(" << fp.componentX() << "," << fp.componentY() << "," << fp.componentZ() << std::endl;
+  }
+
+
+  // This is our electric field vector!
+  // If I cared about getting the magnitude correct in addition to the orientation, there are some missing factors
+  // It should be: B_vec x S_vec = (1/mu0)B^{2} E_vec
+  // But there's no radio cherenkov/geomagnetic shower model or anything so for now just the cross product will do.
+  TVector3 EVec = fp.field().Cross(cosmicRayDirection).Unit();
+  if (fDebug) {
+    std::cout << "EVec: (" << EVec.X() << "," << EVec.Y() << "," << EVec.Z() << ")" << std::endl;
+  }
+  
+  // Here I find the VPol and HPol antenna axes.
+  // And I'm going to  pretend that one of ANITA's antennas points exactly at phiWave
+  // getting an off axis response will be more complicated
+
+  // Since the antennas points down at -10 degrees, the VPol axis is 80 degrees above the horizontal plane
+  TVector3 vPolAxis = getUnitVectorAlongThetaWavePhiWave(phiWave, 80*TMath::DegToRad());
+  // The VPol feed is up... (if) the HPol feed is to the right (looking down the boresight) then it points anticlockwise around the payload
+  // phi increases anti-clockwise in payload coordinates, therefore
+  TVector3 hPolAxis = getUnitVectorAlongThetaWavePhiWave(phiWave + TMath::PiOver2(), 0);
+  
+  // Dot the electric field with the antenna polarisation vectors...
+  double vPolComponent = EVec.Dot(vPolAxis);
+  double hPolComponent = EVec.Dot(hPolAxis);
+  if (fDebug) {
+    std::cout << "vPolComponent: " << vPolComponent << std::endl;
+    std::cout << "hPolComponent: " << hPolComponent << std::endl;
+  }
+  
+  // et voila
+  double polarisationAngle = TMath::ATan(vPolComponent/hPolComponent);
+  
+  return polarisationAngle;
+
+
+}
+
 

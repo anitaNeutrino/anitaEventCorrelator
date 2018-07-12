@@ -20,7 +20,7 @@
 #include <iostream>
 #include <fstream>
 
-void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir=0);
+void makeCorrelationRunTree(int run, int numEnts, const char *baseDir, const char *outDir=0);
 
 int main(int argc, char **argv) {
   int run=17;
@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
 
 }
   
-void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
+void makeCorrelationRunTree(int run, int numEnts, const char *baseDir, const char *outDir) {
   
   char eventName[FILENAME_MAX];
   char headerName[FILENAME_MAX];
@@ -69,7 +69,6 @@ void makeCorrelationRunTree(int run, int numEnts, char *baseDir, char *outDir) {
   Int_t useCalibratedFiles=0;
 
   //Define and zero the class pointers
-  AnitaGeomTool *fGeomTool = AnitaGeomTool::Instance();
   RawAnitaEvent *event = 0;
   CalibratedAnitaEvent *calEvent = 0;
   RawAnitaHeader *header =0;

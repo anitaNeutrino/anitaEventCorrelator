@@ -5,7 +5,7 @@
 #include "Adu5Pat.h" 
 #include "TH2.h" 
 #include "TGraph.h" 
-
+#include "PayloadParameters.h"
 
 const int nH = 5; 
 const int nh = 4; 
@@ -85,7 +85,7 @@ static void init_hists()
 double Refraction::PositionIndependentModel::getElevationCorrection(const Adu5Pat * pat, const AntarcticCoord * source, double * correction_at_source)  const
 {
 
-  PayloadParameters pp(pat,*source); 
+  PayloadParameters pp(pat,*source);
   double H = AntarcticAtmosphere::WGS84toMSL(pat); 
   double h = AntarcticAtmosphere::WGS84toMSL(pat); 
   return getElevationCorrection(pp.source_theta, h,H, correction_at_source); 

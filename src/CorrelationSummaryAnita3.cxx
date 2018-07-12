@@ -20,8 +20,6 @@
 #include "TStyle.h"
 #include "TMinuit.h"
 
-#include "AnitaGeomTool.h"
-
 
 ClassImp(CorrelationSummaryAnita3);
 

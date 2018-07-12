@@ -6,11 +6,11 @@ add_executable (makeSingleEventCorrelationTree makeSingleEventCorrelationTree.cx
 # Link the executable to the Hello library. Since the Hello library has
 # public include directories we will use those link directories when building
 # helloDemo
-target_link_libraries (makeCorrelationRunTree LINK_PUBLIC AnitaCorrelator AnitaEvent )
+target_link_libraries (makeCorrelationRunTree LINK_PUBLIC AnitaCorrelator AnitaEvent AntarcticaRoot)
   
 install (TARGETS makeCorrelationRunTree DESTINATION ${UTIL_BIN_DIR})
 
-target_link_libraries (makeSingleEventCorrelationTree LINK_PUBLIC AnitaCorrelator AnitaEvent )
+target_link_libraries (makeSingleEventCorrelationTree LINK_PUBLIC AnitaCorrelator AnitaEvent AntarcticaRoot)
   
 install (TARGETS makeSingleEventCorrelationTree DESTINATION ${UTIL_BIN_DIR})
 

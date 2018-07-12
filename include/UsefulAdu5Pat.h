@@ -40,6 +40,7 @@ class UsefulAdu5Pat: public Adu5Pat
 {
 
  public:
+  
   UsefulAdu5Pat();			/// Default constructor
   UsefulAdu5Pat(const Adu5Pat *patPtr); /// Assignment constructor
   ~UsefulAdu5Pat();			/// Destructor
@@ -334,7 +335,7 @@ class UsefulAdu5Pat: public Adu5Pat
   RampdemReader *fRampdemReader;
   AnitaGeomTool * fUPGeomTool; 
 
-  Double_t getAngleBetweenPayloadAndSource(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt); //ACG additional 
+  // Double_t getAngleBetweenPayloadAndSource(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt); //ACG additional 
   void getSunPosition(Double_t& phiDeg, Double_t& thetaDeg) const;
   Double_t getAzimuthOfSunRelativeToNorth() const;
   Double_t getAzimuthOfSun() const;
@@ -459,6 +460,9 @@ class UsefulAdu5Pat: public Adu5Pat
 
   // mutable std::vector<TGraph*> grTests;
 
+  double getExpectedGeoMagPolarisation(double phiWave, double thetaWave, double xMax) const;
+  double getExpectedGeoMagPolarisationUpgoing(double phiWave, double thetaWave, double pathLength) const;
+  
  private:
   Int_t		fIncludeGroupDelay;		/// Include group delay in deltaTs? (default is no)
   TVector3	fSourcePos;			/// Private variable to hold the source location in cartesian coordinates.
