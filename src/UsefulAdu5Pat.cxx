@@ -1712,11 +1712,11 @@ double UsefulAdu5Pat::getExpectedGeoMagPolarisation(double phiWave, double theta
   //histGround==1 or 2 means it hits ground, 0 means it doesn't
   int hitsGround = traceBackToContinent(phiWave, thetaWave, &reflectionLon, &reflectionLat, &reflectionAlt, &deltaTheta);
 
-  GeoidModel::Vector destination; // ANITA position if direct cosmic ray or surface position if reflected cosmic ray
+  GeoidModel::Position destination; // ANITA position if direct cosmic ray or surface position if reflected cosmic ray
   TVector3 destinationToSource; // unit vector from ANITA (if direct) or reflection position (if indirect) which points in the direction the cosmic ray signal came from
   bool directCosmicRay = hitsGround == 0 ? true : false; // direct cosmic ray?
 
-  GeoidModel::Vector anitaPosition(this);
+  GeoidModel::Position anitaPosition(this);
 
   // Only used in the reflected case...
   TVector3 surfaceNormal;
@@ -1741,7 +1741,7 @@ double UsefulAdu5Pat::getExpectedGeoMagPolarisation(double phiWave, double theta
 
     // here I find the normal to  the geoid surface by getting the vector difference between
     // a point 1 m above the reflection and the reflection
-    GeoidModel::Vector justAbove = destination;
+    GeoidModel::Position justAbove = destination;
     justAbove.SetAltitude(justAbove.Altitude()+1);
     surfaceNormal = (justAbove - destination).Unit();
 
@@ -1841,11 +1841,11 @@ double UsefulAdu5Pat::getExpectedGeoMagPolarisationUpgoing(double phiWave, doubl
   double reflectionLon=0, reflectionLat=0, reflectionAlt=0, deltaTheta=100; // need non-zero deltaTheta when testing whether things intersectg, as theta < 0 returns instantly
   int hitsGround = traceBackToContinent(phiWave, thetaWave, &reflectionLon, &reflectionLat, &reflectionAlt, &deltaTheta);
 
-  GeoidModel::Vector destination; // ANITA position if direct cosmic ray or surface position if reflected cosmic ray
+  GeoidModel::Position destination; // ANITA position if direct cosmic ray or surface position if reflected cosmic ray
   TVector3 destinationToSource; // unit vector from ANITA (if direct) or reflection position (if indirect) which points in the direction the cosmic ray signal came from
   bool directCosmicRay = hitsGround == 0 ? true : false; // direct cosmic ray?
 
-  GeoidModel::Vector anitaPosition(this);
+  GeoidModel::Position anitaPosition(this);
 
   // here we do the geometry slightly differently for the direct vs. reflected case
   if(directCosmicRay){
@@ -1861,7 +1861,7 @@ double UsefulAdu5Pat::getExpectedGeoMagPolarisationUpgoing(double phiWave, doubl
   destination.SetLonLatAlt(reflectionLon, reflectionLat, reflectionAlt); // i.e. the source on the ice
   destinationToSource = getUnitVectorAlongThetaWavePhiWave(phiWave, thetaWave); // from ANITA to ice
 
-  GeoidModel::Vector justAbove = destination;
+  GeoidModel::Position justAbove = destination;
   justAbove.SetAltitude(justAbove.Altitude()+1);
   const TVector3 surfaceNormal = (justAbove - destination).Unit();
   
