@@ -13,10 +13,16 @@
 #include <TObject.h>
 #include <TGraph.h>
 #include <TVector3.h>
+
+// libAntarcticaRoot
+#include "Geoid.h"
+#include "RampdemReader.h"
+
+// eventReader
 #include "Adu5Pat.h"
 #include "AnitaConventions.h"
-#include "RampdemReader.h"
 #include "AnitaGeomTool.h"
+
 
 /**
  * @namespace AnitaStaticAdu5Offsets
@@ -80,8 +86,6 @@ class UsefulAdu5Pat: public Adu5Pat
    */
   int getSourceLonAndLatAtAlt2(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat,Double_t &sourceAltitude, Int_t maxLoopIter = -1, TVector3* sourcePosOptional = NULL) const;
 
-
-
   TVector3 getUnitVectorAlongThetaWavePhiWave(double thetaWave, double phiWave) const;
   
   int getSourceLonAndLatAtAlt3(Double_t phiWave, Double_t thetaWave, Double_t &sourceLon, Double_t &sourceLat,Double_t &sourceAltitude,
@@ -91,7 +95,7 @@ class UsefulAdu5Pat: public Adu5Pat
    * However this one uses the new and lovely getSourceLonAndLatAtAlt3.
    * 
    * @param phiWave payload phi in radians (relative to adu5 aft-fore)
-   * @param thetaWave radians, +ve theta is up, the silly EventCorrelator convention
+   * @param thetaWave radians, +ve theta is down, the silly EventCorrelator convention
    * @param lon pointer to the calculated longitude
    * @param lat pointer to the calculated latitude
    * @param alt pointer to the calculated altitud
@@ -153,8 +157,8 @@ class UsefulAdu5Pat: public Adu5Pat
    */
   void getThetaAndPhiWave2(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave, TVector3* sourcePos = NULL) const;
 
-  /** Cartesian version of above. Note that sourcePos will be modified so that it is rotated to balloon coords, so pass a copy if you don't want to change it */ 
-  void getThetaAndPhiWaveCart(TVector3 * sourcePos, Double_t & thetaWave, Double_t & phiWave) const; 
+  /** Cartesian version of above.*/ 
+  void getThetaAndPhiWaveCart(const TVector3 * sourcePos, Double_t & thetaWave, Double_t & phiWave) const; 
 
   /** Find the direction in payload coordinates of a cartesian ray p0 - v0 t as t-> infinity or -infinity
    * This does it the dumbest possible way, there's probably a smart way to do it. 
@@ -465,14 +469,13 @@ class UsefulAdu5Pat: public Adu5Pat
   
  private:
   Int_t		fIncludeGroupDelay;		/// Include group delay in deltaTs? (default is no)
-  TVector3	fSourcePos;			/// Private variable to hold the source location in cartesian coordinates.
+  Geoid::Position fSourcePos;			/// Private variable to hold the source location in cartesian coordinates.
   Double_t	fSourceLongitude;		/// The source longitude.
   Double_t	fSourceLatitude;		/// The source latitude.
   Double_t	fSourceAltitude;		/// The source altitude.
   Double_t	fThetaWave;			/// The elevation angle of the plane wave in payload centric coordinates.
   Double_t	fPhiWave;			/// The azimuthal angle of the plane wave in payload centric coordinates with phi equals zero lying along the direction of the ADU5 fore antenna.
-  Double_t	fBalloonCoords[3];		/// The balloon position in cartesian coords
-  TVector3	fBalloonPos;			/// The cartesian coords as a TVector3
+  Geoid::Position fBalloonPos;			/// The cartesian coords as a TVector3
   Double_t	fBalloonTheta;			/// The balloon theta
   Double_t	fBalloonPhi;			/// The balloon phi
   Double_t	fBalloonHeight;			/// The balloon height

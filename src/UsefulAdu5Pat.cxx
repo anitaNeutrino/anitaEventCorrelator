@@ -11,7 +11,7 @@
 #include <iostream>
 #include "TTimeStamp.h"
 #include "AnitaDataset.h"
-#include "GeoidModel.h"
+#include "Geoid.h"
 #include "GeoMagnetic.h"
 
 
@@ -32,9 +32,6 @@ UsefulAdu5Pat::UsefulAdu5Pat()
   fPhiWave=0;
   fSourceLongitude=-1;
   fSourceLatitude=-1;
-  fBalloonCoords[0]=0;
-  fBalloonCoords[1]=0;
-  fBalloonCoords[2]=0;
   fBalloonHeight=0;
   fBalloonLonCache=0;
   fBalloonLatCache=0;
@@ -60,10 +57,6 @@ UsefulAdu5Pat::UsefulAdu5Pat(const Adu5Pat *patPtr)
   if(heading<0){
     heading+=360;
   }
-  // fThetaWave=0;
-  // fPhiWave=0;
-  // fSourceLongitude=-1;
-  // fSourceLatitude=-1;
   fBalloonLonCache=0;
   fBalloonLatCache=0;
   fBalloonAltCache=0;
@@ -87,11 +80,7 @@ void UsefulAdu5Pat::updateCartesianBalloonInfo(){
      latitude!=fBalloonLatCache ||
      altitude!=fBalloonAltCache){
 
-    GeoidModel::getCartesianCoords(latitude,
-					 longitude,
-					 altitude,
-					 fBalloonCoords);
-    fBalloonPos.SetXYZ(fBalloonCoords[0],fBalloonCoords[1],fBalloonCoords[2]);
+    fBalloonPos.SetLonLatAlt(longitude, latitude, altitude);
     fBalloonTheta=fBalloonPos.Theta();
     fBalloonPhi=fBalloonPos.Phi();
     if(fBalloonPhi<0){
@@ -199,7 +188,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAtDesiredAlt(Double_t phiWave, Double_t the
   }
 
   // AnitaGeomTool* geom = AnitaGeomTool::Instance();
-  Double_t reBalloon=GeoidModel::getDistanceToCentreOfEarth(latitude)+desiredAlt; // ACG mod
+  Double_t reBalloon=Geoid::getDistanceToCentreOfEarth(latitude)+desiredAlt; // ACG mod
   Double_t re=reBalloon;
   Double_t nextRe=re;
   Double_t reh=reBalloon+altitude;
@@ -235,8 +224,8 @@ int UsefulAdu5Pat::getSourceLonAndLatAtDesiredAlt(Double_t phiWave, Double_t the
     fSourcePos.GetXYZ(sourceVec);
 
     Double_t sourceAlt;
-    GeoidModel::getLatLonAltFromCartesian(sourceVec,sourceLat,sourceLon,sourceAlt);
-    nextRe=GeoidModel::getDistanceToCentreOfEarth(sourceLat);
+    Geoid::getLatLonAltFromCartesian(sourceVec,sourceLat,sourceLon,sourceAlt);
+    nextRe=Geoid::getDistanceToCentreOfEarth(sourceLat);
 
   } while(TMath::Abs(nextRe-re)>1);
 
@@ -283,7 +272,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt2(Double_t phiWave, Double_t thetaWave
     return -1;
   }
 
-  Double_t reBalloon = GeoidModel::getDistanceToCentreOfEarth(latitude); // reBalloon, radius of earth where balloon is
+  Double_t reBalloon = Geoid::getDistanceToCentreOfEarth(latitude); // reBalloon, radius of earth where balloon is
   Double_t chosenAlt = surfaceAboveGeoid(longitude,latitude);	   // ChosenAlt, the ice surface below balloon
   Double_t re = reBalloon+chosenAlt;				   // re, radius of earth at balloon plus ice height above geoid
   Double_t nextRe = re;						   // nextRe, radius of geoid+ice at next iteration
@@ -334,9 +323,6 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt2(Double_t phiWave, Double_t thetaWave
     if(sqrtArg<0) {
       if(fDebug){
 	std::cerr << "Error in " << __PRETTY_FUNCTION__ << ", no solution possible! Returning 0\n";
-	// std::cerr << "re = " << re << ",  reh = " << reh << ", sintw = " << sintw << ", tempThetaWave = " << tempThetaWave << "\n";
-	// std::cerr << "re*re = " << re*re << ",  reh*reh*sintw*sintw = " << reh*reh*sintw*sintw << "\n";
-	// std::cerr << "sqrtArg = " << sqrtArg << std::endl;
       }
       return 0;
     }
@@ -356,9 +342,9 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt2(Double_t phiWave, Double_t thetaWave
     Double_t sourceVec[3];
     sourcePos.GetXYZ(sourceVec);
     Double_t sourceAlt;
-    GeoidModel::getLatLonAltFromCartesian(sourceVec,sourceLat,sourceLon,sourceAlt);
+    Geoid::getLatLonAltFromCartesian(sourceVec,sourceLat,sourceLon,sourceAlt);
     chosenAlt = surfaceAboveGeoid(sourceLon,sourceLat);
-    nextRe = GeoidModel::getDistanceToCentreOfEarth(sourceLat) + chosenAlt;
+    nextRe = Geoid::getDistanceToCentreOfEarth(sourceLat) + chosenAlt;
 
 
     // if(fDebug && grTest){
@@ -495,7 +481,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt3(Double_t phiWave, Double_t thetaWave
   const TVector3 unitVector = getUnitVectorAlongThetaWavePhiWave(thetaWave, phiWave);
 
   Double_t anitaPosition[3];
-  GeoidModel::getCartesianCoords(latitude, longitude, altitude, anitaPosition);
+  Geoid::getCartesianCoords(latitude, longitude, altitude, anitaPosition);
   const TVector3 anitaVector(anitaPosition);
 
 
@@ -504,8 +490,7 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt3(Double_t phiWave, Double_t thetaWave
   const TVector3 inwardNorm = anitaVector.Unit();
   const double scale = TMath::Abs(1./inwardNorm.Dot(unitVector));
   const TVector3 deltaVector = scale*unitVector;
-  // const TVector3 deltaVector = unitVector;  
-  
+  // const TVector3 deltaVector = unitVector;
 
   double minAbsDeltaAlt = DBL_MAX;
   double bestLon, bestLat, bestAlt, bestDeltaAlt;  
@@ -523,14 +508,10 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt3(Double_t phiWave, Double_t thetaWave
 
     while(deltaAlt <= firstDeltaAlt){
 
-      const TVector3 rayVector = i*deltaVector + anitaPosition; // ray position
-      double rayLat, rayLon, rayAlt;
-      double rayPosition[3];
-      rayVector.GetXYZ(rayPosition);
-      GeoidModel::getLatLonAltFromCartesian(rayPosition, rayLat, rayLon, rayAlt);
+      const Geoid::Position rayPosition = i*deltaVector + anitaPosition; // ray position
 
-      double surfaceAlt = surfaceAboveGeoid(rayLon, rayLat);
-      deltaAlt = rayAlt - surfaceAlt;
+      double surfaceAlt = surfaceAboveGeoid(rayPosition.Longitude(), rayPosition.Latitude());
+      deltaAlt = rayPosition.Altitude() - surfaceAlt;
 
       if(firstDeltaAlt==DBL_MAX){
 	firstDeltaAlt = deltaAlt;
@@ -544,8 +525,8 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt3(Double_t phiWave, Double_t thetaWave
       // is this the best we've done so far?
       double absDeltaAlt = fabs(deltaAlt);
       if(absDeltaAlt < minAbsDeltaAlt){
-	bestLon = rayLon;
-	bestLat = rayLat;
+	bestLon = rayPosition.Longitude();
+	bestLat = rayPosition.Latitude();
 	bestAlt = surfaceAlt;
 	bestDeltaAlt = deltaAlt;
 	best_i = i;
@@ -558,8 +539,8 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt3(Double_t phiWave, Double_t thetaWave
 	// Then we cut the surface at this iteration...
 	// Presumably, with a small step size since deltaAlt approached 0.
 	// There's no need to explore the minimum, so set the values and return.
-	sourceLon = rayLon;
-	sourceLat = rayLat;
+	sourceLon = rayPosition.Longitude();
+	sourceLat = rayPosition.Latitude();
 	sourceAltitude = surfaceAlt;
 	if(deltaAltIfNoIntersectection){
 	  *deltaAltIfNoIntersectection = deltaAlt;
@@ -623,100 +604,120 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt3(Double_t phiWave, Double_t thetaWave
 
 TVector3 UsefulAdu5Pat::getUnitVectorAlongThetaWavePhiWave(double thetaWave, double phiWave) const{
 
-  Double_t anitaPosition[3];
-  GeoidModel::getCartesianCoords(latitude, longitude, altitude, anitaPosition);
+  if(fDebug){
+    std::cout << "In" << __PRETTY_FUNCTION__ << " thetaWave (Degrees) = " << thetaWave*TMath::RadToDeg() << ", phiWave (Degrees) = " << phiWave*TMath::RadToDeg() << "\n" << std::endl;    
+  }
+
+  Geoid::Position anitaPosition(this);
 
   // now I need to get a vector pointing along thetaWave and phiWave from ANITA's position
   // so let's get theta and phi wave from an arbitrary position close to the payload,
   // evaluate theta/phi expected and rotate that vector around ANITA's position
   // until it aligns with phiWave...
 
-  // This is just due north of ANITA
-  double testLon = longitude;
-  double testLat = latitude - 0.1; // if ANITA could be at the north pole, this might not work
-  double testAlt = altitude;
+  // Choose a test position directly due north of ANITA
+  Geoid::Position testPosition = anitaPosition;
+  testPosition.SetLatitude(testPosition.Latitude() + 0.1); // if ANITA could be at the north pole, this might not work
 
   double testThetaWave, testPhiWave;
-  getThetaAndPhiWave2(testLon, testLat, testAlt, testThetaWave, testPhiWave);
+  getThetaAndPhiWaveCart(&testPosition, testThetaWave, testPhiWave);
   
-  // if(fDebug){
-  //   std::cout << "testPhiWave from directly due north of ANITA..." << std::endl;
-  //   std::cout << "testPhiWave (Degrees) = " << testPhiWave*TMath::RadToDeg() << ", for reference heading = " << heading << std::endl;
-  // }
+  if(fDebug){
+    std::cout << "Step 0: we have testPhiWave from directly due north of ANITA...\n";
+    std::cout << "testPhiWave (Degrees) = " << testPhiWave*TMath::RadToDeg()
+	      << ", for reference heading = " << heading << "\n" <<  std::endl;
 
-  Double_t testPosition[3];
-  GeoidModel::getCartesianCoords(testLat, testLon, testAlt, testPosition);
+    // std::cout << anitaPosition.Longitude() << "\t" << anitaPosition.Latitude() << "\t" << anitaPosition.Altitude() << "\n";
+    // std::cout << testPosition.Longitude() << "\t" << testPosition.Latitude() << "\t" << testPosition.Altitude() << "\n" << std::endl;
+  }
   
-  TVector3 testVector(testPosition);
-  const TVector3 unitAnita = TVector3(anitaPosition).Unit();
-  testVector.Rotate(-testPhiWave, unitAnita); // if we were to recalculate the phiWave expected, it would now point to 0
+  // we rotate testPosition -testPhiWave rads around ANITA's position vector
+  // so if we were to recalculate the testPhiWave, it should now point to 0
+  testPosition.Rotate(-testPhiWave, anitaPosition);
   
-  // if(fDebug){
-  //   testVector.GetXYZ(testPosition);
-  //   geom->getLatLonAltFromCartesian(testPosition, testLat, testLon, testAlt);
-  //   getThetaAndPhiWave2(testLon, testLat, testAlt, testThetaWave, testPhiWave);
-  //   std::cout << "After phi rotation, step 1 , phiWave should equal 0 (or 360)" << std::endl;
-  //   std::cout << "testPhiWave (Degrees) = " << testPhiWave*TMath::RadToDeg()
-  // 	      << ", testThetaWave (Degrees) = " << testThetaWave*TMath::RadToDeg() << std::endl;
-  // }
   
-  testVector.Rotate(phiWave, unitAnita); // if we were to recalculate the phiWave expected, it would now point to phiWave
+  if(fDebug){
+    getThetaAndPhiWaveCart(&testPosition, testThetaWave, testPhiWave);
+    std::cout << "Step 1: the new testPhiWave should equal 0 (or 360)\n";
+    std::cout << "testPhiWave (Degrees) = " << testPhiWave*TMath::RadToDeg()
+  	      << ", testThetaWave (Degrees) = " << testThetaWave*TMath::RadToDeg()
+	      << "\n" << std::endl;
+    // std::cout << anitaPosition.Longitude() << "\t" << anitaPosition.Latitude() << "\t" << anitaPosition.Altitude() << "\n";
+    // std::cout << testPosition.Longitude() << "\t" << testPosition.Latitude() << "\t" << testPosition.Altitude() << "\n" << std::endl;
+  }
 
-  testVector.GetXYZ(testPosition);
-  GeoidModel::getLatLonAltFromCartesian(testPosition, testLat, testLon, testAlt);
-  getThetaAndPhiWave2(testLon, testLat, testAlt, testThetaWave, testPhiWave);
+  testPosition.Rotate(phiWave, anitaPosition); // if we were to recalculate the phiWave expected, it would now point to phiWave
 
-  // if(fDebug){
-  //   std::cout << "After phi rotation, step 2, testPhiWave should equal phiWave..." << std::endl;    
-  //   std::cout << "In degrees..." << std::endl;
-  //   std::cout << "phiWave (Degrees) = " << phiWave*TMath::RadToDeg()
-  // 	      << ", thetaWave (Degrees) = " << thetaWave*TMath::RadToDeg() << std::endl;
-  //   std::cout << "testPhiWave (Degrees) = " << testPhiWave*TMath::RadToDeg()
-  // 	      << ", testThetaWave (Degrees) = " << testThetaWave*TMath::RadToDeg() << std::endl;
-  // }
-  
-  // now need to raise/lower the point described by testVector such that thetaWave is correct
-  // i.e. set the magnitude of the testVector such that thetaWave is correct
-  //
-  //                        
-  //                      O   
-  // Earth Centre (Origin) o
-  //                       |\  a 
-  //                     t | \ 
-  //                       |  \
-  //                 ANITA o---o "Test Vector"
-  //                       A    T
+  getThetaAndPhiWaveCart(&testPosition, testThetaWave, testPhiWave);
+
+  if(fDebug){
+    std::cout << "Step 2: the new testPhiWave should equal phiWave\n";
+    std::cout << "phiWave (Degrees) = " << phiWave*TMath::RadToDeg()
+  	      << ", thetaWave (Degrees) = " << thetaWave*TMath::RadToDeg() << "\n";
+    std::cout << "testPhiWave (Degrees) = " << testPhiWave*TMath::RadToDeg()
+  	      << ", testThetaWave (Degrees) = " << testThetaWave*TMath::RadToDeg() << "\n" << std::endl;
+    // std::cout << anitaPosition.Longitude() << "\t" << anitaPosition.Latitude() << "\t" << anitaPosition.Altitude() << "\n";
+    // std::cout << testPosition.Longitude() << "\t" << testPosition.Latitude() << "\t" << testPosition.Altitude() << "\n" << std::endl;
     
-  // O, A, T are the angles
-  // o, a, t are the lengths. I'm trying to find the length a for a given angle A.
-  // a / sin(A) = t / sin(T)
-  //
-  // t = anitaPosition.Mag();
-  // A = (pi/2 - thetaWave);
-  // O = angle between ANITA and the test vector
-  // T = pi - A - O
-  // so...
-  // a = sin(A) * t / (pi - A - O)
-  TVector3 anitaVector(anitaPosition);
-  
+  }
+  /**
+   * now need to raise or lower the point described by testPosition such that thetaWave is correct
+   * i.e. set the magnitude of the testPosition such that thetaWave is correct
+   *
+   *
+   *
+   * Earth Centre (Origin) o
+   *                       |\
+   *                       |O\
+   *                       |  \
+   *                       |   \
+   *                       |    \  a
+   *                       |     \
+   *                       |      \
+   *                       |       \
+   *                       |        \
+   *                       |         \
+   *                    t  |        T o "testPosition"
+   *                       |         /
+   *                       |        /
+   *                       |       /
+   *                       |      /
+   *                       |     /
+   *                       |    /
+   *                       |   /
+   *                       |  /
+   *                       |A/
+   *                 ANITA o
+   *
+   *
+   * O, A, T are the angles
+   * o, a, t are the opposite side lengths.
+   * I'm trying to find the length a for a given angle A.
+   * a / sin(A) = t / sin(T)
+   *
+   * t = anitaPosition.Mag();
+   * A = (pi/2 - thetaWave);
+   * O = angle between ANITA and the test vector
+   * T = pi - A - O
+   * so...
+   * a = sin(A) * t / (pi - A - O)
+   */
   double A = TMath::PiOver2() - thetaWave;
-  double O = testVector.Angle(anitaPosition); //angle between the vectors
+  double O = testPosition.Angle(anitaPosition); //angle between the vectors
   double T = TMath::Pi() - A - O;
-  double t = anitaVector.Mag();
+  double t = anitaPosition.Mag();
   double a = TMath::Sin(A)*(t/TMath::Sin(T));
 
-  testVector.SetMag(a);
+  testPosition.SetMag(a);
 
-  // if(fDebug){
-  //   testVector.GetXYZ(testPosition);
-  //   geom->getLatLonAltFromCartesian(testPosition, testLat, testLon, testAlt);
-  //   getThetaAndPhiWave2(testLon, testLat, testAlt, testThetaWave, testPhiWave);
-  //   std::cout << "After setting mangitude, testThetaWave should equal thetaWave too!" << std::endl;
-  //   std::cout << "testPhiWave (Degrees) = " << testPhiWave*TMath::RadToDeg()
-  // 	      << ", testThetaWave (Degrees) = " << testThetaWave*TMath::RadToDeg() << std::endl;
-  // }
+  if(fDebug){
+    getThetaAndPhiWaveCart(&testPosition, testThetaWave, testPhiWave);
+    std::cout << "Step 3: Have mangitude, testThetaWave should equal thetaWave too!" << std::endl;
+    std::cout << "testPhiWave (Degrees) = " << testPhiWave*TMath::RadToDeg()
+  	      << ", testThetaWave (Degrees) = " << testThetaWave*TMath::RadToDeg() << std::endl;
+  }
   
-  TVector3 deltaVec = testVector - anitaPosition;
+  TVector3 deltaVec = testPosition - anitaPosition;
   return deltaVec.Unit();
 }
 
@@ -746,41 +747,55 @@ void UsefulAdu5Pat::getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, D
 void UsefulAdu5Pat::getThetaAndPhiWave2(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave, TVector3* sourcePos) const {
   
   Double_t pSource[3]={0};
-  GeoidModel::getCartesianCoords(TMath::Abs(sourceLat),sourceLon,sourceAlt,pSource);  
+  Geoid::getCartesianCoords(sourceLat,sourceLon,sourceAlt,pSource);
+
   TVector3 sourcePosStack;
   sourcePos  = sourcePos ? sourcePos : &sourcePosStack;
   sourcePos->SetXYZ(pSource[0],pSource[1],pSource[2]);
-  getThetaAndPhiWaveCart(sourcePos, thetaWave, phiWave); 
+  getThetaAndPhiWaveCart(sourcePos, thetaWave, phiWave);
 
 }
 
-void UsefulAdu5Pat::getThetaAndPhiWaveCart(TVector3 * sourcePos, Double_t & thetaWave, Double_t& phiWave) const 
+void UsefulAdu5Pat::getThetaAndPhiWaveCart(const TVector3 * sourcePos2, Double_t & thetaWave, Double_t& phiWave) const 
 {
+  TVector3 sourcePos = *sourcePos2; // make a copy internally to avoid really unintuitive errors!
+
+  // this function requires that fBalloonHeight, fBalloonPhi, fBalloonTheta be correct
+
   AnitaGeomTool * geom = AnitaGeomTool::Instance();
   //Rotate such that balloon is at 0,0,fBalloonHeight
-  sourcePos->RotateZ(-1*fBalloonPhi);
-  sourcePos->RotateY(-1*fBalloonTheta);
+
+  sourcePos.RotateZ(-1*fBalloonPhi);
+  sourcePos.RotateY(-1*fBalloonTheta);
+
+  double x = sourcePos.X();
+  double y = sourcePos.Y();
+  double z = sourcePos.Z();
 
   //Now find thetaWave and phiWave
-  thetaWave = TMath::ATan((fBalloonHeight-sourcePos->Z())/TMath::Sqrt(sourcePos->X()*sourcePos->X() + sourcePos->Y()*sourcePos->Y()));
+  thetaWave = TMath::ATan2((fBalloonHeight-z), TMath::Sqrt(x*x + y*y));
+  phiWave = TMath::ATan2(y, x);
 
-  // phiWave is just atan(yp/xp)
-  // It only looks confusing to make sure I get the sign and 0-360 convention
-  phiWave = 0;
-  if(sourcePos->X()==0) {
-    phiWave = TMath::PiOver2();
-    if(sourcePos->Y()<0)
-      phiWave += TMath::Pi();
-  }
-  else if(sourcePos->X()<0) {
-    phiWave = TMath::Pi()+TMath::ATan(sourcePos->Y()/sourcePos->X());
-  }
-  else {
-    phiWave = TMath::ATan(sourcePos->Y()/sourcePos->X());
-    if(sourcePos->Y()<0) {
-      phiWave += TMath::TwoPi();
-    }
-  }
+  phiWave = phiWave < 0 ? phiWave + TMath::TwoPi() : phiWave;
+
+  // // phiWave is just atan(yp/xp)
+  // // It only looks confusing to make sure I get the sign and 0-360 convention
+  // phiWave = 0;
+  // if(x==0) {
+  //   phiWave = TMath::PiOver2();
+  //   if(y<0){
+  //     phiWave += TMath::Pi();
+  //   }
+  // }
+  // else if(x<0) {
+  //   phiWave = TMath::Pi()+TMath::ATan2(y, x);
+  // }
+  // else {
+  //   phiWave = TMath::ATan2(y, x);
+  //   if(y<0) {
+  //     phiWave += TMath::TwoPi();
+  //   }
+  // }
 
   TVector3 rollAxis = geom->fRollRotationAxis;
   TVector3 pitchAxis = geom->fPitchRotationAxis;
@@ -830,9 +845,7 @@ void UsefulAdu5Pat::getThetaWaveAtBase(Double_t baseLon, Double_t baseLat, Doubl
   
   //gets the theta from a base to the balloon - can check if we are beyond horizon
 
-  Double_t pSource[3]={0};
-  GeoidModel::getCartesianCoords(TMath::Abs(baseLat),baseLon,baseAlt,pSource);
-  fSourcePos.SetXYZ(pSource[0], pSource[1], pSource[2]);
+  fSourcePos.SetLonLatAlt(baseLat, baseLon, baseAlt);
 
   //make copy of balloon position and rotate it such that base is at 0,0,baseAlt
   TVector3 rotatedBalloonPos = fBalloonPos;
@@ -1056,12 +1069,9 @@ UInt_t UsefulAdu5Pat::getLDBTriggerTimeNs() const
 
 Double_t UsefulAdu5Pat::getDistanceFromSource(Double_t sourceLat, Double_t sourceLong, Double_t sourceAlt) const 
 {
-  // static Double_t pTaylor[3]={0};
-  Double_t pTaylor[3]={0};  
-  GeoidModel::getCartesianCoords(sourceLat, sourceLong, sourceAlt, pTaylor);
-  Double_t s2 = ((pTaylor[0]-fBalloonCoords[0])*(pTaylor[0]-fBalloonCoords[0]) +
-		 (pTaylor[1]-fBalloonCoords[1])*(pTaylor[1]-fBalloonCoords[1]) +
-		 (pTaylor[2]-fBalloonCoords[2])*(pTaylor[2]-fBalloonCoords[2]));
+  Geoid::Position pTaylor;
+  pTaylor.SetLonLatAlt(sourceLong, sourceLat, sourceAlt);
+  Double_t s2 = (pTaylor - fBalloonPos).Mag();
   Double_t distanceToFly=TMath::Sqrt(s2);
   return distanceToFly;
 }
@@ -1086,18 +1096,18 @@ UInt_t UsefulAdu5Pat::getTriggerTimeNsFromSource(Double_t sourceLat, Double_t so
 }
 
 /**
- * strutt: I've commented out for now as these inaccurate functions in GeoidModel have been replaced.			       
+ * strutt: I've commented out for now as these inaccurate functions in Geoid have been replaced.
  * Those functions assumed geodetic latitude (i.e. latitude) = 90 - theta(degrees) which isn't true. It's close but not true.  
  * If someone is desparate to  have this functionality back, we can figure out what it was supposed to do and put it back in...
  */
 // Double_t UsefulAdu5Pat::getAngleBetweenPayloadAndSource(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt) { //ACG additional function
-//   Double_t thetaBalloon=GeoidModel::getThetaFromLat(TMath::Abs(latitude));
-//   Double_t phiBalloon=GeoidModel::getPhiFromLon(longitude);
-//   Double_t balloonHeight=GeoidModel::getGeoidRadius(thetaBalloon)+altitude;
+//   Double_t thetaBalloon=Geoid::getThetaFromLat(TMath::Abs(latitude));
+//   Double_t phiBalloon=Geoid::getPhiFromLon(longitude);
+//   Double_t balloonHeight=Geoid::getGeoidRadius(thetaBalloon)+altitude;
 
-//   Double_t thetaSource=GeoidModel::getThetaFromLat(TMath::Abs(sourceLat));
-//   Double_t phiSource=GeoidModel::getPhiFromLon(sourceLon);
-//   Double_t radiusSource=GeoidModel::getGeoidRadius(thetaSource)+sourceAlt;
+//   Double_t thetaSource=Geoid::getThetaFromLat(TMath::Abs(sourceLat));
+//   Double_t phiSource=Geoid::getPhiFromLon(sourceLon);
+//   Double_t radiusSource=Geoid::getGeoidRadius(thetaSource)+sourceAlt;
 
 //   //Get vector from Earth's centre to source
 //   fSourcePos.SetX(radiusSource*TMath::Sin(thetaSource)*TMath::Cos(phiSource));
@@ -1712,11 +1722,11 @@ double UsefulAdu5Pat::getExpectedGeoMagPolarisation(double phiWave, double theta
   //histGround==1 or 2 means it hits ground, 0 means it doesn't
   int hitsGround = traceBackToContinent(phiWave, thetaWave, &reflectionLon, &reflectionLat, &reflectionAlt, &deltaTheta);
 
-  GeoidModel::Position destination; // ANITA position if direct cosmic ray or surface position if reflected cosmic ray
+  Geoid::Position destination; // ANITA position if direct cosmic ray or surface position if reflected cosmic ray
   TVector3 destinationToSource; // unit vector from ANITA (if direct) or reflection position (if indirect) which points in the direction the cosmic ray signal came from
   bool directCosmicRay = hitsGround == 0 ? true : false; // direct cosmic ray?
 
-  GeoidModel::Position anitaPosition(this);
+  Geoid::Position anitaPosition(this);
 
   // Only used in the reflected case...
   TVector3 surfaceNormal;
@@ -1741,7 +1751,7 @@ double UsefulAdu5Pat::getExpectedGeoMagPolarisation(double phiWave, double theta
 
     // here I find the normal to  the geoid surface by getting the vector difference between
     // a point 1 m above the reflection and the reflection
-    GeoidModel::Position justAbove = destination;
+    Geoid::Position justAbove = destination;
     justAbove.SetAltitude(justAbove.Altitude()+1);
     surfaceNormal = (justAbove - destination).Unit();
 
@@ -1841,11 +1851,11 @@ double UsefulAdu5Pat::getExpectedGeoMagPolarisationUpgoing(double phiWave, doubl
   double reflectionLon=0, reflectionLat=0, reflectionAlt=0, deltaTheta=100; // need non-zero deltaTheta when testing whether things intersectg, as theta < 0 returns instantly
   int hitsGround = traceBackToContinent(phiWave, thetaWave, &reflectionLon, &reflectionLat, &reflectionAlt, &deltaTheta);
 
-  GeoidModel::Position destination; // ANITA position if direct cosmic ray or surface position if reflected cosmic ray
+  Geoid::Position destination; // ANITA position if direct cosmic ray or surface position if reflected cosmic ray
   TVector3 destinationToSource; // unit vector from ANITA (if direct) or reflection position (if indirect) which points in the direction the cosmic ray signal came from
   bool directCosmicRay = hitsGround == 0 ? true : false; // direct cosmic ray?
 
-  GeoidModel::Position anitaPosition(this);
+  Geoid::Position anitaPosition(this);
 
   // here we do the geometry slightly differently for the direct vs. reflected case
   if(directCosmicRay){
@@ -1861,7 +1871,7 @@ double UsefulAdu5Pat::getExpectedGeoMagPolarisationUpgoing(double phiWave, doubl
   destination.SetLonLatAlt(reflectionLon, reflectionLat, reflectionAlt); // i.e. the source on the ice
   destinationToSource = getUnitVectorAlongThetaWavePhiWave(phiWave, thetaWave); // from ANITA to ice
 
-  GeoidModel::Position justAbove = destination;
+  Geoid::Position justAbove = destination;
   justAbove.SetAltitude(justAbove.Altitude()+1);
   const TVector3 surfaceNormal = (justAbove - destination).Unit();
   
