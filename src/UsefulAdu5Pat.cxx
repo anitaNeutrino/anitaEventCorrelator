@@ -596,8 +596,8 @@ int UsefulAdu5Pat::getSourceLonAndLatAtAlt3(Double_t phiWave, Double_t thetaWave
 /** 
  * Get a unit length TVector that points along thetaWave and phiWave 
  * 
- * @param phiWave is the azimuth direction (radians) in payload coordinates
  * @param thetaWave is the elevation angle (radians) theta=0 lies along the horizonal with -ve theta being up (the UsefulAdu5Pat convention)
+ * @param phiWave is the azimuth direction (radians) in payload coordinates
  * 
  * @return TVector3 containing a unit vector pointing to thetaWave/phiWave away from ANITA
  */
@@ -1707,7 +1707,6 @@ void UsefulAdu5Pat::getThetaAndPhiWaveOfRayAtInfinity(const TVector3 & p0, const
  * @param thetaWave elevation angle (radians) in payload coordinates (-ve theta is up, +ve theta is down)
  * @param xMax 
  */
-
 double UsefulAdu5Pat::getExpectedGeoMagPolarisation(double phiWave, double thetaWave, double xMax) const {
 
   if(fDebug){
@@ -1720,7 +1719,7 @@ double UsefulAdu5Pat::getExpectedGeoMagPolarisation(double phiWave, double theta
   double reflectionLon=0, reflectionLat=0, reflectionAlt=0, deltaTheta=100; // need non-zero deltaTheta when testing whether things intersectg, as theta < 0 returns instantly
   
   //histGround==1 or 2 means it hits ground, 0 means it doesn't
-  int hitsGround = traceBackToContinent(phiWave, thetaWave, &reflectionLon, &reflectionLat, &reflectionAlt, &deltaTheta);
+  int hitsGround = traceBackToContinent3(phiWave, thetaWave, &reflectionLon, &reflectionLat, &reflectionAlt, &deltaTheta);
 
   Geoid::Position destination; // ANITA position if direct cosmic ray or surface position if reflected cosmic ray
   TVector3 destinationToSource; // unit vector from ANITA (if direct) or reflection position (if indirect) which points in the direction the cosmic ray signal came from
@@ -1738,7 +1737,7 @@ double UsefulAdu5Pat::getExpectedGeoMagPolarisation(double phiWave, double theta
       std::cout << "I'm a direct Cosmic Ray! (" << hitsGround << ") " << deltaTheta << "\t" <<  reflectionLon << "\t" << reflectionLat << "\t"  << reflectionAlt  << std::endl;
     }
     destination = anitaPosition;
-    destinationToSource = getUnitVectorAlongThetaWavePhiWave(phiWave, thetaWave);
+    destinationToSource = getUnitVectorAlongThetaWavePhiWave(thetaWave, phiWave);
   }
   else{ // reflected cosmic ray
     if(fDebug){
@@ -1801,13 +1800,13 @@ double UsefulAdu5Pat::getExpectedGeoMagPolarisation(double phiWave, double theta
   // getting an off axis response will be more complicated
 
   // Since the antennas points down at -10 degrees, the VPol axis is 80 degrees above the horizontal plane
-  TVector3 vPolAxis = getUnitVectorAlongThetaWavePhiWave(phiWave, 80*TMath::DegToRad());
+  TVector3 vPolAxis = getUnitVectorAlongThetaWavePhiWave(80*TMath::DegToRad(), phiWave);
   // The VPol feed is up... (if) the HPol feed is to the right (looking down the boresight) then it points anticlockwise around the payload
   // phi increases anti-clockwise in payload coordinates, therefore
-  TVector3 hPolAxis = getUnitVectorAlongThetaWavePhiWave(phiWave + TMath::PiOver2(), 0);//-10*TMath::DegToRad());
+  TVector3 hPolAxis = getUnitVectorAlongThetaWavePhiWave(0, phiWave + TMath::PiOver2());
 
   if(fDebug){
-    TVector3 antennaAxis = getUnitVectorAlongThetaWavePhiWave(phiWave, -10*TMath::DegToRad());
+    TVector3 antennaAxis = getUnitVectorAlongThetaWavePhiWave(-10*TMath::DegToRad(),  phiWave);
     std::cout << "The dot products of any pair of the antenna axis, hPolAxis, vPolAxis should be zero..." << std::endl;
     std::cout << "antennaAxis dot hPolAxis  = " << antennaAxis.Dot(hPolAxis) << std::endl;
     std::cout << "antennaAxis dot vPolAxis  = " << antennaAxis.Dot(vPolAxis) << std::endl;
@@ -1849,7 +1848,7 @@ double UsefulAdu5Pat::getExpectedGeoMagPolarisationUpgoing(double phiWave, doubl
   // phiWave is in radians relative to ADU5 Aft Fore line
 
   double reflectionLon=0, reflectionLat=0, reflectionAlt=0, deltaTheta=100; // need non-zero deltaTheta when testing whether things intersectg, as theta < 0 returns instantly
-  int hitsGround = traceBackToContinent(phiWave, thetaWave, &reflectionLon, &reflectionLat, &reflectionAlt, &deltaTheta);
+  int hitsGround = traceBackToContinent3(phiWave, thetaWave, &reflectionLon, &reflectionLat, &reflectionAlt, &deltaTheta);
 
   Geoid::Position destination; // ANITA position if direct cosmic ray or surface position if reflected cosmic ray
   TVector3 destinationToSource; // unit vector from ANITA (if direct) or reflection position (if indirect) which points in the direction the cosmic ray signal came from
@@ -1869,7 +1868,7 @@ double UsefulAdu5Pat::getExpectedGeoMagPolarisationUpgoing(double phiWave, doubl
     std::cout << "I'm pointed at the continent! " << deltaTheta << "\t" <<  reflectionLon << "\t" << reflectionLat << "\t"  << reflectionAlt  << std::endl;
   }
   destination.SetLonLatAlt(reflectionLon, reflectionLat, reflectionAlt); // i.e. the source on the ice
-  destinationToSource = getUnitVectorAlongThetaWavePhiWave(phiWave, thetaWave); // from ANITA to ice
+  destinationToSource = getUnitVectorAlongThetaWavePhiWave(thetaWave, phiWave); // from ANITA to ice
 
   Geoid::Position justAbove = destination;
   justAbove.SetAltitude(justAbove.Altitude()+1);
@@ -1922,10 +1921,10 @@ double UsefulAdu5Pat::getExpectedGeoMagPolarisationUpgoing(double phiWave, doubl
   // getting an off axis response will be more complicated
 
   // Since the antennas points down at -10 degrees, the VPol axis is 80 degrees above the horizontal plane
-  TVector3 vPolAxis = getUnitVectorAlongThetaWavePhiWave(phiWave, 80*TMath::DegToRad());
+  TVector3 vPolAxis = getUnitVectorAlongThetaWavePhiWave(80*TMath::DegToRad(), phiWave);
   // The VPol feed is up... (if) the HPol feed is to the right (looking down the boresight) then it points anticlockwise around the payload
   // phi increases anti-clockwise in payload coordinates, therefore
-  TVector3 hPolAxis = getUnitVectorAlongThetaWavePhiWave(phiWave + TMath::PiOver2(), 0);
+  TVector3 hPolAxis = getUnitVectorAlongThetaWavePhiWave(0, phiWave + TMath::PiOver2());
   
   // Dot the electric field with the antenna polarisation vectors...
   double vPolComponent = EVec.Dot(vPolAxis);
