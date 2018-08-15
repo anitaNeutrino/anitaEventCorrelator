@@ -120,9 +120,11 @@ double Hical2::isHical(UInt_t eventNumber, UInt_t triggerTime, double peakPhi, d
   anglesToHical(eventNumber, &a4_hc2a, &a4_hc2b);
 
   if( abs(FFTtools::wrap(a4_hc2a-peakPhi,360,0))<getPhiCut(snr) && hc2aOn(triggerTime)==1){
+  // std::cout<< "\n ## hical a delta phi: "<<abs(FFTtools::wrap(a4_hc2a-peakPhi,360,0)) << " <  phiCut " << getPhiCut(snr) << "\t snr = "<< snr <<  std::endl;
     return 1;
   }
   else if( abs(FFTtools::wrap(a4_hc2b-peakPhi,360,0))<getPhiCut(snr) && hc2bOn(triggerTime)==1){
+  // std::cout<< "\n ## hical b delta phi: "<<abs(FFTtools::wrap(a4_hc2b-peakPhi,360,0)) << " <  phiCut " << getPhiCut(snr) << "\t snr = "<< snr <<  std::endl;
     return 1;
   }
   return 0;

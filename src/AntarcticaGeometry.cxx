@@ -7,7 +7,7 @@
 #include "TRandom.h" 
 #include "TGraph2D.h" 
 #include "TString.h" 
-#include "TFile.h" 
+#include "TFile.h"
 
 #ifdef USE_GEOGRAPHIC_LIB
 #include "GeographicLib/GeodesicLine.hpp" 
@@ -685,8 +685,41 @@ PayloadParameters::PayloadParameters(const PayloadParameters & other)
   payload = other.payload; 
   source = other.source; 
 }
+//binary search to get the horizon. 
+double PayloadParameters::getHorizon(double phi, const Adu5Pat * gps, const Refraction::Model * refractionModel, double tol, RampdemReader::dataSet rampdemData) {
+#ifdef USE_GEOGRAPHIC_LIB
+  GeographicLib::GeodesicLine gl(GeographicLib::Geodesic::WGS84(),  gps->latitude,  gps->longitude, gps->heading - phi); 
+  double low = 0; //low distance is 0 km
+  double high = 1000 * 1000 ;// high distance is 1000km, it means start from the (long, lat) of payload and go 1000km towards the phi direction. as used in the later function gs.Posiiton()
+  int count = 0;
+  while (1){
+    count ++;
+    // force get out of loop if count reach 100, something wrong happen, horizon did not find.
+    double mid = (low + high)/2.0;
+    double lat, lon; 
+    gl.Position(mid, lat, lon); 
+    AntarcticCoord coordinate(AntarcticCoord::WGS84, lat, lon, RampdemReader::SurfaceAboveGeoid(lon,lat,rampdemData)); 
+    PayloadParameters payloadParameter = PayloadParameters(gps, coordinate, refractionModel); 
+    //if the elevation of payload is nearly 0,  return the horizon theta in payload frame
+    if (fabs(payloadParameter.payload_el) < tol or count > 100){
+      if (count > 100){
+        std::cout<<"The loop never stop. the last payload elevation(0 is best) is: "<<payloadParameter.payload_el<<std::endl;
+      }
+      std::ofstream myfile;
+      myfile.open ("horizon.txt", std::ios::app);
+      myfile << -1*payloadParameter.source_theta <<"\n";
+      myfile.close();
+      return payloadParameter.source_theta;
+    }
+    if (payloadParameter.payload_el > 0 ){
+      low = mid;
+    }else{
+      high = mid;
+    }
+  }
+#endif
 
-
+}
 
 int PayloadParameters::findSourceOnContinent(double theta, double phi, const Adu5Pat * gps, PayloadParameters * p, 
                                              const Refraction::Model * m, 

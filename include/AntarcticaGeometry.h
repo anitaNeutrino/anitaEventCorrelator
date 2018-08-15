@@ -249,6 +249,7 @@ class PayloadParameters
      * Returns 1 on success, 0 if over horizon (but fills in payload position with the point at the horizon), -1 if doesn't converge to tolerance (but fills in closest) 
      *
      */
+    static double getHorizon(double phi, const Adu5Pat * gps, const Refraction::Model * refractionModel = 0, double tol = 5e-6, RampdemReader::dataSet rampdemData= RampdemReader::rampdem);
 
     static int findSourceOnContinent(double theta, double phi,
                           const Adu5Pat * gps, PayloadParameters * fillme, 
