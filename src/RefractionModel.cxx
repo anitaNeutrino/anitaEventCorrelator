@@ -112,7 +112,7 @@ double Refraction::PGFit::getElevationCorrection(double theta, double h, double 
 } 
 
 
-const double REARTH = 6371e3; 
+const double REARTH = 6356e3; 
 const double speed_of_light=299792458; 
 int Refraction::RaytracerSpherical::raytrace(const Setup * setup, Result * result) 
 {
@@ -171,7 +171,18 @@ int Refraction::RaytracerSpherical::raytrace(const Setup * setup, Result * resul
   double dy = y- y0; 
   double dM  = sqrt(dx*dx + dy*dy); 
 
+  double last_dx = last_path_x[last_path_x.size()-1]-last_path_x[last_path_x.size()-2]; 
+  double last_dy = last_path_y[last_path_y.size()-1]-last_path_y[last_path_y.size()-2]; 
+  double last_r = sqrt(last_dx*last_dx + last_dy*last_dy); 
+  result->last_dx = last_dx/last_r; 
+  result->last_dy = last_dy/last_r; 
+  result->full_dx = dx/dM; 
+  result->full_dy = dy/dM; 
+  result->x = x; 
+  result->y = y; 
+  result->r = r; 
   result->actual_distance = dM; 
+  result->surface_distance = phi * REARTH; 
   result->apparent_source_angle = theta * TMath::RadToDeg(); 
   result->actual_source_angle = 90 - acos( (dx*x + dy*y) / (r * dM)) *TMath::RadToDeg(); 
   result->actual_payload_angle = 90 - acos(dy/dM) * TMath::RadToDeg(); 

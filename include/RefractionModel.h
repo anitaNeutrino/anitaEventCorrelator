@@ -88,8 +88,14 @@ namespace Refraction
        double actual_source_angle; 
        double actual_payload_angle; 
        double actual_distance; 
+       double surface_distance; 
        double ray_distance; 
        double ray_time; 
+       double x,y,r; 
+       double last_dx;
+       double last_dy;
+       double full_dx;
+       double full_dy;
        
      };
 
