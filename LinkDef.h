@@ -34,6 +34,7 @@
 #pragma link C++ class AntarcticAtmosphere::AtmosphericModel; 
 #pragma link C++ class AntarcticAtmosphere::StandardUS; 
 #pragma link C++ class AntarcticAtmosphere::ExponentialRefractivity; 
+#pragma link C++ class AntarcticAtmosphere::SPRadiosonde; 
 #pragma link C++ namespace Refraction; 
 #pragma link C++ class Refraction::Model; 
 #pragma link C++ class Refraction::PositionIndependentModel; 

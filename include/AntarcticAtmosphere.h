@@ -7,8 +7,9 @@
  *
  **/
 
+#include "TGraph.h" 
+#include "TF1.h" 
 
-class TGraph; 
 class Adu5Pat; 
 namespace AntarcticAtmosphere
 {
@@ -59,6 +60,34 @@ namespace AntarcticAtmosphere
   }; 
 
 
+
+
+  class SPRadiosonde : public AtmosphericModel
+  {
+    public: 
+
+      /** This will download and use data from south pole radiosondes  */ 
+      SPRadiosonde(int year, int month, int day, bool early = true); 
+
+      virtual int computeAtmosphere(double h, Pars * p) const; 
+      
+      double min_height() const { return 2800; }
+      bool ok() const { return loaded; } 
+ 
+    private: 
+      bool loaded; 
+      TGraph P; 
+      TGraph T; 
+      TGraph N; 
+      TGraph rho; 
+      TF1 fit; 
+  }; 
+
+
+
+
+
+
   class StandardUS : public AtmosphericModel
   {
     public: 
@@ -90,6 +119,8 @@ namespace AntarcticAtmosphere
   }; 
 
   const ExponentialRefractivity & ITURefractivity(); 
+
+
 
 
   class ArtificialInversion : public AtmosphericModel

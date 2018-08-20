@@ -2,6 +2,9 @@
 #include "TGraph.h" 
 #include "TAxis.h" 
 #include "Adu5Pat.h" 
+#include "TObjArray.h" 
+#include "TObjString.h" 
+#include "TSystem.h" 
 #include "math.h"
 
 #ifdef USE_GEOGRAPHIC_LIB
@@ -270,3 +273,112 @@ const AntarcticAtmosphere::ExponentialRefractivity & AntarcticAtmosphere::ITURef
  static ExponentialRefractivity er(315,0.1361e-3); 
  return er; 
 }
+
+
+
+//hopefully the format didn't change... 
+static const char * sp_base = "ftp://amrc.ssec.wisc.edu/pub/southpole/radiosonde"; 
+
+
+struct atm_meas
+{
+  double h; // m, msl
+  double P; // hPa
+  double T; // kelvin 
+  double N; // refractivity (derived) 
+  double rho; // density (derived) 
+
+  bool operator< (const atm_meas & other) const
+  {
+    return h < other.h; 
+  }
+}; 
+
+
+
+int AntarcticAtmosphere::SPRadiosonde::computeAtmosphere(double h, Pars *p) const
+{
+  p->rho = rho.Eval(h); 
+  p->P = P.Eval(h); 
+  p->T = T.Eval(h); 
+  p->N = h > N.GetX()[N.GetN()-1] ? fit.Eval(h) : N.Eval(h); 
+  return 0; 
+}
+
+
+
+AntarcticAtmosphere::SPRadiosonde::SPRadiosonde(int year, int mon, int day, bool early) 
+  : fit("Nfit","expo",10e3,50e3) 
+{
+  TString cmd; cmd.Form("curl %s/%d/%02d%02d%02d%02ddat.txt",sp_base,year,mon,day,year % 100, early? 0 :12); 
+  TString data = gSystem->GetFromPipe(cmd.Data()); 
+  loaded = false; 
+
+  if (year < 2015) 
+  {
+    fprintf(stderr,"Haven't implemented parsing older radiosonde profiles yet...\n"); 
+    return; 
+  }
+
+  //split into lines 
+
+  TObjArray  *lines = data.Tokenize("\n"); 
+  lines->SetOwner(true); 
+
+  // the south pole data format kindly changes from year to year... 
+
+
+  std::vector<atm_meas> v; 
+
+
+  //skip first 9 lines
+  for (int i = 10; i < lines->GetEntries(); i++) 
+  {
+    const char * line = ((TObjString*)lines->At(i))->GetString().Data(); 
+
+    int s,h,rh,dir; 
+    float hPa,T,dwp,speed; 
+    sscanf(line,"%d %d %g %g %g %d %g %d", &s,&h,&hPa,&T,&dwp,&rh,&speed,&dir);
+
+    atm_meas m; 
+    m.h = h; 
+    m.P = hPa; 
+    m.T= T + 273; 
+
+    //I guess we assume it's ice? 
+
+    double EF=1+1e-4 * (2.2 +m.P*(0.00382 + 6.4e-7 * (T*T))); 
+    const double a = 6.115; 
+    const double b = 23.036; 
+    const double c = 279.82; 
+    const double d = 333.7; 
+    double e_s = EF * a * exp( (( b-T/d)*T)/(T+c)); 
+
+    double e= e_s*rh/100.; 
+
+    m.N = 77.6 * m.P / m.T - 5.6 * e / m.T + 3e5 * e / (m.T*m.T); 
+
+    m.rho = (m.P) / (287.058 *m.T); //ignore wet for now since the air is plenty dry 
+    v.push_back(m); 
+     
+  }
+
+  std::sort(v.begin(), v.end()); 
+
+  delete lines; 
+
+  loaded = v.size(); 
+
+
+  for (unsigned i = 0; i < v.size(); i++) 
+  {
+//    printf("%g %g %g %g, %g\n",v[i].h,v[i].P, v[i].T, v[i].N, v[i].rho); 
+    P.SetPoint(i, v[i].h, v[i].P);
+    T.SetPoint(i, v[i].h, v[i].T);
+    N.SetPoint(i, v[i].h, v[i].N);
+    rho.SetPoint(i, v[i].h, v[i].rho);
+  }
+
+  N.Fit(&fit,"R"); 
+}
+
