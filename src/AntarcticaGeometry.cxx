@@ -134,6 +134,8 @@ PayloadParameters::PayloadParameters(const Adu5Pat * gps, const AntarcticCoord &
 
   source_phi = FFTtools::wrap(gps->heading - source_phi,360); 
 #endif
+  apparent_source_theta = source_theta; 
+  apparent_payload_el = payload_el; 
 
   if (refract) 
   {

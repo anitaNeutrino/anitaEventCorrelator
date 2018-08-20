@@ -235,6 +235,9 @@ class PayloadParameters
     double payload_az; // the azimuth of the payload from the source (deg). 
     double distance; //distance between source and payload
 
+    double apparent_source_theta; // The APPARENT source theta (without refraction correction)
+    double apparent_payload_el; // The APPARENT source theta (without refraction correction)
+
     /* Checks for collision with the ground */
     bool checkForCollision(double dx = 100, AntarcticCoord * where = 0, AntarcticCoord * where_exit = 0, RampdemReader::dataSet d = RampdemReader::rampdem, double grace = 20, bool reverse = false) const;
 
@@ -262,7 +265,7 @@ class PayloadParameters
 
   private: 
 
-    ClassDefNV (PayloadParameters,1); 
+    ClassDefNV (PayloadParameters,2); 
 };
 
 
