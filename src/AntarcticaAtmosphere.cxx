@@ -6,6 +6,7 @@
 #include "TObjString.h" 
 #include "TSystem.h" 
 #include "math.h"
+#include <algorithm> 
 
 #ifdef USE_GEOGRAPHIC_LIB
 #include "GeographicLib/Geoid.hpp" 
