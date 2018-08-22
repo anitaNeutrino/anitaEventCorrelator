@@ -87,7 +87,8 @@ double Refraction::PositionIndependentModel::getElevationCorrection(const Adu5Pa
 
   PayloadParameters pp(pat,*source); 
   double H = AntarcticAtmosphere::WGS84toMSL(pat); 
-  double h = AntarcticAtmosphere::WGS84toMSL(pat); 
+  AntarcticCoord s = source->as(AntarcticCoord::WGS84); 
+  double h = AntarcticAtmosphere::WGS84toMSL(s.z,s.x,s.y); 
   return getElevationCorrection(pp.source_theta, h,H, correction_at_source); 
 
 }

@@ -190,6 +190,11 @@ double AntarcticAtmosphere::MSLtoWGS84(double h, double lat, double lon, Geoid g
   return  getGeoid(g).ConvertHeight ( lat, lon, h, GeographicLib::Geoid::GEOIDTOELLIPSOID); 
 }
 
+double AntarcticAtmosphere::WGS84toMSL(double lat, double lon, double alt, Geoid g)
+{
+  return getGeoid(g).ConvertHeight(lat,lon,alt, GeographicLib::Geoid::ELLIPSOIDTOGEOID); 
+}
+
 double AntarcticAtmosphere::WGS84toMSL(const Adu5Pat * pat, Geoid g)
 {
   return  getGeoid(g).ConvertHeight ( pat->latitude, pat->longitude, pat->altitude, GeographicLib::Geoid::ELLIPSOIDTOGEOID); 

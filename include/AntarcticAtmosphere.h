@@ -28,6 +28,7 @@ namespace AntarcticAtmosphere
 
   /** Convert from WGS84 altitude to height above mean sea level. Requires GeographicLib*/ 
   double WGS84toMSL( const Adu5Pat * pat,  Geoid g = EGM96_5) ; 
+  double WGS84toMSL( double lat, double lon, double alt,  Geoid g = EGM96_5) ; 
 
 
   /** Atmospheric Parameters. 
