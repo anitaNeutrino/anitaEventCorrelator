@@ -703,17 +703,17 @@ double PayloadParameters::getHorizon(double phi, const Adu5Pat * gps, const Refr
     AntarcticCoord coordinate(AntarcticCoord::WGS84, lat, lon, RampdemReader::SurfaceAboveGeoid(lon,lat,rampdemData)); 
     PayloadParameters payloadParameter = PayloadParameters(gps, coordinate, refractionModel); 
     //if the elevation of payload is nearly 0,  return the horizon theta in payload frame
-    if (fabs(payloadParameter.payload_el) < tol or count > 100){
+    if (fabs(payloadParameter.apparent_payload_el) < tol or count > 100){
       if (count > 100){
-        std::cout<<"The loop never stop. the last payload elevation(0 is better) is: "<<payloadParameter.payload_el<<std::endl;
+        std::cout<<"The loop never stop. the last payload elevation(0 is better) is: "<<payloadParameter.apparent_payload_el<<std::endl;
       }
       // std::ofstream myfile;
       // myfile.open ("horizon.txt", std::ios::app);
       // myfile << -1*payloadParameter.source_theta <<"\n";
       // myfile.close();
-      return payloadParameter.source_theta;
+      return payloadParameter.apparent_source_theta;
     }
-    if (payloadParameter.payload_el > 0 ){
+    if (payloadParameter.apparent_payload_el > 0 ){
       low = mid;
     }else{
       high = mid;
