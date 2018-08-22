@@ -711,7 +711,7 @@ double PayloadParameters::getHorizon(double phi, const Adu5Pat * gps, const Refr
       // myfile.open ("horizon.txt", std::ios::app);
       // myfile << -1*payloadParameter.source_theta <<"\n";
       // myfile.close();
-      return payloadParameter.apparent_source_theta;
+      return payloadParameter.source_theta;
     }
     if (payloadParameter.apparent_payload_el > 0 ){
       low = mid;
