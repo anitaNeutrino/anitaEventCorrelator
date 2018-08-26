@@ -398,10 +398,12 @@ AntarcticAtmosphere::SPRadiosonde::SPRadiosonde(int year, int mon, int day, bool
     rho.SetPoint(i, v[i].h, v[i].rho);
   }
 
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,7,0) 
   P.SetBit(TGraph::kIsSortedX); 
   T.SetBit(TGraph::kIsSortedX); 
   N.SetBit(TGraph::kIsSortedX); 
   rho.SetBit(TGraph::kIsSortedX); 
+#endif
 
   N.Fit(&fit,"R"); 
 }
