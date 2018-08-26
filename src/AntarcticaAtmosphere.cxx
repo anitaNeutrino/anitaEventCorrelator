@@ -215,6 +215,19 @@ double AntarcticAtmosphere::WGS84toMSL(const Adu5Pat * pat, Geoid g )
 }
 
 
+double AntarcticAtmosphere::WGS84toMSL(double lat, double lon, double alt, Geoid g) 
+{
+
+  static int nagged = 0; 
+
+  if (nagged++ < 5) 
+  {
+    fprintf(stderr,"Need GeographicLib for MSL conversions\n"); 
+  }
+ 
+  return alt; 
+}
+
 double AntarcticAtmosphere::MSLtoWGS84(double h, double lat, double lon, Geoid g)
 {
   static int nagged = 0; 
@@ -384,6 +397,11 @@ AntarcticAtmosphere::SPRadiosonde::SPRadiosonde(int year, int mon, int day, bool
     N.SetPoint(i, v[i].h, v[i].N);
     rho.SetPoint(i, v[i].h, v[i].rho);
   }
+
+  P.SetBit(TGraph::kIsSortedX); 
+  T.SetBit(TGraph::kIsSortedX); 
+  N.SetBit(TGraph::kIsSortedX); 
+  rho.SetBit(TGraph::kIsSortedX); 
 
   N.Fit(&fit,"R"); 
 }
