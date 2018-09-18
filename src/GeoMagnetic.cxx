@@ -1000,8 +1000,8 @@ TVector3 GeoMagnetic::fresnelReflection(const TVector3& incidentPoyntingVector, 
   double E_p_z = electricFieldVec.Dot(z_hat_local);
 
   double reflected_E_s = r_s*E_s; // +ve r_s means E field is parallel
-  double reflected_E_p_x = -r_p*E_p_x; // +ve r_p means H field is parallel, which means E-field is flipped
-  double reflected_E_p_z = -r_p*E_p_z; // +ve r_p means H field is parallel, which means E-field is flipped
+  double reflected_E_p_x = r_p*E_p_x; // +ve r_p means H field is parallel, which means E-field is flipped
+  double reflected_E_p_z = r_p*E_p_z; // +ve r_p means H field is parallel, which means E-field is flipped
 
   TVector3 reflectedElectricFieldVec = reflected_E_p_x*x_hat_local + reflected_E_s*y_hat_local + reflected_E_p_z*z_hat_local;
 
@@ -1239,7 +1239,7 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
   // getting an off axis response will be more complicated
 
   // Since the antennas points down at -10 degrees, the VPol axis is 80 degrees above the horizontal plane
-  TVector3 vPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, 80*TMath::DegToRad());
+  TVector3 vPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, -80*TMath::DegToRad());
   // The VPol feed is up... (if) the HPol feed is to the right (looking down the boresight) then it points anticlockwise around the payload
   // phi increases anti-clockwise in payload coordinates, therefore
   TVector3 hPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave + TMath::PiOver2(), 0);//-10*TMath::DegToRad());
@@ -1368,7 +1368,7 @@ double GeoMagnetic::getExpectedPolarisationUpgoing(UsefulAdu5Pat& usefulPat, dou
   // getting an off axis response will be more complicated
 
   // Since the antennas points down at -10 degrees, the VPol axis is 80 degrees above the horizontal plane
-  TVector3 vPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, 80*TMath::DegToRad());
+  TVector3 vPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, -80*TMath::DegToRad());
   // The VPol feed is up... (if) the HPol feed is to the right (looking down the boresight) then it points anticlockwise around the payload
   // phi increases anti-clockwise in payload coordinates, therefore
   TVector3 hPolAxis = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave + TMath::PiOver2(), 0);
