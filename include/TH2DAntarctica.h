@@ -4,6 +4,7 @@
 #include "TProfile2D.h"
 #include "TH2D.h"
 #include "AntarcticaBackground.h"
+#include "UsefulAdu5Pat.h"
 
 
 /** 
@@ -197,6 +198,16 @@ class TH2DAntarctica : public TH2D {
 
   virtual void Draw(Option_t* opt="");
   virtual Int_t Fill(Double_t lon, Double_t lat, Double_t val=1);
+
+  /** 
+   * Fills the point and the error around the point with different colors.
+   * lon, lat, phi, theta, snr are all parameters for the event to be plotted.
+   * theta uses the normal sign convention (negative is toward ground).
+   * snr is deconvolved filtered snr.
+   * ll_thresh is the ll you want to plot out to  
+   * upat is the UsefulAdu5Pat for the event.
+   */
+  Int_t FillWithErrorContours(Double_t lon, Double_t lat, Double_t phi, Double_t theta, Double_t snr, Double_t ll_thresh, UsefulAdu5Pat upat);
 
   void UnZoom(){getBackground()->UnZoom();} //*MENU
 

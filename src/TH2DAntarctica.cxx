@@ -329,6 +329,133 @@ Int_t TH2DAntarctica::Fill(Double_t lon, Double_t lat, Double_t val){
   return TH2D::Fill(easting, northing, val);  
 }
 
+void getAngularResolution(Double_t snr, Double_t& sigmaTheta, Double_t& sigmaPhi)
+{
+  //this is just here for the error contour filling
+  sigmaPhi = (AnitaVersion::get() == 3) ? exp(-2.50414e-01 * snr + 3.02406e-01) + 2.43376e-01 : 5.09057/(pow(snr, 8.01369e-01) + 1.);
+  sigmaTheta = (AnitaVersion::get() == 3) ? exp(-3.83773e-01 * snr + -3.00964e-01) + 1.64537e-01 : 1.34307/(pow(snr, 7.09382e-01) + 1.);
+}
+
+Int_t TH2DAntarctica::FillWithErrorContours(Double_t lon, Double_t lat, Double_t phi, Double_t theta,Double_t snr, Double_t ll_thresh, UsefulAdu5Pat upat){
+  //maxval is the value of the reconstructed point on the continent, other points are maxval - sqrt(ll)
+  Int_t maxval = ceil(sqrt(ll_thresh)) + 1;
+
+  Double_t easting, northing;
+  RampdemReader::LonLatToEastingNorthing(lon, lat, easting, northing);
+
+  Int_t binX = TH2D::GetXaxis()->FindBin(easting);
+  Int_t binY = TH2D::GetYaxis()->FindBin(northing);
+
+  Double_t sigmaPhi, sigmaTheta;
+  getAngularResolution(snr, sigmaTheta, sigmaPhi);
+
+  bool checking = true;
+  Int_t n_added = 1;
+
+  //want to keep track of which ways it's still worth checking
+  int udlr[4]; 
+  bool updone = 0;
+  bool downdone = 0;
+  bool leftdone = 0;
+  bool rightdone = 0;
+  Int_t nrow;
+  Int_t ncol;
+  int level = 1;
+
+  while(checking)
+  {
+    int miss_count = 0;
+    int curr = 0;
+    udlr[0] = 0;
+    udlr[1] = 0;
+    udlr[2] = 0;
+    udlr[3] = 0;
+    for(int i = 0; i <  8*level; i++)
+    {
+      Double_t thetaSource, phiSource;
+      Double_t sourceEasting, sourceNorthing;
+      Double_t sourceLon, sourceLat;
+      nrow = 3 + 2*(level-1);
+      ncol = nrow - 2;
+
+      Int_t newBinX, newBinY;
+
+      //search outwards from a point in squares
+      if(i < nrow){
+        if(updone){
+          miss_count++;
+          continue;
+        }
+        curr = 0;
+        newBinX = binX-level+i;
+        newBinY = binY+level;
+      }
+      else if(i < 2 * nrow){
+        if(downdone){
+          miss_count++;
+          continue;
+        }
+        curr = 1;
+        newBinX = binX-level+i-nrow;
+        newBinY = binY-level;
+      }
+      else{
+        Int_t alternator = i%2 ? 1 : -1;
+        if(alternator == 1 && rightdone){
+          miss_count++;
+          continue;
+        }
+        if(alternator == -1 && leftdone){
+          miss_count++;
+          continue;
+        }
+        curr = alternator == 1 ? 3 : 2;
+        Int_t ypos = level - 1 - (i - 2*nrow)/2;
+        newBinX = binX+(alternator*level);
+        newBinY = binY+ypos;
+      }
+      sourceEasting = TH2D::GetXaxis()->GetBinCenter(newBinX);
+      sourceNorthing = TH2D::GetYaxis()->GetBinCenter(newBinY);
+
+      RampdemReader::EastingNorthingToLonLat(sourceEasting, sourceNorthing, sourceLon, sourceLat);
+      Double_t sourceAlt = RampdemReader::SurfaceAboveGeoid(sourceLon, sourceLat);
+      
+      upat.getThetaAndPhiWave2(sourceLon, sourceLat, sourceAlt, thetaSource, phiSource);
+      
+      thetaSource *= TMath::RadToDeg();
+      phiSource *= TMath::RadToDeg();
+      
+      Double_t dTheta = (thetaSource - theta)/sigmaTheta;
+      Double_t deltaPhi = phiSource - phi;
+      if(deltaPhi > 180) {
+        while(deltaPhi >= 180)
+          deltaPhi -= 360;
+        while(deltaPhi < -180)
+          deltaPhi += 360;
+      }
+      Double_t dPhi = deltaPhi/sigmaPhi;
+
+      Double_t ll = dTheta * dTheta + dPhi * dPhi;
+      if(ll > ll_thresh)
+      {
+        miss_count++;
+        udlr[curr]++;
+        continue;
+      }
+      Fill(sourceLon, sourceLat, maxval - ceil(sqrt(ll)));
+      n_added++;
+    }
+    if(miss_count == 8*level) checking = false;
+    if(udlr[0] == nrow) updone = true;
+    if(udlr[1] == nrow) downdone = true;
+    if(udlr[2] == ncol) leftdone = true;
+    if(udlr[3] == ncol) rightdone = true;
+    level++;
+  }
+  Fill(lon, lat, maxval);
+  return n_added;
+}
+
 
 /** 
  * This is just to try out drawing one 2D histogram on top of another background
