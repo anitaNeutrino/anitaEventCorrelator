@@ -209,6 +209,7 @@ class TH2DAntarctica : public TH2D {
    * dist_thresh adds a distance metric check in km (default is off)
    */
   Int_t FillWithErrorContours(Double_t lon, Double_t lat, Double_t phi, Double_t theta, Double_t snr, Double_t ll_thresh, UsefulAdu5Pat upat, Double_t dist_thresh=0);
+  Int_t FillWithErrorContours(Double_t lon, Double_t lat, Double_t phi, Double_t theta, Double_t sigmaPhi, Double_t sigmaTheta, Double_t ll_thresh, UsefulAdu5Pat upat, Double_t dist_thresh=0);
 
   void UnZoom(){getBackground()->UnZoom();} //*MENU
 

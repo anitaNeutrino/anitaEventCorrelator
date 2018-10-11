@@ -931,7 +931,7 @@ double CartesianSurfaceMap::metersAboveIce(double x, double y, double z) const
 
 #ifndef USE_GEOGRAPHIC_LIB
 static int nagged_about_surface = 0; 
-static double hav(double phi) { return ((1-cos(phi)/2)); }
+static double hav(double phi) { return ((1.-cos(phi))/2.); }
 #endif
 
 double AntarcticCoord::surfaceDistance(const AntarcticCoord & a, const AntarcticCoord & b) 
@@ -952,7 +952,14 @@ double AntarcticCoord::surfaceDistance(double lat0 , double lat1, double lon0, d
     nagged_about_surface++; 
     fprintf(stderr,"WARNING: compiled without geographic lib support. Using haversine distance between points\n"); 
   }
-  return 2 * R_EARTH * asin( hav(lat1-lat0) + cos(lat0) * cos(lat1) * hav(lon1-lon0)); 
+  lat0 *= TMath::DegToRad();
+  lat1 *= TMath::DegToRad();
+  lon0 *= TMath::DegToRad();
+  lon1 *= TMath::DegToRad();
+  double a = hav(lat1-lat0) + cos(lat0) * cos(lat1) * hav(lon1-lon0);
+  double c = 2 * atan2(sqrt(a), sqrt(1-a));
+  double d = R_EARTH * c;
+  return d; 
 #else
 
   double distance; 

@@ -338,6 +338,13 @@ void getAngularResolution(Double_t snr, Double_t& sigmaTheta, Double_t& sigmaPhi
 }
 
 Int_t TH2DAntarctica::FillWithErrorContours(Double_t lon, Double_t lat, Double_t phi, Double_t theta,Double_t snr, Double_t ll_thresh, UsefulAdu5Pat upat, Double_t dist_thresh){
+  Double_t sigmaPhi, sigmaTheta;
+  getAngularResolution(snr, sigmaTheta, sigmaPhi);
+  return FillWithErrorContours(lon,lat,phi,theta,sigmaPhi,sigmaTheta,ll_thresh,upat,dist_thresh);
+}
+
+
+Int_t TH2DAntarctica::FillWithErrorContours(Double_t lon, Double_t lat, Double_t phi, Double_t theta,Double_t sigmaPhi, Double_t sigmaTheta, Double_t ll_thresh, UsefulAdu5Pat upat, Double_t dist_thresh){
   //maxval is the value of the reconstructed point on the continent, other points are maxval - sqrt(ll)
   Int_t maxval = ceil(sqrt(ll_thresh)) + 1;
 
@@ -346,9 +353,6 @@ Int_t TH2DAntarctica::FillWithErrorContours(Double_t lon, Double_t lat, Double_t
 
   Int_t binX = TH2D::GetXaxis()->FindBin(easting);
   Int_t binY = TH2D::GetYaxis()->FindBin(northing);
-
-  Double_t sigmaPhi, sigmaTheta;
-  getAngularResolution(snr, sigmaTheta, sigmaPhi);
 
   bool checking = true;
   Int_t n_added = 1;
@@ -422,7 +426,7 @@ Int_t TH2DAntarctica::FillWithErrorContours(Double_t lon, Double_t lat, Double_t
 
       if(dist_thresh > 0)
       {
-        Double_t surfaceDist = 1e-4*AntarcticCoord::surfaceDistance(sourceLat, lat, sourceLon, lon);
+        Double_t surfaceDist = 1e-3*AntarcticCoord::surfaceDistance(sourceLat, lat, sourceLon, lon);
         if(surfaceDist < dist_thresh)
         {
           Fill(sourceLon, sourceLat, maxval-1);
