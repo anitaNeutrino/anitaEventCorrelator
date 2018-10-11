@@ -6,6 +6,7 @@
 #include "TVirtualPad.h"
 #include "TPaletteAxis.h"
 #include "TList.h"
+#include "AntarcticaGeometry.h"
 
 ClassImp(TProfile2DAntarctica)
 ClassImp(TH2DAntarctica)
@@ -336,7 +337,7 @@ void getAngularResolution(Double_t snr, Double_t& sigmaTheta, Double_t& sigmaPhi
   sigmaTheta = (AnitaVersion::get() == 3) ? exp(-3.83773e-01 * snr + -3.00964e-01) + 1.64537e-01 : 1.34307/(pow(snr, 7.09382e-01) + 1.);
 }
 
-Int_t TH2DAntarctica::FillWithErrorContours(Double_t lon, Double_t lat, Double_t phi, Double_t theta,Double_t snr, Double_t ll_thresh, UsefulAdu5Pat upat){
+Int_t TH2DAntarctica::FillWithErrorContours(Double_t lon, Double_t lat, Double_t phi, Double_t theta,Double_t snr, Double_t ll_thresh, UsefulAdu5Pat upat, Double_t dist_thresh){
   //maxval is the value of the reconstructed point on the continent, other points are maxval - sqrt(ll)
   Int_t maxval = ceil(sqrt(ll_thresh)) + 1;
 
@@ -416,9 +417,19 @@ Int_t TH2DAntarctica::FillWithErrorContours(Double_t lon, Double_t lat, Double_t
       }
       sourceEasting = TH2D::GetXaxis()->GetBinCenter(newBinX);
       sourceNorthing = TH2D::GetYaxis()->GetBinCenter(newBinY);
-
       RampdemReader::EastingNorthingToLonLat(sourceEasting, sourceNorthing, sourceLon, sourceLat);
       Double_t sourceAlt = RampdemReader::SurfaceAboveGeoid(sourceLon, sourceLat);
+
+      if(dist_thresh > 0)
+      {
+        Double_t surfaceDist = 1e-4*AntarcticCoord::surfaceDistance(sourceLat, lat, sourceLon, lon);
+        if(surfaceDist < dist_thresh)
+        {
+          Fill(sourceLon, sourceLat, maxval-1);
+          n_added++;
+          continue;
+        }
+      }
       
       upat.getThetaAndPhiWave2(sourceLon, sourceLat, sourceAlt, thetaSource, phiSource);
       

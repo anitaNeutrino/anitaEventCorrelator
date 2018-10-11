@@ -206,8 +206,9 @@ class TH2DAntarctica : public TH2D {
    * snr is deconvolved filtered snr.
    * ll_thresh is the ll you want to plot out to  
    * upat is the UsefulAdu5Pat for the event.
+   * dist_thresh adds a distance metric check in km (default is off)
    */
-  Int_t FillWithErrorContours(Double_t lon, Double_t lat, Double_t phi, Double_t theta, Double_t snr, Double_t ll_thresh, UsefulAdu5Pat upat);
+  Int_t FillWithErrorContours(Double_t lon, Double_t lat, Double_t phi, Double_t theta, Double_t snr, Double_t ll_thresh, UsefulAdu5Pat upat, Double_t dist_thresh=0);
 
   void UnZoom(){getBackground()->UnZoom();} //*MENU
 
