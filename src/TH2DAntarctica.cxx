@@ -375,6 +375,7 @@ Int_t TH2DAntarctica::FillWithErrorContours(Double_t lon, Double_t lat, Double_t
     udlr[1] = 0;
     udlr[2] = 0;
     udlr[3] = 0;
+    int dist_added = 0;
     for(int i = 0; i <  8*level; i++)
     {
       Double_t thetaSource, phiSource;
@@ -429,9 +430,8 @@ Int_t TH2DAntarctica::FillWithErrorContours(Double_t lon, Double_t lat, Double_t
         Double_t surfaceDist = 1e-3*AntarcticCoord::surfaceDistance(sourceLat, lat, sourceLon, lon);
         if(surfaceDist < dist_thresh)
         {
-          Fill(sourceLon, sourceLat, maxval-1);
-          n_added++;
-          continue;
+          Fill(sourceLon, sourceLat, 0.01);
+          dist_added = 1;
         }
       }
       
@@ -453,8 +453,15 @@ Int_t TH2DAntarctica::FillWithErrorContours(Double_t lon, Double_t lat, Double_t
       Double_t ll = dTheta * dTheta + dPhi * dPhi;
       if(ll > ll_thresh)
       {
-        miss_count++;
-        udlr[curr]++;
+        if(!dist_added)
+        {
+          miss_count++;
+          udlr[curr]++;
+        }
+        else
+        {
+          n_added++;
+        }
         continue;
       }
       Fill(sourceLon, sourceLat, maxval - ceil(sqrt(ll)));
