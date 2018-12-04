@@ -1071,8 +1071,8 @@ Double_t UsefulAdu5Pat::getDistanceFromSource(Double_t sourceLat, Double_t sourc
 {
   Geoid::Position pTaylor;
   pTaylor.SetLonLatAlt(sourceLong, sourceLat, sourceAlt);
-  Double_t s2 = (pTaylor - fBalloonPos).Mag();
-  Double_t distanceToFly=TMath::Sqrt(s2);
+  Double_t distanceToFly = (pTaylor - fBalloonPos).Mag();
+  
   return distanceToFly;
 }
 
@@ -1082,6 +1082,7 @@ Double_t UsefulAdu5Pat::getDistanceFromSource(Double_t sourceLat, Double_t sourc
 
 UInt_t UsefulAdu5Pat::getTriggerTimeNsFromSource(Double_t sourceLat, Double_t sourceLong, Double_t sourceAlt) const
 {
+
   Double_t distanceToFly = getDistanceFromSource(sourceLat, sourceLong, sourceAlt);
   Double_t timeOfFlight=distanceToFly/C_LIGHT;
   timeOfFlight*=1e9;
