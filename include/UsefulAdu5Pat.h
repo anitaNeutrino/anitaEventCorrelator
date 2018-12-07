@@ -48,7 +48,7 @@ class UsefulAdu5Pat: public Adu5Pat
  public:
   
   UsefulAdu5Pat();			/// Default constructor
-  UsefulAdu5Pat(const Adu5Pat *patPtr); /// Assignment constructor
+  UsefulAdu5Pat(const Adu5Pat *patPtr, bool staticPitchAndRoll=true); /// Assignment constructor
   ~UsefulAdu5Pat();			/// Destructor
 
   /**

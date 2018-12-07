@@ -42,15 +42,20 @@ UsefulAdu5Pat::UsefulAdu5Pat()
   setMaxLoopIterations();
 }
 
-UsefulAdu5Pat::UsefulAdu5Pat(const Adu5Pat *patPtr)
+UsefulAdu5Pat::UsefulAdu5Pat(const Adu5Pat *patPtr, bool staticPitchAndRoll)
   : Adu5Pat(*patPtr)
 {
   fIncludeGroupDelay=0;
 
-  pitch = AnitaStaticAdu5Offsets::pitch;
-  roll = AnitaStaticAdu5Offsets::roll;
-  heading += AnitaStaticAdu5Offsets::heading;
-
+  if(staticPitchAndRoll){
+    pitch = AnitaStaticAdu5Offsets::pitch;
+    roll = AnitaStaticAdu5Offsets::roll;
+    heading += AnitaStaticAdu5Offsets::heading;
+  }
+  else{
+    pitch = patPtr->pitch;
+    roll = patPtr->roll;
+  }
   if(heading>=360){
     heading-=360;
   }
