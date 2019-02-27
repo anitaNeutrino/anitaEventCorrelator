@@ -369,124 +369,146 @@ int Hical2::whereIsHical(UInt_t eventNumber, double * latA, double * lonA, doubl
   return whereAreHical(eventNumber,latA,lonA,altA,latB,lonB,altB);
 }
 //return the coords of the payloads
-int Hical2::whereAreHical(UInt_t eventNumber, double * latA, double * lonA, double *altA, double * latB, double *lonB, double *altB){
-  if(eventNumber<31059701){
-    //hical is not not in the air yet!
-    *latA=-999;
-    *lonA=-999;
-    *altA=-999;
-    *latB=-999;
-    *lonB=-999;
-    *altB=-999;
+int Hical2::whereAreHical(UInt_t eventNumber, double * latA, double * lonA, double * altA, double * latB, double * lonB, double * altB){
+
+  if (eventNumber < 31059701 || eventNumber > 72073425) {  //  Either HiCal isn't in the air yet, or is dead!
+//  if (eventNumber < 31059701) {  //  HiCal is not not in the air yet!
+
+    * latA = -999;
+    * lonA = -999;
+    * altA = -999;
+    * latB = -999;
+    * lonB = -999;
+    * altB = -999;
+
     return 0;
   }
-  if(eventNumber>72073425){
-    *latA=-999;
-    *lonA=-999;
-    *altA=-999;
-    *latB=-999;
-    *lonB=-999;
-    *altB=-999;
-    // hical is dead!;
-    return 0;
-  }
-  //use static declarations here so that these only need to load once
-  static AnitaDataset *ad=0;
-  if(!ad)ad=new AnitaDataset(157);
+
+//  if (eventNumber > 72073425) {  //  HiCal is dead!
+//
+//    * latA = -999;
+//    * lonA = -999;
+//    * altA = -999;
+//    * latB = -999;
+//    * lonB = -999;
+//    * altB = -999;
+//
+//    return 0;
+//  }
+
+  //  Use static declarations here so that these only need to load once.
+  static AnitaDataset * ad = 0;
+  if (!ad) ad = new AnitaDataset(157);
   
-  static TFile *hc2ahk_file = 0;
-  static TTree *hc2ahk_tree = 0;
-  static HCHKTree *hc2ahk=0;
-  if(!hc2ahk_file){
-    hc2ahk=new HCHKTree();
+  static TFile * hc2ahk_file = 0;
+  static TTree * hc2ahk_tree = 0;
+  static HCHKTree * hc2ahk = 0;
+  if (!hc2ahk_file) {
+
+    hc2ahk = new HCHKTree();
     char filename[1000];
-    char *dir=getenv("ANITA_UTIL_INSTALL_DIR");
-    sprintf(filename,"%s/share/anitaCalib/hc2ahk.root",dir);
-    hc2ahk_file=TFile::Open(filename);
-    hc2ahk_tree = (TTree*)hc2ahk_file->Get("tree");
-    hc2ahk_tree->SetBranchAddress("hktree", &hc2ahk);
-    hc2ahk_tree->BuildIndex("hktree.time");
+    char * dir = getenv("ANITA_UTIL_INSTALL_DIR");
+    sprintf(filename, "%s/share/anitaCalib/hc2ahk.root", dir);
+    hc2ahk_file = TFile::Open(filename);
+    hc2ahk_tree = (TTree *) hc2ahk_file -> Get("tree");
+    hc2ahk_tree -> SetBranchAddress("hktree", & hc2ahk);
+    hc2ahk_tree -> BuildIndex("hktree.time");
   }
 
-  static TFile *hc2bhk_file = 0;
-  static TTree *hc2bhk_tree = 0;
-  static HCHKTree *hc2bhk = 0;
-  if(!hc2bhk_file){
-    hc2bhk=new HCHKTree();
+  static TFile * hc2bhk_file = 0;
+  static TTree * hc2bhk_tree = 0;
+  static HCHKTree * hc2bhk = 0;
+  if (!hc2bhk_file) {
+
+    hc2bhk = new HCHKTree();
     char filename[1000];
-    char *dir=getenv("ANITA_UTIL_INSTALL_DIR");
-    sprintf(filename,"%s/share/anitaCalib/hc2bhk.root",dir);
-    hc2bhk_file=TFile::Open(filename);
-    hc2bhk_tree = (TTree*)hc2bhk_file->Get("tree");
-    hc2bhk_tree->SetBranchAddress("hktree", &hc2bhk);
-    hc2bhk_tree->BuildIndex("hktree.time");
+    char * dir = getenv("ANITA_UTIL_INSTALL_DIR");
+    sprintf(filename, "%s/share/anitaCalib/hc2bhk.root", dir);
+    hc2bhk_file = TFile::Open(filename);
+    hc2bhk_tree = (TTree *) hc2bhk_file -> Get("tree");
+    hc2bhk_tree -> SetBranchAddress("hktree", & hc2bhk);
+    hc2bhk_tree -> BuildIndex("hktree.time");
   }
-
- 
   
-  ad->getEvent(eventNumber);
-  double atime1, alat1, alon1, aalt1, atime2, alat2, alon2, aalt2;
-  double btime1, blat1, blon1, balt1, btime2, blat2, blon2, balt2;
-  double alat, alon, aalt, blat, blon, balt;
-  double frachk;
+  ad -> getEvent(eventNumber);
+//  double atime1, alat1, alon1, aalt1, atime2, alat2, alon2, aalt2;
+//  double btime1, blat1, blon1, balt1, btime2, blat2, blon2, balt2;
+//  double alat, alon, aalt, blat, blon, balt;
+//  double frachk;
   
-  //for hc2a
-  int aentry = hc2ahk_tree->GetEntryNumberWithBestIndex(ad->header()->triggerTime, ad->header()->triggerTime);
-  hc2ahk_tree->GetEntry(aentry);
-  if(aentry==hc2ahk_tree->GetEntries()-1){
-    *latA=-999;
-    *lonA=-999;
-    *altA=-999;
-  }
-  else{
-    atime1 = hc2ahk->time;
-    alat1  = hc2ahk->lat;
-    alon1  = hc2ahk->lon;
-    aalt1  = hc2ahk->alt;
+  double realTime = ad -> header() -> triggerTime + ad -> header() -> triggerTimeNs * 1e-9;
 
-    hc2ahk_tree->GetEntry(aentry+1);
+  //  for hc2a
+  int aentry = hc2ahk_tree -> GetEntryNumberWithBestIndex(realTime);
+//  int aentry = hc2ahk_tree->GetEntryNumberWithBestIndex(ad->header()->triggerTime, ad->header()->triggerTime);
+  hc2ahk_tree -> GetEntry(aentry);
+  if (aentry == hc2ahk_tree -> GetEntries() - 1) {
 
-    atime2 = hc2ahk->time;
-    alat2  = hc2ahk->lat;
-    alon2  = hc2ahk->lon;
-    aalt2  = hc2ahk->alt;
+    * latA = -999;
+    * lonA = -999;
+    * altA = -999;
 
-    frachk = ((double)ad->header()->triggerTime+((double)ad->header()->triggerTimeNs/1000000000.)-atime1)/(atime2-atime1);
+  } else {
 
-    *latA = (frachk*(alat2-alat1))+alat1;
-    *lonA = (frachk*(alon2-alon1))+alon1;
-    *altA = (frachk*(aalt2-aalt1))+aalt1;
+    double time1 = hc2ahk -> time;
+    double lat1  = hc2ahk -> lat;
+    double lon1  = hc2ahk -> lon;
+    double alt1  = hc2ahk -> alt;
+
+    hc2ahk_tree -> GetEntry(aentry + 1);
+
+    double time2 = hc2ahk -> time;
+    double lat2  = hc2ahk -> lat;
+    double lon2  = hc2ahk -> lon;
+    double alt2  = hc2ahk -> alt;
+
+    double frachk = (realTime - time1) / (time2 - time1);
+//    frachk = ((double)ad->header()->triggerTime+((double)ad->header()->triggerTimeNs/1000000000.)-atime1)/(atime2-atime1);
+
+    * latA = (lat2 - lat1) * frachk + lat1;
+    * lonA = (lon2 - lon1) * frachk + lon1;
+    * altA = (alt2 - alt1) * frachk + alt1;
+//    *latA = (frachk*(alat2-alat1))+alat1;
+//    *lonA = (frachk*(alon2-alon1))+alon1;
+//    *altA = (frachk*(aalt2-aalt1))+aalt1;
   
     //    *angleToA = angleToThing(ad->gps()->latitude, ad->gps()->longitude, alat, alon);
   }
-  //for hc2b
-  int bentry = hc2bhk_tree->GetEntryNumberWithBestIndex(ad->header()->triggerTime, ad->header()->triggerTime);
-  hc2bhk_tree->GetEntry(bentry);
 
-  if(bentry==hc2bhk_tree->GetEntries()-1){
-    *latB=-999;
-    *lonB=-999;
-    *altB=-999;
-  }
-  else{
-    btime1 = hc2bhk->time;
-    blat1  = hc2bhk->lat;
-    blon1  = hc2bhk->lon;
-    balt1  = hc2bhk->alt;
+  //  for hc2b
+  int bentry = hc2bhk_tree -> GetEntryNumberWithBestIndex(realTime);
+//  int bentry = hc2bhk_tree->GetEntryNumberWithBestIndex(ad->header()->triggerTime, ad->header()->triggerTime);
+  hc2bhk_tree -> GetEntry(bentry);
 
-    hc2bhk_tree->GetEntry(bentry+1);
+  if (bentry == hc2bhk_tree -> GetEntries() - 1) {
 
-    btime2 = hc2bhk->time;
-    blat2  = hc2bhk->lat;
-    blon2  = hc2bhk->lon;
-    balt2  = hc2bhk->alt;
+    * latB = -999;
+    * lonB = -999;
+    * altB = -999;
 
-    frachk = ((double)ad->header()->triggerTime+((double)ad->header()->triggerTimeNs/1000000000.)-btime1)/(btime2-btime1);
+  } else {
 
-    *latA = (frachk*(blat2-blat1))+blat1;
-    *lonA = (frachk*(blon2-blon1))+blon1;
-    *altA = (frachk*(balt2-balt1))+balt1;
-  
+    double time1 = hc2bhk -> time;
+    double lat1  = hc2bhk -> lat;
+    double lon1  = hc2bhk -> lon;
+    double alt1  = hc2bhk -> alt;
+
+    hc2bhk_tree -> GetEntry(bentry + 1);
+
+    double time2 = hc2bhk -> time;
+    double lat2 = hc2bhk -> lat;
+    double lon2 = hc2bhk -> lon;
+    double alt2 = hc2bhk -> alt;
+
+    double frachk = (realTime - time1) / (time2 - time1);
+//    frachk = ((double)ad->header()->triggerTime+((double)ad->header()->triggerTimeNs/1000000000.)-btime1)/(btime2-btime1);
+
+    * latA = (blat2 - blat1) * frachk + blat1;
+    * lonA = (blon2 - blon1) * frachk + blon1;
+    * altA = (balt2 - balt1) * frachk + balt1;
+//    *latA = (frachk*(blat2-blat1))+blat1;
+//    *lonA = (frachk*(blon2-blon1))+blon1;
+//    *altA = (frachk*(balt2-balt1))+balt1;
   }
   
   return 1;
