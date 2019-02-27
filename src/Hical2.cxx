@@ -503,9 +503,9 @@ int Hical2::whereAreHical(UInt_t eventNumber, double * latA, double * lonA, doub
     double frachk = (realTime - time1) / (time2 - time1);
 //    frachk = ((double)ad->header()->triggerTime+((double)ad->header()->triggerTimeNs/1000000000.)-btime1)/(btime2-btime1);
 
-    * latA = (blat2 - blat1) * frachk + blat1;
-    * lonA = (blon2 - blon1) * frachk + blon1;
-    * altA = (balt2 - balt1) * frachk + balt1;
+    * latA = (lat2 - lat1) * frachk + blat1;
+    * lonA = (lon2 - lon1) * frachk + blon1;
+    * altA = (alt2 - alt1) * frachk + balt1;
 //    *latA = (frachk*(blat2-blat1))+blat1;
 //    *lonA = (frachk*(blon2-blon1))+blon1;
 //    *altA = (frachk*(balt2-balt1))+balt1;
