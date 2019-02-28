@@ -10,7 +10,6 @@ ClassImp(Hical2)
 Hical2::Hical2(){}
 
 
-
 double Hical2::isHical(UInt_t eventNumber){
   //initialize the hical stuff
   if(INIT_HICAL==0){
@@ -40,8 +39,6 @@ double Hical2::isHical(UInt_t eventNumber){
 
   return -1;
 }
-
-
 
 
 double Hical2::isHical(AnitaEventSummary *sum, int peak){
@@ -75,6 +72,7 @@ double Hical2::isHical(AnitaEventSummary *sum, int peak){
   }
 } 
 
+
 double Hical2::isHical(UInt_t eventNumber, double peakPhi, double snr){
   static AnitaDataset *ad=0;
   if(!ad)ad=new AnitaDataset(157);
@@ -104,6 +102,8 @@ double Hical2::isHical(UInt_t eventNumber, double peakPhi, double snr){
   }
   return 0;
 }
+
+
 double Hical2::isHical(UInt_t eventNumber, UInt_t triggerTime, double peakPhi, double snr){
   
   //quick sanity checks for hical not being in the air
@@ -130,10 +130,12 @@ double Hical2::isHical(UInt_t eventNumber, UInt_t triggerTime, double peakPhi, d
   return 0;
 }
 
+
 //return the absolute angle from A4 to HC w/r/t north
 int Hical2::anglesToHical(UInt_t eventNumber, double * angleToA, double * angleToB){
  return angleToHical(eventNumber, angleToA, angleToB);
 }
+
 
 int Hical2::angleToHical(UInt_t eventNumber, double * angleToA, double * angleToB){
   if(eventNumber<31059701){
@@ -179,8 +181,6 @@ int Hical2::angleToHical(UInt_t eventNumber, double * angleToA, double * angleTo
     hc2bhk_tree->SetBranchAddress("hktree", &hc2bhk);
     hc2bhk_tree->BuildIndex("hktree.time");
   }
-
- 
   
   ad->getEvent(eventNumber);
   double atime1, alat1, alon1, aalt1, atime2, alat2, alon2, aalt2;
@@ -252,6 +252,7 @@ int Hical2::anglesToHical(AnitaEventSummary *sum, double * angleToA, double * an
  return angleToHical(sum, angleToA, angleToB);
 }
 
+
 int Hical2::angleToHical(AnitaEventSummary *sum, double * angleToA, double * angleToB){
   UInt_t eventNumber = sum->eventNumber;
   if(eventNumber<31059701){
@@ -267,7 +268,6 @@ int Hical2::angleToHical(AnitaEventSummary *sum, double * angleToA, double * ang
     return 0;
   }
 
-  
   static TFile *hc2ahk_file = 0;
   static TTree *hc2ahk_tree = 0;
   static HCHKTree *hc2ahk=0;
@@ -295,9 +295,6 @@ int Hical2::angleToHical(AnitaEventSummary *sum, double * angleToA, double * ang
     hc2bhk_tree->SetBranchAddress("hktree", &hc2bhk);
     hc2bhk_tree->BuildIndex("hktree.time");
   }
-
- 
-  
 
   double atime1, alat1, alon1, aalt1, atime2, alat2, alon2, aalt2;
   double btime1, blat1, blon1, balt1, btime2, blat2, blon2, balt2;
@@ -368,6 +365,8 @@ int Hical2::angleToHical(AnitaEventSummary *sum, double * angleToA, double * ang
 int Hical2::whereIsHical(UInt_t eventNumber, double * latA, double * lonA, double *altA, double * latB, double *lonB, double *altB){
   return whereAreHical(eventNumber,latA,lonA,altA,latB,lonB,altB);
 }
+
+
 //return the coords of the payloads
 int Hical2::whereAreHical(UInt_t eventNumber, double * latA, double * lonA, double * altA, double * latB, double * lonB, double * altB){
 
@@ -503,16 +502,17 @@ int Hical2::whereAreHical(UInt_t eventNumber, double * latA, double * lonA, doub
     double frachk = (realTime - time1) / (time2 - time1);
 //    frachk = ((double)ad->header()->triggerTime+((double)ad->header()->triggerTimeNs/1000000000.)-btime1)/(btime2-btime1);
 
-    * latA = (lat2 - lat1) * frachk + lat1;
-    * lonA = (lon2 - lon1) * frachk + lon1;
-    * altA = (alt2 - alt1) * frachk + alt1;
-//    *latA = (frachk*(blat2-blat1))+blat1;
-//    *lonA = (frachk*(blon2-blon1))+blon1;
-//    *altA = (frachk*(balt2-balt1))+balt1;
+    * latB = (lat2 - lat1) * frachk + lat1;
+    * lonB = (lon2 - lon1) * frachk + lon1;
+    * altB = (alt2 - alt1) * frachk + alt1;
+//    *latB = (frachk*(blat2-blat1))+blat1;
+//    *lonB = (frachk*(blon2-blon1))+blon1;
+//    *altB = (frachk*(balt2-balt1))+balt1;
   }
   
   return 1;
 }
+
 
 // double Hical2::dPhi(int aorb, int peak){
 //   return .5;
@@ -546,6 +546,8 @@ int Hical2::initHical(){
   
   return 1;
 }
+
+
 //simple straight line distance by making each payload a vector from the center of the earth
 double Hical2::straightLineDist(double lat1, double lon1, double alt1, double lat2, double lon2, double alt2){
   double r1, theta1, phi1, r2, theta2, phi2;
@@ -569,8 +571,9 @@ double Hical2::straightLineDist(double lat1, double lon1, double alt1, double la
 
   mag = sqrt(pow(x2-x1, 2)+pow(y2-y1, 2)+pow(z2-z1, 2));
   return mag;
-
 }
+
+
 //find the absolute angle from one thing to another thing
 double Hical2::angleToThing(double a4lat, double a4lon, double hclat, double hclon){
   double lat1=deg2rad(a4lat);
@@ -583,14 +586,19 @@ double Hical2::angleToThing(double a4lat, double a4lon, double hclat, double hcl
   if(bearing<0)bearing=((2.*TMath::Pi())+bearing);
   return rad2deg(bearing);
 }
+
+
 //probably from stackoverflow
 double Hical2::deg2rad(double deg) {
   return (deg * TMath::Pi() / 180.);
 }
+
+
 //yup
 double Hical2::rad2deg(double rad) {
   return (rad * 180. / TMath::Pi());
 }
+
 
 double Hical2::getPhiCut(double snr){
   double c1 = 40.96, c2 = -1.61, c3 = 0.1766;
@@ -598,6 +606,7 @@ double Hical2::getPhiCut(double snr){
   double sigma = std::min(5.0, c1*pow(snr,c2) + c3);
   return factorOfSigma * sigma;
 }
+
 
 //hc2a runs, known times that the payload is on or off from multiple sources
 bool Hical2::hc2aOn(UInt_t triggerTime){
@@ -642,6 +651,7 @@ bool Hical2::hc2aOn(UInt_t triggerTime){
   //infile->Close();
   return on;
 }
+
 
 //hical 2b
 bool Hical2::hc2bOn(UInt_t triggerTime){
