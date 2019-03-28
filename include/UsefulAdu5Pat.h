@@ -144,6 +144,8 @@ class UsefulAdu5Pat: public Adu5Pat
    */
   void getThetaAndPhiWave(Double_t sourceLon, Double_t sourceLat, Double_t sourceAlt, Double_t &thetaWave, Double_t &phiWave);
 
+  inline double getThetaHorizon(Double_t phiWave) {return 0;} // I never got this to work properly anyway, so let's just get thing to compile
+
 
   /**
    * const/thread-safe version of getThetaAndPhiWave, unlike that function the fSourcePos vector is not updated
