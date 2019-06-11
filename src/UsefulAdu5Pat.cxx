@@ -14,8 +14,6 @@
 
 
 
-
-
 ClassImp(UsefulAdu5Pat);
 
 UsefulAdu5Pat::UsefulAdu5Pat()
@@ -1547,6 +1545,12 @@ int UsefulAdu5Pat::astronomicalCoordinates(Double_t phiWave, Double_t thetaWave,
 
   lst*= ( M_PI / 12);  //hour -> radians
   double RA = lst -h;
+
+  // Perform wrapping if RA is negative
+  if(RA < 0)
+    {
+      RA+=2 * M_PI;
+    }
 
   if (RA_ptr) *RA_ptr = RA * 12 / M_PI;
   if (dec_ptr) *dec_ptr = dec* 180 / M_PI;
