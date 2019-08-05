@@ -56,8 +56,9 @@ namespace AntarcticAtmosphere
     public: 
       virtual int computeAtmosphere(double h, Pars * p) const= 0; 
       virtual double get(double h, Par p) const; 
-      TGraph * makeGraph(double hmin, double hmax, int nh, Par P) const; 
+      TGraph * makeGraph(double hmin, double hmax, int nh, Par P, bool alt_on_x=true) const; 
       virtual ~AtmosphericModel() { ; }
+      virtual const char * name() const  { return "atmospheric model"; }
   }; 
 
 
@@ -72,8 +73,10 @@ namespace AntarcticAtmosphere
 
       virtual int computeAtmosphere(double h, Pars * p) const; 
       
-      double min_height() const { return 2800; }
+      double max_unextrapolated_height() const { return N.GetX()[N.GetN()-1]; }
+      double min_height() const { return N.GetX()[0]; }
       bool ok() const { return loaded; } 
+      virtual const char * name() const { return my_name.Data(); }
  
     private: 
       bool loaded; 
@@ -81,6 +84,8 @@ namespace AntarcticAtmosphere
       TGraph T; 
       TGraph N; 
       TGraph rho; 
+      TString my_name; 
+      bool extrapolate;
       TF1 fit; 
   }; 
 
@@ -100,6 +105,7 @@ namespace AntarcticAtmosphere
       virtual ~StandardUS() { ;} 
 
       virtual int computeAtmosphere(double h, Pars * p) const; 
+      virtual const char * name() const { return "Standard US"; }
     protected: 
       double sea_level_T; 
       double sea_level_P; 
@@ -109,13 +115,16 @@ namespace AntarcticAtmosphere
   class ExponentialRefractivity : public StandardUS
   {
     public: 
-      ExponentialRefractivity(double a = 315, double b = 0.1361e-3) : StandardUS() {k_A = a ; k_B =b; }
+      ExponentialRefractivity(double a = 315, double b = 0.1361e-3) : StandardUS() {k_A = a ; k_B =b; my_name.Form("exponential refractivity, a = %g, b =%g", k_A, k_B); }
 
       virtual int computeAtmosphere(double h, Pars * p) const; 
       virtual double get(double h, Par p) const; 
       virtual ~ExponentialRefractivity() {; } 
+      virtual const char * name() const { return my_name.Data(); }
+
     protected:
      double k_A, k_B; 
+     TString my_name; 
 
   }; 
 

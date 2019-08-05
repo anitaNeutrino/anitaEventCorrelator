@@ -244,23 +244,28 @@ double AntarcticAtmosphere::MSLtoWGS84(double h, double lat, double lon, Geoid g
 #endif
 
 
-TGraph * AntarcticAtmosphere::AtmosphericModel::makeGraph(double hmin, double hmax, int nh, Par p) const
+TGraph * AntarcticAtmosphere::AtmosphericModel::makeGraph(double hmin, double hmax, int nh, Par p, bool alt_on_x) const
 { 
 
   TGraph * g = new TGraph(nh); 
-  g->GetXaxis()->SetTitle( p== DENSITY ? "Density (kg/m^3)" :
+  g->SetTitle(name()); 
+  (alt_on_x ? g->GetYaxis() : g->GetXaxis())->SetTitle( p== DENSITY ? "Density (kg/m^3)" :
                            p== PRESSURE ? "Pressure (kPa) " : 
                            p== TEMPERATURE ? "Temperature (K)" : 
-                           "(n  - 1) #times 10#{^6}"); 
+                           "(n  - 1) #times 10^{6}"); 
 
-  g->GetYaxis()->SetTitle("Height above MSL (m)"); 
+  (alt_on_x ? g->GetXaxis() : g->GetYaxis())->SetTitle("Height above MSL (m)"); 
+
 
   for (int i = 0; i < nh; i++)
   {
     double h = hmin + i*(hmax-hmin)/(nh-1); 
 
-    g->SetPoint(i, get(h,p), h); 
-
+    double val = get(h,p); 
+    if (alt_on_x) 
+      g->SetPoint(i, h,val); 
+    else
+      g->SetPoint(i, val,h); 
   }
 
   return g; 
@@ -326,7 +331,7 @@ int AntarcticAtmosphere::SPRadiosonde::computeAtmosphere(double h, Pars *p) cons
 
 
 
-AntarcticAtmosphere::SPRadiosonde::SPRadiosonde(int year, int mon, int day, bool early) 
+AntarcticAtmosphere::SPRadiosonde::SPRadiosonde(int year, int mon, int day, bool early)
   : fit("Nfit","expo",10e3,50e3) 
 {
   TString cmd; cmd.Form("curl %s/%d/%02d%02d%02d%02ddat.txt",sp_base,year,mon,day,year % 100, early? 0 :12); 
@@ -338,6 +343,8 @@ AntarcticAtmosphere::SPRadiosonde::SPRadiosonde(int year, int mon, int day, bool
     fprintf(stderr,"Haven't implemented parsing older radiosonde profiles yet...\n"); 
     return; 
   }
+
+  my_name.Form("SP Radiosonde %d-%d-%d %s", year,mon,day, early ? " early " : "late"); 
 
   //split into lines 
 
@@ -405,6 +412,6 @@ AntarcticAtmosphere::SPRadiosonde::SPRadiosonde(int year, int mon, int day, bool
   rho.SetBit(TGraph::kIsSortedX); 
 #endif
 
-  N.Fit(&fit,"R"); 
+    N.Fit(&fit,"RQ"); 
 }
 
