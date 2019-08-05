@@ -11,8 +11,16 @@
 #include <iostream>
 #include "TTimeStamp.h"
 #include "AnitaDataset.h"
+#include "FFTtools.h" 
 
 
+#ifdef ENABLE_VECTORIZE
+#include "vectormath_trig.h" 
+#define VEC_T double
+#define VEC_N 4
+#define VEC Vec4d 
+#define IVEC Vec4i 
+#endif
 
 
 
@@ -1611,6 +1619,96 @@ int UsefulAdu5Pat::astronomicalCoordinates(Double_t phiWave, Double_t thetaWave,
 #endif
 
 }
+int UsefulAdu5Pat::fromRADec(int N, const Double_t * RA, const Double_t * dec, Double_t * phi, Double_t *theta) const
+{
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,0,0)
+  std::cerr << "Your  version of ROOT does not support all the features of eventReaderRoot\n";
+  return 0;
+#else
+
+  TTimeStamp ts ( (time_t) realTime, (timeOfDay % 1000)  * 1e6);
+
+  //should this be AsLAST or AsLMST? Need to find a real astronomer
+  // Also, the UT1 offset seems like a royal pain
+  double lst = ts.AsLMST(longitude);
+
+  double lat = latitude * (M_PI /180); 
+  double sin_lat = sin(lat); 
+  double cos_lat = cos(lat); 
+
+
+
+  int istart = 0;
+#ifdef ENABLE_VECTORIZE
+  int nit = N / VEC_N; 
+
+  istart = nit * VEC_N; 
+
+  if (nit > 0)
+  {
+
+    VEC vheading(heading);
+    VEC vlst(lst); 
+    VEC vsin_lat(sin_lat);
+    VEC vcos_lat(cos_lat);
+    VEC vh; 
+    VEC vra; 
+    VEC vdec; 
+    VEC vcos_dec; 
+    VEC vsin_dec; 
+    VEC vcos_h; 
+    VEC vsin_h; 
+    VEC vel;
+    VEC vaz;
+    VEC vphi;
+    VEC vtheta;
+
+    for (int i = 0; i < nit; i++) 
+    {
+      vra.load(RA+i*VEC_N);
+      vdec.load(dec+i*VEC_N);
+      vh = vlst-vra; 
+      vh *= (M_PI/12); 
+      vdec *= M_PI/180; 
+
+      vcos_dec = cos(vdec); 
+      vsin_dec = sin(vdec); 
+      vcos_h = cos(vh); 
+      vsin_h = sin(vh); 
+
+      vaz = atan2(vcos_dec * vsin_h, -vcos_h * vsin_lat * vcos_dec + vsin_dec * vcos_lat);
+      vel = asin(vsin_lat * vsin_dec + vcos_lat * vcos_dec * vcos_h); 
+
+      vphi = vheading + vaz * 180/M_PI; 
+      vtheta = -vel * 180/M_PI; 
+      vphi = vphi - 360 * floor(vphi/360) ; 
+
+      vphi.store(phi+i*VEC_N);
+      vtheta.store(theta+i*VEC_N);
+    }
+
+  }
+#endif
+
+
+  for (int i = istart; i < N; i++) 
+  {
+    double h = lst - RA[i]; //hour angle 
+    h*= ( M_PI / 12);  //hour -> radians
+    double dc = dec[i] * M_PI/180; 
+
+    double Az = atan2( cos(dc) * sin(h), -cos(h) * sin_lat* cos(dc) + sin(dc) * cos_lat); 
+    double el = asin(sin_lat * sin(dc) + cos_lat * cos(dc) * cos(h)); 
+
+    phi[i] = FFTtools::wrap(heading + Az * (180/M_PI),360); 
+    theta[i] = - el * (180/M_PI); 
+  }
+  return 0; 
+#endif
+
+}
+
+
 
 int UsefulAdu5Pat::fromRADec(Double_t RA, Double_t dec, Double_t * phi, Double_t *theta) const
 {

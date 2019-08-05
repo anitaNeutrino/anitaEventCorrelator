@@ -382,7 +382,9 @@ class UsefulAdu5Pat: public Adu5Pat
    * @return 
    */
   int astronomicalCoordinates(Double_t phiWave, Double_t thetaWave, Double_t * RA = 0, Double_t * dec = 0, Double_t * l = 0, Double_t * b = 0) const; 
+
   int fromRADec (Double_t RA,  Double_t dec, Double_t *phi, Double_t *theta) const; 
+  int fromRADec (int N, const Double_t * RA,  const Double_t * dec, Double_t *phi, Double_t *theta) const; 
   
 
   /** 
