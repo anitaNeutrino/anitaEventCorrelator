@@ -82,15 +82,40 @@ static void init_hists()
 
 
 
-double Refraction::PositionIndependentModel::getElevationCorrection(const Adu5Pat * pat, const AntarcticCoord * source, double * correction_at_source)  const
+double Refraction::PositionIndependentModel::getElevationCorrection(const Adu5Pat * pat, const AntarcticCoord * source, double * correction_at_source, double dth)  const
 {
 
   PayloadParameters pp(pat,*source); 
   double H = AntarcticAtmosphere::WGS84toMSL(pat); 
   AntarcticCoord s = source->as(AntarcticCoord::WGS84); 
   double h = AntarcticAtmosphere::WGS84toMSL(s.x,s.y,s.z); 
-  return getElevationCorrection(pp.source_theta, h,H, correction_at_source); 
 
+  double last_corr = 0; 
+  double last_at_source= 0; 
+  double theta = pp.source_theta + dth; 
+  while(true) 
+  {
+
+    double at_source; 
+    double corr = getElevationCorrection(theta, h,H, &at_source); 
+
+    if (!isnan(corr))
+    {
+      last_corr = corr; 
+      last_at_source = at_source; 
+
+      if (theta + corr > pp.source_theta); 
+      break; 
+
+    }
+    else break; 
+
+    theta += dth; 
+  }
+  
+
+  if (correction_at_source) *correction_at_source = last_at_source; 
+  return last_corr; 
 }
 
 double Refraction::PGFit::getElevationCorrection(double theta, double h, double H, double * correction_at_source)  const
@@ -113,7 +138,6 @@ double Refraction::PGFit::getElevationCorrection(double theta, double h, double 
 } 
 
 
-const double REARTH = 6356e3; 
 const double speed_of_light=299792458; 
 int Refraction::RaytracerSpherical::raytrace(const Setup * setup, Result * result) 
 {
@@ -121,8 +145,8 @@ int Refraction::RaytracerSpherical::raytrace(const Setup * setup, Result * resul
   last_path_x.clear(); 
   last_path_y.clear(); 
 
-  double r0 = setup->start_alt + REARTH; 
-  double r1 = setup->end_alt + REARTH; 
+  double r0 = setup->start_alt + setup->R_c; 
+  double r1 = setup->end_alt + setup->R_c; 
   double theta = setup->thrown_payload_angle * TMath::DegToRad(); 
   double r = r0; 
   double phi=0; 
@@ -145,8 +169,8 @@ int Refraction::RaytracerSpherical::raytrace(const Setup * setup, Result * resul
     double dphi = step_size  / r; 
     double dr= step_size * tan(theta); 
 
-    double N = m->get(r-REARTH, AntarcticAtmosphere::REFRACTIVITY); 
-    double N1 = m->get(r-REARTH+dr, AntarcticAtmosphere::REFRACTIVITY); 
+    double N = m->get(r-setup->R_c, AntarcticAtmosphere::REFRACTIVITY); 
+    double N1 = m->get(r-setup->R_c+dr, AntarcticAtmosphere::REFRACTIVITY); 
     double DN = N1-N ;
     double dn = DN * 1e-6; 
     double n = 1 + N * 1e-6; 
@@ -183,7 +207,7 @@ int Refraction::RaytracerSpherical::raytrace(const Setup * setup, Result * resul
   result->y = y; 
   result->r = r; 
   result->actual_distance = dM; 
-  result->surface_distance = phi * REARTH; 
+  result->surface_distance = phi * setup->R_c; 
   result->apparent_source_angle = theta * TMath::RadToDeg(); 
   result->actual_source_angle = 90 - acos( (dx*x + dy*y) / (r * dM)) *TMath::RadToDeg(); 
   result->actual_payload_angle = 90 - acos(dy/dM) * TMath::RadToDeg(); 
@@ -197,7 +221,7 @@ void Refraction::RaytracerSpherical::draw()
   TGraph * g = new TGraph (last_path_x.size(), &last_path_x[0], &last_path_y[0]); 
   g->Draw("alp"); 
 
-  //TEllipse * e = new TEllipse(0,0,REARTH, REARTH); 
+  //TEllipse * e = new TEllipse(0,0,POLAR_C, POLAR_C); 
 //  e->SetLineColor(4); 
 //  e->Draw("lsame"); 
 
@@ -250,7 +274,7 @@ double Refraction::SphRay::getElevationCorrection(double el, double hSource, dou
 
   //compute the horizon angle at the ground 
   
-  double throw_angle = TMath::RadToDeg() * acos (  cos(el * TMath::DegToRad())  * (REARTH + hPayload) / (REARTH + hSource)  * (1 + 1e-6 * atm->get(hPayload, AntarcticAtmosphere::REFRACTIVITY)) /  (1 + 1e-6 * atm->get(hSource, AntarcticAtmosphere::REFRACTIVITY)));
+  double throw_angle = TMath::RadToDeg() * acos (  cos(el * TMath::DegToRad())  * (R_c + hPayload) / (R_c + hSource)  * (1 + 1e-6 * atm->get(hPayload, AntarcticAtmosphere::REFRACTIVITY)) /  (1 + 1e-6 * atm->get(hSource, AntarcticAtmosphere::REFRACTIVITY)));
 
   RaytracerSpherical::Setup s; 
   RaytracerSpherical::Result r; 
@@ -258,6 +282,7 @@ double Refraction::SphRay::getElevationCorrection(double el, double hSource, dou
   s.start_alt = hSource; 
   s.end_alt = hPayload; 
   s.thrown_payload_angle = throw_angle; 
+  s.R_c = R_c; 
 
   ray.raytrace(&s,&r); 
 
@@ -278,6 +303,39 @@ double Refraction::SphRay::getElevationCorrection(double el, double hSource, dou
 }
 
 
+void Refraction::SphRay::adjustLatitude(double lat, double bearing) 
+{
+  if (use_cache) 
+  {
+    TLockGuard l(&cache_lock); 
+    cache.clear(); 
+  }
+
+
+  const double a = 6378137.0 ;
+  const double b = 6356752.3;
+  const double ab = a*b; 
+  const double ab2inv = 1./(ab*ab); 
+  const double a2 = a*a; 
+  const double a2inv = 1./a2; 
+  const double b2 = b*b; 
+  double sin_lat = sin(lat*TMath::DegToRad()); 
+  double cos_lat = cos(lat*TMath::DegToRad()); 
+  double sin2_lat = sin_lat*sin_lat;
+  double cos2_lat = cos_lat*cos_lat; 
+
+  double arg = a2*cos2_lat + b2*sin2_lat; 
+  double Minv = ab2inv * pow(arg,1.5); 
+  double Ninv = a2inv * sqrt(arg); 
+
+  double sin_alpha = sin(bearing*TMath::DegToRad()); 
+  double cos_alpha = cos(bearing*TMath::DegToRad()); 
+  double sin2_alpha = sin_alpha*sin_alpha;
+  double cos2_alpha = cos_alpha*cos_alpha; 
+
+  R_c = pow(cos2_alpha*Minv + sin2_alpha*Ninv,-1);
+
+}
 
 
 

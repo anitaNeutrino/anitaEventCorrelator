@@ -141,8 +141,8 @@ PayloadParameters::PayloadParameters(const Adu5Pat * gps, const AntarcticCoord &
   {
     //We actually want the apparent anagle
     double payload_el_correction = 0;
-    source_theta -= refract->getElevationCorrection(gps, &source, &payload_el_correction); 
-    payload_el-= payload_el_correction; 
+    apparent_source_theta -= refract->getElevationCorrection(gps, &source, &payload_el_correction); 
+    apparent_payload_el+= payload_el_correction; 
   }
 
 
@@ -758,7 +758,7 @@ int PayloadParameters::findSourceOnContinent(double theta, double phi, const Adu
 
 
     //we found something that works
-    if (fabs(p->source_phi -phi) < tol && fabs(p->source_theta - theta) < tol && p->payload_el >= min_el) 
+    if (fabs(p->source_phi -phi) < tol && fabs(p->source_theta - theta) < tol && p->apparent_payload_el>= min_el) 
     {
       //check for a collision, 
       //then go to exit point? 

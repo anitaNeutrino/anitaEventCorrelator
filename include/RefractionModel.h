@@ -25,7 +25,7 @@ namespace Refraction
      * with respect to the apparent (true - apparent). 
      * Because I'm using the positive theta going down convention, this should be positive (the real theta is lower than the apparent). 
      * */ 
-    virtual double getElevationCorrection(const Adu5Pat * pat, const AntarcticCoord * source, double * correction_at_source = 0) const = 0; 
+    virtual double getElevationCorrection(const Adu5Pat * pat, const AntarcticCoord * source, double * correction_at_source = 0, double dth = 0.01) const = 0; 
 
 
   }; 
@@ -45,7 +45,7 @@ namespace Refraction
   //  TGraph * makeGraph(double hSource, double hPayload, double minEl = 0); 
 
     /* Implemented in terms of the other prototpe */ 
-    virtual double getElevationCorrection(const Adu5Pat * pat, const AntarcticCoord * source, double * correction_at_source = 0)const ; 
+    virtual double getElevationCorrection(const Adu5Pat * pat, const AntarcticCoord * source, double * correction_at_source = 0, double dth = 0.01) const ; 
   }; 
 
 
@@ -75,11 +75,12 @@ namespace Refraction
      struct Setup
        
      {
-       Setup() : start_alt(0) , end_alt(40e3), thrown_payload_angle(1), save_path(true)  {;} 
+       Setup() : start_alt(0) , end_alt(40e3), thrown_payload_angle(1), save_path(true), R_c(6399593.6258)  {;} 
        double start_alt; 
        double end_alt; 
        double thrown_payload_angle; 
        bool save_path; 
+       double R_c; 
      };
 
      struct Result
@@ -129,8 +130,9 @@ namespace Refraction
       SphRay(const AntarcticAtmosphere::AtmosphericModel * a = &AntarcticAtmosphere::ITURefractivity() , double step_size = 10, bool cache_similar = true)  
         : atm(a), step(step_size), use_cache(cache_similar) 
       {
-
+        adjustLatitude(-90,0); 
       }
+      void adjustLatitude(double lat, double bearing); 
       void changeAtmosphere(const AntarcticAtmosphere::AtmosphericModel * a) { atm = a; }
       virtual double getElevationCorrection(double el, double hSource, double hPayload, double * correction_at_source = 0) const ; 
       virtual ~SphRay() {; } 
@@ -140,6 +142,7 @@ namespace Refraction
       double step;
       bool use_cache; 
       mutable TMutex cache_lock; 
+      double R_c; 
       mutable std::map<UInt_t, std::pair<double,double> > cache; 
 
       ClassDef(SphRay,1); 
