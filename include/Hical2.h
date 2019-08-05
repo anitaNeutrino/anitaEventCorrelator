@@ -85,6 +85,6 @@ private:
   //HCHKTree *hc2bhk=new HCHKTree();
 
 
-  ClassDef(Hical2, 1);
+  ClassDef(Hical2, 2);
 };
 #endif

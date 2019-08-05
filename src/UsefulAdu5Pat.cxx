@@ -13,7 +13,6 @@
 #include "AnitaDataset.h"
 #include "FFTtools.h" 
 
-
 #ifdef ENABLE_VECTORIZE
 #include "vectormath_trig.h" 
 #define VEC_T double
@@ -1555,6 +1554,9 @@ int UsefulAdu5Pat::astronomicalCoordinates(Double_t phiWave, Double_t thetaWave,
 
   lst*= ( M_PI / 12);  //hour -> radians
   double RA = lst -h;
+
+  // Perform wrapping if RA is not within the expected range
+  RA = FFTtools::wrap(RA,2*TMath::Pi());
 
   if (RA_ptr) *RA_ptr = RA * 12 / M_PI;
   if (dec_ptr) *dec_ptr = dec* 180 / M_PI;
