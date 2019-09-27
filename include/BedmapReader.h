@@ -54,6 +54,15 @@ class BedmapReader// : public TObject
 		  
 		  Double_t& lon, 
 		  Double_t& lat);
+
+  void EaNoToLonLat(Double_t easting, 
+		    Double_t northing, 
+		    
+		    Double_t& lon, 
+		    Double_t& lat);
+
+
+
   void SurfaceENtoLonLat(Int_t e,
 			 Int_t n,
 			 
@@ -66,11 +75,24 @@ class BedmapReader// : public TObject
 		  
 		  int& e_coord, 
 		  int& n_coord);
+
+  void LonLattoEaNo(Double_t lon, 
+		  Double_t lat,
+		  
+		  double& ea, 
+		  double& no);
+
   void SurfaceLonLattoEN(Double_t lon,
 			 Double_t lat,
 			 
 			 int& e_coord,
 			 int& n_coord);
+
+  void ENtoEaNo(Int_t e_coord, 
+		Int_t n_coord, 
+
+		Double_t& es, 
+		Double_t& no);
   
   //Data Output methods
   

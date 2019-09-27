@@ -360,23 +360,50 @@ Double_t BedmapReader::Area(Double_t latitude) {
 void BedmapReader::LonLattoEN(Double_t lon, Double_t lat, Double_t xLowerLeft, Double_t yLowerLeft, int& e_coord, int& n_coord) {
   //takes as input a latitude and longitude (in degrees) and converts to indicies for BEDMAP matricies. Needs a location for the corner of the matrix, as not all the BEDMAP files cover the same area.  Code by Stephen Hoover.
 
-  Double_t easting=0;
-  Double_t northing=0;
+  double ea,no;
 
-  Double_t lon_rad = lon * TMath::DegToRad(); //convert to radians
-  Double_t lat_rad = -lat * TMath::DegToRad();
+  LonLattoEaNo(lon, lat, ea, no);
 
-  bedmap_R = scale_factor*bedmap_c_0 * pow(( (1 + eccentricity*sin(lat_rad)) / (1 - eccentricity*sin(lat_rad)) ),eccentricity/2) * tan((TMath::Pi()/4) - lat_rad/2);
-
-  easting = bedmap_R * sin(lon_rad);
-  northing = bedmap_R * cos(lon_rad);
-
-  e_coord = (int)((easting - xLowerLeft) / cellSize);
-  n_coord = (int)((-1*northing - yLowerLeft) / cellSize);
+  e_coord = (int)((ea - xLowerLeft) / cellSize);
+  n_coord = (int)((-1*no - yLowerLeft) / cellSize);
 
   return;
 } //method LonLattoEN
+//void BedmapReader::LonLattoEN(Double_t lon, Double_t lat, Double_t xLowerLeft, Double_t yLowerLeft, int& e_coord, int& n_coord) {
+////takes as input a latitude and longitude (in degrees) and converts to indicies for BEDMAP matricies. Needs a location for the corner of the matrix, as not all the BEDMAP files cover the same area.  Code by Stephen Hoover.
 
+//  Double_t easting=0;
+//  Double_t northing=0;
+
+//  Double_t lon_rad = lon * TMath::DegToRad(); //convert to radians
+//  Double_t lat_rad = -lat * TMath::DegToRad();
+
+//  bedmap_R = scale_factor*bedmap_c_0 * pow(( (1 + eccentricity*sin(lat_rad)) / (1 - eccentricity*sin(lat_rad)) ),eccentricity/2) * tan((TMath::Pi()/4) - lat_rad/2);
+
+//  easting = bedmap_R * sin(lon_rad);
+//  northing = bedmap_R * cos(lon_rad);
+
+//  e_coord = (int)((easting - xLowerLeft) / cellSize);
+//  n_coord = (int)((-1*northing - yLowerLeft) / cellSize);
+
+//  return;
+//} //method LonLattoEN
+void BedmapReader::LonLattoEaNo(Double_t lon, Double_t lat, double& ea, double& no) {
+// same as LonLattoEN, but returns easting/northing instead of indices
+  
+  ea=0;
+  no=0;
+  
+  Double_t lon_rad = lon * TMath::DegToRad(); //convert to radians
+  Double_t lat_rad = -lat * TMath::DegToRad();
+  
+  bedmap_R = scale_factor*bedmap_c_0 * pow(( (1 + eccentricity*sin(lat_rad)) / (1 - eccentricity*sin(lat_rad)) ),eccentricity/2) * tan((TMath::Pi()/4) - lat_rad/2);
+  
+  ea = bedmap_R * sin(lon_rad);
+  no = bedmap_R * cos(lon_rad);
+  
+  return;
+} //method LonLattoEaNo
 
 
 
@@ -387,32 +414,25 @@ void BedmapReader::SurfaceLonLattoEN(Double_t lon, Double_t lat, int& e_coord, i
 }//SurfaceLonLattoEN
 
 
-
-//_______________________________________________________________________________
-void BedmapReader::ENtoLonLat(Int_t e_coord, Int_t n_coord, Double_t xLowerLeft, Double_t yLowerLeft, Double_t& lon, Double_t& lat) {
+void BedmapReader::EaNoToLonLat(Double_t easting, Double_t northing, Double_t& lon, Double_t& lat) {
   //Takes as input the indicies from a BEDMAP data set, and turns them into latitude and longitude coordinates.  Information on which data set (surface data, ice depth, water depth) is necessary, in the form of coordinates of a corner of the map.  Code by Stephen Hoover.
 
   Double_t isometric_lat=0;
-  Double_t easting = xLowerLeft+(cellSize*(e_coord+0.5)); //Add offset of 0.5 to get coordinates of middle of cell instead of edges.
-  Double_t northing = -1*(yLowerLeft+(cellSize*(n_coord+0.5)));
-
   //first set longitude
-
   if (northing!=0)
     lon = atan(easting/northing);
   else
     lon = 90*TMath::DegToRad();
-
-
+  
   if (easting > 0 && lon < 0) //adjust sign of longitude
     lon += TMath::Pi();
   else if (easting < 0 && lon > 0)
     lon -= TMath::Pi();
   else if (easting == 0 && northing < 0)
     lon += TMath::Pi();
-
+  
   //now find latitude
-
+  
   if (easting != 0)
     bedmap_R = TMath::Abs(easting/sin(lon));
   else if (easting == 0 && northing != 0)
@@ -422,13 +442,26 @@ void BedmapReader::ENtoLonLat(Int_t e_coord, Int_t n_coord, Double_t xLowerLeft,
     lon = lon*TMath::RadToDeg();
     return;
   } //else
-
+  
   isometric_lat = (TMath::Pi()/2) - 2*atan(bedmap_R/(scale_factor*bedmap_c_0));
-
+  
   lat = isometric_lat + bedmap_a_bar*sin(2*isometric_lat) + bedmap_b_bar*sin(4*isometric_lat) + bedmap_c_bar*sin(6*isometric_lat) + bedmap_d_bar*sin(8*isometric_lat);
-
+  
   lon = lon * TMath::RadToDeg();  //convert to degrees
   lat =  -lat*TMath::RadToDeg(); //convert to degrees, with -90 degrees at the south pole
+  return;
+} //method ENtoLonLat
+
+//_______________________________________________________________________________
+void BedmapReader::ENtoLonLat(Int_t e_coord, Int_t n_coord, Double_t xLowerLeft, Double_t yLowerLeft, Double_t& lon, Double_t& lat) {
+  //Takes as input the indicies from a BEDMAP data set, and turns them into latitude and longitude coordinates.  Information on which data set (surface data, ice depth, water depth) is necessary, in the form of coordinates of a corner of the map.  Code by Stephen Hoover.
+
+  Double_t isometric_lat=0;
+  Double_t easting = xLowerLeft+(cellSize*(e_coord+0.5)); //Add offset of 0.5 to get coordinates of middle of cell instead of edges.
+  Double_t northing = -1*(yLowerLeft+(cellSize*(n_coord+0.5)));
+
+  EaNoToLonLat(easting, northing, lon, lat);
+
   return;
 } //method ENtoLonLat
 
@@ -507,4 +540,13 @@ TGaxis *BedmapReader::distanceScale(Double_t xMin,Double_t xMax,Double_t yMin,Do
   theAxis->SetTitle("km");
 
   return theAxis;
+}
+
+
+  
+
+  
+void BedmapReader::ENtoEaNo(Int_t e_coord, Int_t n_coord, Double_t& es, Double_t& no) {
+  es = xLowerLeft_surface + double(cellSize) * e_coord;
+  no = -(yLowerLeft_surface + double(cellSize) * n_coord);
 }
