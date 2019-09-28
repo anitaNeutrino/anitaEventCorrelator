@@ -199,6 +199,7 @@ void radiosondeRaytrace(double direct_angle = -5.9,  double dtheta=1e-5,  int ns
     s.end_alt = 40e3; 
 
     bool going_up = true; 
+    double real_dtheta =dtheta; 
     while(true) 
     {
       s.thrown_payload_angle += going_up ? dtheta : -dtheta; 
@@ -315,6 +316,7 @@ void radiosondeRaytrace(double direct_angle = -5.9,  double dtheta=1e-5,  int ns
 
     }
 
+    dtheta = real_dtheta; 
     printf("Stopped at %g\n", s.thrown_payload_angle); 
 
     tplot->Fill(); 
