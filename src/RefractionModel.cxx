@@ -143,7 +143,11 @@ int Refraction::RaytracerSpherical::raytrace(const Setup * setup, Result * resul
 {
 
   last_path_x.clear(); 
+  last_path_X.clear(); 
   last_path_y.clear(); 
+  last_path_s.clear(); 
+  last_path_t.clear(); 
+  last_R_c = setup->R_c; 
 
   double r0 = setup->start_alt + setup->R_c; 
   double r1 = setup->end_alt + setup->R_c; 
@@ -157,17 +161,36 @@ int Refraction::RaytracerSpherical::raytrace(const Setup * setup, Result * resul
   double y= y0; 
   result->ray_distance = 0; 
   result->ray_time = 0; 
+  result->reflected = false;
+  result->reflection_angle =-1;
+  result->reflect_xy[0] = 0;
+  result->reflect_xy[1] = 0;
+
+  double reflect_r = setup->R_c + setup->surface_alt; 
+  double X = 0;//realy the complement grammage here 
 
   while (r <= r1) 
   {
 
     last_path_x.push_back(x); 
+    last_path_X.push_back(X); 
     last_path_y.push_back(y); 
-
+    last_path_s.push_back(result->ray_distance); 
+    last_path_t.push_back(result->ray_time); 
     // we want to step in r  dphi 
 
     double dphi = step_size  / r; 
     double dr= step_size * tan(theta); 
+
+    bool am_reflecting = false; 
+    // check if we are going to bounce off 
+    if (r+dr < reflect_r)
+    {
+      am_reflecting = true; 
+      dr = reflect_r-r; 
+      double temp_step_size = dr/tan(theta); 
+      dphi = temp_step_size / r; 
+    }
 
     double N = m->get(r-setup->R_c, AntarcticAtmosphere::REFRACTIVITY); 
     double N1 = m->get(r-setup->R_c+dr, AntarcticAtmosphere::REFRACTIVITY); 
@@ -179,7 +202,9 @@ int Refraction::RaytracerSpherical::raytrace(const Setup * setup, Result * resul
 //    printf("%g %g %g\n", r,theta,dtheta); 
 
     double dL = sqrt((r*dphi)*(r*dphi) + dr*dr); 
+    double rho = m->get(r-setup->R_c,AntarcticAtmosphere::DENSITY); 
     result->ray_distance += dL; 
+    X += dL*rho;
     result->ray_time += dL * n / speed_of_light; 
 //    printf("%g %g %g %g\n",dphi,dtheta, phi,theta); 
     theta += dtheta; 
@@ -187,11 +212,27 @@ int Refraction::RaytracerSpherical::raytrace(const Setup * setup, Result * resul
     r += dr; 
     x = r* sin(phi); 
     y = r* cos(phi); 
+
+    if (am_reflecting) 
+    {
+      //grammage no longer makes sense. set it to 0 here and everywhere before; 
+      X = 0; 
+      for (unsigned i =0; i < last_path_X.size(); i++) last_path_X[i] = 0; 
+      theta = -theta; 
+      result->reflected = true; 
+      result->reflection_angle = theta * TMath::RadToDeg();
+      result->reflect_xy[0] = x; 
+      result->reflect_xy[1] = y; 
+    }
   }
 
   last_path_x.push_back(x); 
   last_path_y.push_back(y); 
+  last_path_s.push_back(result->ray_distance); 
+  last_path_t.push_back(result->ray_time); 
+  last_path_X.push_back(X); 
 
+  for (unsigned i = 0; i < last_path_X.size();i++) last_path_X[i]=X-last_path_X[i]; 
   double dx = x- x0; 
   double dy = y- y0; 
   double dM  = sqrt(dx*dx + dy*dy); 
@@ -216,17 +257,79 @@ int Refraction::RaytracerSpherical::raytrace(const Setup * setup, Result * resul
 
 
 
-void Refraction::RaytracerSpherical::draw() 
+TGraph* Refraction::RaytracerSpherical::makeXYGraph(TGraph * g) const
 {
-  TGraph * g = new TGraph (last_path_x.size(), &last_path_x[0], &last_path_y[0]); 
-  g->Draw("alp"); 
-
+  if (!g) return new TGraph (last_path_x.size(), &last_path_x[0], &last_path_y[0]); 
+  g->Set(last_path_x.size()); 
+  memcpy(g->GetY(), &last_path_y[0], g->GetN()*sizeof(double));
+  memcpy(g->GetX(), &last_path_x[0], g->GetN()*sizeof(double));
+  return g; 
   //TEllipse * e = new TEllipse(0,0,POLAR_C, POLAR_C); 
 //  e->SetLineColor(4); 
 //  e->Draw("lsame"); 
 
 }
+TGraph* Refraction::RaytracerSpherical::makeXTGraph(TGraph *g) const
+{
+  if (!g) return new TGraph (last_path_x.size(), &last_path_x[0], &last_path_t[0]); 
+  g->Set(last_path_x.size()); 
+  memcpy(g->GetY(), &last_path_t[0], g->GetN()*sizeof(double));
+  memcpy(g->GetX(), &last_path_x[0], g->GetN()*sizeof(double));
+  return g; 
+ 
+}
 
+
+TGraph * Refraction::RaytracerSpherical::makePhiAltGraph(TGraph * g)  const
+{
+
+  if (!g) g = new TGraph(last_path_x.size()); 
+  else g->Set(last_path_x.size()); 
+
+  for (int i = 0; i < g->GetN(); i++) 
+  {
+    g->SetPoint(i, 90-atan2(last_path_y[i], last_path_x[i])*TMath::RadToDeg(), sqrt(last_path_x[i]*last_path_x[i] + last_path_y[i]*last_path_y[i])- last_R_c);
+  }
+  return g; 
+}
+
+TGraph* Refraction::RaytracerSpherical::makeSTGraph(TGraph *g) const
+{
+  if (!g) return new TGraph (last_path_x.size(), &last_path_s[0], &last_path_t[0]); 
+  g->Set(last_path_x.size()); 
+  memcpy(g->GetY(), &last_path_t[0], g->GetN()*sizeof(double));
+  memcpy(g->GetX(), &last_path_s[0], g->GetN()*sizeof(double));
+  return g; 
+}
+
+
+double Refraction::RaytracerSpherical::lastMinAlt() const 
+{
+  if (!nSteps()) return -9999; 
+
+  double R2min = last_path_x[0]*last_path_x[0] + last_path_y[0] * last_path_y[0]; 
+
+  for (int i =1; i < nSteps(); i++) 
+  {
+    double R2= last_path_x[i]*last_path_x[i] + last_path_y[i] * last_path_y[i]; 
+    if (R2 < R2min) R2min = R2; 
+  }
+
+  return sqrt(R2min) - last_R_c; 
+}
+
+TGraph* Refraction::RaytracerSpherical::makeRTGraph(TGraph * g) const
+{
+  if (!g) g = new TGraph (last_path_t.size());
+  else g->Set(last_path_t.size()); 
+
+  for (int i = 0; i < g->GetN(); i++) 
+  {
+    g->SetPoint(i,last_path_t[i],sqrt(last_path_x[i]*last_path_x[i] + last_path_y[i]*last_path_y[i]) -last_R_c);
+  }
+  return g;
+
+}
 
 
 double Refraction::SphRay::getElevationCorrection(double el, double hSource, double hPayload, double * correction_at_source ) const

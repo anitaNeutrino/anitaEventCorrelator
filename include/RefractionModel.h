@@ -75,12 +75,13 @@ namespace Refraction
      struct Setup
        
      {
-       Setup() : start_alt(0) , end_alt(40e3), thrown_payload_angle(1), save_path(true), R_c(6399593.6258)  {;} 
+       Setup() : start_alt(0) , end_alt(40e3), thrown_payload_angle(1), save_path(true), R_c(6399593.6258), surface_alt(0)  {;} 
        double start_alt; 
        double end_alt; 
        double thrown_payload_angle; 
        bool save_path; 
        double R_c; 
+       double surface_alt;
      };
 
      struct Result
@@ -92,6 +93,9 @@ namespace Refraction
        double surface_distance; 
        double ray_distance; 
        double ray_time; 
+       bool reflected; 
+       double reflection_angle; 
+       double reflect_xy[2]; 
        double x,y,r; 
        double last_dx;
        double last_dy;
@@ -105,15 +109,29 @@ namespace Refraction
      double step_size; 
 
      int nSteps() const { return (int) last_path_x.size(); }
-     const double * lastY() { return &last_path_y[0]; } 
-     const double * lastX() { return &last_path_x[0]; } 
+     const double * lastY() const { return &last_path_y[0]; } 
+     const double * lastX() const { return &last_path_x[0]; } 
 
-     void draw(); 
+     //this is the grammage from the end of the path to the beginning
+     const double * lastGrammage() const { return &last_path_X[0]; } 
+     const double * lastS() const { return &last_path_s[0]; } 
+     const double * lastT() const { return &last_path_t[0]; } 
+     double lastMinAlt() const; 
+
+     TGraph * makeXYGraph(TGraph * g = 0) const; 
+     TGraph * makeXTGraph(TGraph * g = 0) const; 
+     TGraph * makeSTGraph(TGraph * g = 0) const; 
+     TGraph * makeRTGraph(TGraph * g = 0) const; 
+     TGraph * makePhiAltGraph(TGraph * g = 0) const; 
 
     private: 
      const AntarcticAtmosphere::AtmosphericModel *m; 
      std::vector<double> last_path_x; 
+     std::vector<double> last_path_t; 
+     std::vector<double> last_path_s; 
      std::vector<double> last_path_y; 
+     std::vector<double> last_path_X; 
+     double last_R_c; 
   }; 
 
  /** This will use spherical raytracing to compute the correction 
