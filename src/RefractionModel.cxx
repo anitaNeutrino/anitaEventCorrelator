@@ -204,6 +204,7 @@ int Refraction::RaytracerSpherical::raytrace(const Setup * setup, Result * resul
     double dL = sqrt((r*dphi)*(r*dphi) + dr*dr); 
     double rho = m->get(r-setup->R_c,AntarcticAtmosphere::DENSITY); 
     result->ray_distance += dL; 
+    if (rho < 0) rho = 0; 
     X += dL*rho;
     result->ray_time += dL * n / speed_of_light; 
 //    printf("%g %g %g %g\n",dphi,dtheta, phi,theta); 
