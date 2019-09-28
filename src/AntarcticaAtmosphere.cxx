@@ -85,8 +85,10 @@ static int us_atmosphere(double alt_km, double * rel_rho,double * rel_P, double 
   return 0; 
 }
 
-int AntarcticAtmosphere::StandardUS::computeAtmosphere(double h, Pars *p) const 
+int AntarcticAtmosphere::StandardUS::computeAtmosphere(double h, Pars *p, double phi) const 
 {
+
+  (void) phi; 
 
   int ret = us_atmosphere(h/1e3, &p->rho, &p->P, &p->T); 
   p->T *= sea_level_T; 
@@ -105,9 +107,9 @@ double AntarcticAtmosphere::ArtificialInversion::correction(double h) const
 }
 
 
-int AntarcticAtmosphere::ArtificialInversion::computeAtmosphere(double h, Pars *p) const 
+int AntarcticAtmosphere::ArtificialInversion::computeAtmosphere(double h, Pars *p, double phi) const 
 {
-
+  (void) phi; 
   int ret = m.computeAtmosphere(h,p); 
   p->T   *= correction(h);
   p->rho *= correction(h); 
@@ -115,8 +117,9 @@ int AntarcticAtmosphere::ArtificialInversion::computeAtmosphere(double h, Pars *
   return ret; 
 }
 
-double AntarcticAtmosphere::ArtificialInversion::get(double h, Par p)  const
+double AntarcticAtmosphere::ArtificialInversion::get(double h, Par p, double phi)  const
 {
+  (void) phi; 
   //short circuilt easy calculation 
   if (p == REFRACTIVITY) return m.get(h,p) * correction(h); 
   else if (p == TEMPERATURE) return m.get(h,p) * correction(h); 
@@ -126,8 +129,9 @@ double AntarcticAtmosphere::ArtificialInversion::get(double h, Par p)  const
 
 
 
-int AntarcticAtmosphere::ExponentialRefractivity::computeAtmosphere(double h, Pars *p) const 
+int AntarcticAtmosphere::ExponentialRefractivity::computeAtmosphere(double h, Pars *p, double phi) const 
 {
+  (void) phi; 
 
   int ret = us_atmosphere(h/1e3, &p->rho, &p->P, &p->T); 
   p->T *= sea_level_T; 
@@ -137,8 +141,9 @@ int AntarcticAtmosphere::ExponentialRefractivity::computeAtmosphere(double h, Pa
   return ret; 
 }
 
-double AntarcticAtmosphere::ExponentialRefractivity::get(double h, Par p)  const
+double AntarcticAtmosphere::ExponentialRefractivity::get(double h, Par p, double phi)  const
 {
+  (void) phi; 
   //short circuilt easy calculation 
   if (p == REFRACTIVITY) return k_A * exp(-k_B* h) ; 
   Pars x; 
@@ -244,7 +249,7 @@ double AntarcticAtmosphere::MSLtoWGS84(double h, double lat, double lon, Geoid g
 #endif
 
 
-TGraph * AntarcticAtmosphere::AtmosphericModel::makeGraph(double hmin, double hmax, int nh, Par p, bool alt_on_x) const
+TGraph * AntarcticAtmosphere::AtmosphericModel::makeGraph(double hmin, double hmax, int nh, Par p, bool alt_on_x, double phi) const
 { 
 
   TGraph * g = new TGraph(nh); 
@@ -261,7 +266,7 @@ TGraph * AntarcticAtmosphere::AtmosphericModel::makeGraph(double hmin, double hm
   {
     double h = hmin + i*(hmax-hmin)/(nh-1); 
 
-    double val = get(h,p); 
+    double val = get(h,p,phi); 
     if (alt_on_x) 
       g->SetPoint(i, h,val); 
     else
@@ -272,10 +277,10 @@ TGraph * AntarcticAtmosphere::AtmosphericModel::makeGraph(double hmin, double hm
 }
 
 
-double AntarcticAtmosphere::AtmosphericModel::get(double h, Par p)  const
+double AntarcticAtmosphere::AtmosphericModel::get(double h, Par p, double phi)  const
 {
   Pars x; 
-  computeAtmosphere(h,&x); 
+  computeAtmosphere(h,&x,phi); 
   switch (p)
   {
     case DENSITY: 
@@ -320,8 +325,9 @@ struct atm_meas
 
 
 
-int AntarcticAtmosphere::SPRadiosonde::computeAtmosphere(double h, Pars *p) const
+int AntarcticAtmosphere::SPRadiosonde::computeAtmosphere(double h, Pars *p, double phi) const
 {
+  (void) phi;
   p->rho = rho.Eval(h); 
   p->P = P.Eval(h); 
   p->T = T.Eval(h); 
@@ -334,7 +340,10 @@ int AntarcticAtmosphere::SPRadiosonde::computeAtmosphere(double h, Pars *p) cons
 AntarcticAtmosphere::SPRadiosonde::SPRadiosonde(int year, int mon, int day, bool early)
   : fit("Nfit","expo",10e3,50e3) 
 {
-  TString cmd; cmd.Form("curl %s/%d/%02d%02d%02d%02ddat.txt",sp_base,year,mon,day,year % 100, early? 0 :12); 
+  int late_time = 12; 
+  TString cmd; 
+  char * local_dir = getenv("RADIOSONDE_DIR"); 
+  cmd.Form("%s %s/%d/%02d%02d%02d%02ddat.txt",local_dir ? "cat " : "curl", local_dir ? local_dir : sp_base,year,mon,day,year % 100, early? 0 :late_time); 
   TString data = gSystem->GetFromPipe(cmd.Data()); 
   loaded = false; 
 
@@ -414,4 +423,63 @@ AntarcticAtmosphere::SPRadiosonde::SPRadiosonde(int year, int mon, int day, bool
 
     N.Fit(&fit,"RQ"); 
 }
+
+
+int AntarcticAtmosphere::InterpolatedAtmosphere::computeAtmosphere(double h, Pars * p, double phi) const
+{
+  //find the two atmospheres to interpolate in between 
+
+  if (atms.size()==0) return 1; 
+
+  if (atms.size()==1) 
+  {
+    (*atms.begin()).second->computeAtmosphere(h,p,phi); 
+    return 0; 
+  }
+
+  //otherwise let's find the bounds
+
+  std::set<std::pair<double,const AtmosphericModel*> >::const_iterator it = atms.lower_bound(std::pair<double,const AtmosphericModel*>(phi,0)); 
+
+  //this means our phi is smaller than the minimum
+  if (it == atms.begin()) 
+  {
+    (*atms.begin()).second->computeAtmosphere(h,p,phi); 
+    return 0; 
+  }
+
+  //this means our phi is bigger than maximum
+  if (it == atms.end()) //our phi is greater than the last one 
+  {
+
+    (*atms.rbegin()).second->computeAtmosphere(h,p,phi); 
+    return 0; 
+  }
+
+
+  //otherwise we want to interpolate between the two 
+  double phi1 = (*it).first; 
+  const AtmosphericModel * m1 =(*it).second;
+  it--; 
+  double phi0 = (*it).first; 
+  const AtmosphericModel * m0 =(*it).second;
+
+  double frac= phi1==phi0 ? 0.5: (phi-phi0)/(phi1-phi0); 
+
+//  printf("%g | %g %g %g | %g\n", h, phi, phi0, phi1,frac); 
+  Pars p0; 
+  Pars p1; 
+
+  m0->computeAtmosphere(h,&p0,phi);
+  m1->computeAtmosphere(h,&p1,phi);
+
+  p->rho = p0.rho * (1-frac) + frac*p1.rho; 
+  p->P = p0.P * (1-frac) + frac*p1.P; 
+  p->T = p0.T * (1-frac) + frac*p1.T; 
+  p->N = p0.N * (1-frac) + frac*p1.N; 
+
+  return 0; 
+
+}
+
 

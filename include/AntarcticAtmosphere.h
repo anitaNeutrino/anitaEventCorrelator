@@ -9,6 +9,9 @@
 
 #include "TGraph.h" 
 #include "TF1.h" 
+#include <set> 
+#include <utility>
+
 
 class Adu5Pat; 
 namespace AntarcticAtmosphere
@@ -53,15 +56,27 @@ namespace AntarcticAtmosphere
 
   class AtmosphericModel 
   {
-    public: 
-      virtual int computeAtmosphere(double h, Pars * p) const= 0; 
-      virtual double get(double h, Par p) const; 
-      TGraph * makeGraph(double hmin, double hmax, int nh, Par P, bool alt_on_x=true) const; 
+    public:   
+      //h in m (msl), phi in radians (for position-dependent models. most models this has no effect) 
+      virtual int computeAtmosphere(double h, Pars * p, double phi = 0) const= 0; 
+      virtual double get(double h, Par p, double phi = 0) const; 
+      TGraph * makeGraph(double hmin, double hmax, int nh, Par P, bool alt_on_x=true, double phi = 0) const; 
       virtual ~AtmosphericModel() { ; }
       virtual const char * name() const  { return "atmospheric model"; }
   }; 
 
 
+
+  class InterpolatedAtmosphere : public AtmosphericModel
+  {
+
+    public: 
+      InterpolatedAtmosphere() {;} 
+      void addModel(const AtmosphericModel * m, double phi) { atms.insert(std::pair<double,const AtmosphericModel *>(phi,m));}
+      virtual int computeAtmosphere(double h, Pars * p, double phi = 0) const; 
+    private: 
+      std::set<std::pair<double, const AtmosphericModel *> > atms; 
+  }; 
 
 
   class SPRadiosonde : public AtmosphericModel
@@ -71,12 +86,14 @@ namespace AntarcticAtmosphere
       /** This will download and use data from south pole radiosondes  */ 
       SPRadiosonde(int year, int month, int day, bool early = true); 
 
-      virtual int computeAtmosphere(double h, Pars * p) const; 
+      virtual int computeAtmosphere(double h, Pars * p, double phi = 0) const; 
       
       double max_unextrapolated_height() const { return N.GetX()[N.GetN()-1]; }
       double min_height() const { return N.GetX()[0]; }
       bool ok() const { return loaded; } 
       virtual const char * name() const { return my_name.Data(); }
+
+      const TGraph * raw_N() const { return &N ; }
  
     private: 
       bool loaded; 
@@ -104,7 +121,7 @@ namespace AntarcticAtmosphere
       }
       virtual ~StandardUS() { ;} 
 
-      virtual int computeAtmosphere(double h, Pars * p) const; 
+      virtual int computeAtmosphere(double h, Pars * p, double phi = 0) const; 
       virtual const char * name() const { return "Standard US"; }
     protected: 
       double sea_level_T; 
@@ -117,8 +134,8 @@ namespace AntarcticAtmosphere
     public: 
       ExponentialRefractivity(double a = 315, double b = 0.1361e-3) : StandardUS() {k_A = a ; k_B =b; my_name.Form("exponential refractivity, a = %g, b =%g", k_A, k_B); }
 
-      virtual int computeAtmosphere(double h, Pars * p) const; 
-      virtual double get(double h, Par p) const; 
+      virtual int computeAtmosphere(double h, Pars * p, double phi = 0) const; 
+      virtual double get(double h, Par p, double phi = 0) const; 
       virtual ~ExponentialRefractivity() {; } 
       virtual const char * name() const { return my_name.Data(); }
 
@@ -138,8 +155,8 @@ namespace AntarcticAtmosphere
     public: 
       ArtificialInversion(const AtmosphericModel & base, double max_height, double max_ampl)  
         : m(base), hmax(max_height), Amax(max_ampl)  {; } 
-      virtual int computeAtmosphere(double h, Pars * p) const; 
-      virtual double get(double h, Par p) const; 
+      virtual int computeAtmosphere(double h, Pars * p, double phi = 0) const; 
+      virtual double get(double h, Par p, double phi = 0) const; 
     private: 
       const AtmosphericModel & m;
       double hmax; 
