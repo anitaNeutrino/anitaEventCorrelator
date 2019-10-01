@@ -167,7 +167,7 @@ int Refraction::RaytracerSpherical::raytrace(const Setup * setup, Result * resul
   result->reflect_xy[1] = 0;
 
   double reflect_r = setup->R_c + setup->surface_alt; 
-  double X = 0;//realy the complement grammage here 
+  double X = 0;//really the complement grammage here 
 
   while (r <= r1) 
   {
