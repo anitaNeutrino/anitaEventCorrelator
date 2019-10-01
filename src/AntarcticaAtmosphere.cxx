@@ -255,7 +255,7 @@ TGraph * AntarcticAtmosphere::AtmosphericModel::makeGraph(double hmin, double hm
   TGraph * g = new TGraph(nh); 
   g->SetTitle(name()); 
   (alt_on_x ? g->GetYaxis() : g->GetXaxis())->SetTitle( p== DENSITY ? "Density (kg/m^3)" :
-                           p== PRESSURE ? "Pressure (kPa) " : 
+                           p== PRESSURE ? "Pressure (hPa) " : 
                            p== TEMPERATURE ? "Temperature (K)" : 
                            "(n  - 1) #times 10^{6}"); 
 
@@ -397,7 +397,7 @@ AntarcticAtmosphere::SPRadiosonde::SPRadiosonde(int year, int mon, int day, bool
 
     m.N = 77.6 * m.P / m.T - 5.6 * e / m.T + 3e5 * e / (m.T*m.T); 
 
-    m.rho = (m.P) / (287.058 *m.T); //ignore wet for now since the air is plenty dry 
+    m.rho = (m.P*100) / (287.058 *m.T); //ignore wet for now since the air is plenty dry 
     v.push_back(m); 
      
   }
