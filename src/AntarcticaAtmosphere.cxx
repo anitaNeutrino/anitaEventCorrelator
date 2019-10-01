@@ -328,17 +328,21 @@ struct atm_meas
 int AntarcticAtmosphere::SPRadiosonde::computeAtmosphere(double h, Pars *p, double phi) const
 {
   (void) phi;
-  p->rho = rho.Eval(h); 
-  p->P = P.Eval(h); 
-  p->T = T.Eval(h); 
-  p->N = h > N.GetX()[N.GetN()-1] ? fit.Eval(h) : N.Eval(h); 
+  p->rho = h > rho.GetX()[rho.GetN()-1] ? rhofit.Eval(h) : rho.Eval(h); 
+  p->P = h > P.GetX()[P.GetN()-1] ? Pfit.Eval(h) : P.Eval(h); 
+  p->T = h > T.GetX()[T.GetN()-1] ? Tfit.Eval(h) : T.Eval(h); 
+  p->N = h > N.GetX()[N.GetN()-1] ? Nfit.Eval(h) : N.Eval(h); 
   return 0; 
 }
 
 
 
 AntarcticAtmosphere::SPRadiosonde::SPRadiosonde(int year, int mon, int day, bool early)
-  : fit("Nfit","expo",10e3,50e3) 
+  : 
+    Nfit("Nfit","expo",10e3,50e3) ,
+    Pfit("Pfit","expo",10e3,50e3) ,
+    Tfit("Tfit","expo",10e3,50e3) ,
+    rhofit("rhofit","expo",10e3,50e3) 
 {
   int late_time = 12; 
   TString cmd; 
@@ -421,7 +425,10 @@ AntarcticAtmosphere::SPRadiosonde::SPRadiosonde(int year, int mon, int day, bool
   rho.SetBit(TGraph::kIsSortedX); 
 #endif
 
-    N.Fit(&fit,"RQ"); 
+    N.Fit(&Nfit,"RQ"); 
+    P.Fit(&Pfit,"RQ"); 
+    T.Fit(&Tfit,"RQ"); 
+    rho.Fit(&rhofit,"RQ"); 
 }
 
 

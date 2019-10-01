@@ -102,8 +102,10 @@ namespace AntarcticAtmosphere
       TGraph N; 
       TGraph rho; 
       TString my_name; 
-      bool extrapolate;
-      TF1 fit; 
+      TF1 Nfit; 
+      TF1 Pfit; 
+      TF1 Tfit; 
+      TF1 rhofit; 
   }; 
 
 
