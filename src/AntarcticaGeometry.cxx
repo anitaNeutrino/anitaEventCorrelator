@@ -431,6 +431,18 @@ void AntarcticSegmentationScheme::Draw(const char * opt, const double * data, co
 }
 
 
+void AntarcticSegmentationScheme::fillHistogram(TH2 * h, const double * data, AntarcticCoord::CoordType type, double noval) const
+{
+
+  for (int i = 1; i <= h->GetNbinsX(); i++) 
+  {
+    for (int j = 1; j <= h->GetNbinsY(); j++) 
+    {
+      AntarcticCoord here(type, h->GetXaxis()->GetBinCenter(i), h->GetYaxis()->GetBinCenter(j),0); 
+      h->SetBinContent(i,j, interpolate(here, data, noval)); 
+    }
+  }
+}
 
 StereographicGrid::StereographicGrid(int NX, int NY, double MAX_E, double MAX_N)
   : AntarcticSegmentationScheme(), nx(NX), ny(NY), max_E(MAX_E), max_N(MAX_N) 
@@ -464,6 +476,42 @@ void StereographicGrid::getSegmentCenter(int idx, AntarcticCoord * fillme, bool 
   double z = fillalt ? getSurface<4> (dataset).compute(x,y): 0; 
   fillme->set(AntarcticCoord::STEREOGRAPHIC,x,y,z); 
 }
+
+
+double StereographicGrid::interpolate(AntarcticCoord where, const double * data, double noval) const 
+{
+  AntarcticCoord stereo = where.as(AntarcticCoord::STEREOGRAPHIC); 
+  return interpolate(stereo.x, stereo.y,data,noval); 
+}
+
+double StereographicGrid::interpolate(double x, double y, const double * data, double noval) const
+{
+  if (x <= -max_E || x >= max_E || y <= -max_N || y >= max_N) return noval; 
+
+  double flx = (x+max_E)/dx; 
+  double fly = (-y+max_N)/dy; 
+
+
+  int lx = flx;
+  int ly = fly; 
+
+  double fx = flx-lx;
+  double fy = fly-ly;
+
+  int i11 = lx + ly*nx; 
+  int i21 = lx + ly*nx+1; 
+  int i12 = lx + (ly+1)*nx; 
+  int i22 = lx + (ly+1)*nx+1; 
+
+  double v11 = data[i11]; 
+  double v21 = data[i21]; 
+  double v12 = data[i12]; 
+  double v22 = data[i22]; 
+
+  return ( v11 * (1-fx)*(1-fy) + v22 * fx * fy + v12 * (1-fx)*fy + v21 * fx*(1-fy)); 
+}
+
+
 
 
 AntarcticCoord * StereographicGrid::sampleSegment(int idx, int N, AntarcticCoord * fill, bool random, bool fillalt) const 

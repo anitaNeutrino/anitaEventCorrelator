@@ -72,6 +72,26 @@ class BedmapReader// : public TObject
 			 int& e_coord,
 			 int& n_coord);
   
+  //Added for BinnedAnalysis - JCF 9/27/2021
+  void EaNoToLonLat(Double_t easting, 
+		    Double_t northing,
+ 
+		    Double_t& lon, 
+		    Double_t& lat);
+
+  void LonLattoEaNo(Double_t lon, 
+		    Double_t lat,
+ 
+		    double& ea, 
+		    double& no);
+
+  void ENtoEaNo(Int_t e_coord, 
+		Int_t n_coord,
+ 
+		Double_t& es, 
+		Double_t& no);
+  //End BinnedAnalysis additions  
+
   //Data Output methods
   
   Double_t Surface(Double_t longitude, Double_t latitude);

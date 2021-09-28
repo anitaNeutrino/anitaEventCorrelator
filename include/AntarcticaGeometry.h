@@ -156,6 +156,11 @@ class AntarcticSegmentationScheme {
      */ 
     virtual int getNeighbors(int segment, std::vector<int> * neighbors = NULL) const = 0; 
 
+
+    /** Interpolate data at where. If outside of range, noval is returned. */
+    virtual double interpolate(AntarcticCoord where, const double * data, double noval = 0) const = 0;
+    void fillHistogram(TH2 * h, const double * data, AntarcticCoord::CoordType type = AntarcticCoord::STEREOGRAPHIC, double noval = 0) const; 
+
     /** Sample N coordinates within this segment. Will allocate N coords fillus is null. If random is true, random sampling, otherwise some uniformish type 
      *
      * If fillalt, will also fill altitude using RampdemReader (which will be somewhat slower) , otherwise sets it to equivalent of 0 
@@ -201,6 +206,8 @@ class StereographicGrid : public AntarcticSegmentationScheme
     virtual AntarcticCoord * sampleSegment(int idx, int N, AntarcticCoord * fillus = 0, bool random = true, bool fillalt = true) const; 
     virtual void Draw(const char * opt = "colz", const double * data = 0, const double * range = 0) const; 
     
+    virtual double interpolate(AntarcticCoord where, const double * data, double noval = 0) const; 
+    virtual double interpolate(double x, double y, const double * data, double noval = 0) const; 
 
     virtual void asString(TString * str) const; 
   private:
