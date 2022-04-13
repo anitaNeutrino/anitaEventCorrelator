@@ -21,8 +21,7 @@ using namespace BaseList;
 #endif
 
 
-static void fillBases(std::vector<base> & baseList, int anita) 
-{
+static void fillBases(std::vector<base> & baseList, int anita) {
 
   TString fname; 
   // fname.Form("%s/share/anitaCalib/baseListA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
@@ -30,20 +29,18 @@ static void fillBases(std::vector<base> & baseList, int anita)
   TString oldPwd = gDirectory->GetPath();
   TFile fbase(fname.Data()); 
 
-  if (!fbase.IsOpen())
-  {
-    fprintf(stderr,"Couldn't load base list for ANITA %d. Sorry :(\n", anita); 
+  if (!fbase.IsOpen()) {
+  
+    fprintf(stderr,"Couldn't load base list for ANITA %d. Sorry :(\n", anita);
+    
     return;
   }
 
   //now load each tree 
-
-
   TIter iter(fbase.GetListOfKeys()); 
   TKey *k; 
 
-  while ((k = (TKey *) iter()))
-  {
+  while ((k = (TKey *) iter())) {
 
     //only read in TTrees 
     TClass * cl = gROOT->GetClass(k->GetClassName()); 
@@ -62,47 +59,50 @@ static void fillBases(std::vector<base> & baseList, int anita)
     t->SetBranchAddress("fullLong",&lon); 
     t->SetBranchAddress("alt",&alt);
 
-    for (int i = 0; i < t->GetEntries(); i++) 
-    {
+    for (int i = 0; i < t->GetEntries(); i++) {
+    
       t->GetEntry(i); 
       baseList.push_back(base(TString(*str_name), source, lat,lon,alt)); 
     }
   }
+  
   fbase.Close();
   gDirectory->cd(oldPwd);
 }
 
 
-static void fillPaths(std::vector<path> & pathList, int anita) 
-{
+static void fillPaths(std::vector<path> & pathList, int anita) {
 
   TString fname; 
   fname.Form("%s/share/anitaCalib/transientListRestrictedA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
 
   //see if we have the restricted list
 
-  if (access(fname.Data(),R_OK))
-  {
-    fprintf(stderr,"Couldn't find restricted list for ANITA %d (%s).  Will try to load unrestricted list. \n", anita, fname.Data()); 
+  if (access(fname.Data(), R_OK)) {
+  
+    fprintf(stderr,"Couldn't find restricted list for ANITA %d (%s).  Will try to load unrestricted list. \n", anita, fname.Data());
+    
     fname.Form("%s/share/anitaCalib/transientListUnrestrictedA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
   }
+  
   TString oldPwd = gDirectory->GetPath();
 
   TFile fpath(fname.Data()); 
 
-  if (!fpath.IsOpen())
-  {
-    fprintf(stderr,"Couldn't find unrestricted list for ANITA %d (%s).  Sorry :( \n", anita,  fname.Data()); 
+  if (!fpath.IsOpen()) {
+  
+    fprintf(stderr,"Couldn't find unrestricted list for ANITA %d (%s).  Sorry :( \n", anita,  fname.Data());
+    
     return; 
   }
 
   TIter iter(fpath.GetListOfKeys()); 
-  TKey *k; 
-  while ((k = (TKey *) iter()))
-  {
+  TKey *k;
+  
+  while ((k = (TKey *) iter())) {
   
     //only read in TTrees 
-    TClass * cl = gROOT->GetClass(k->GetClassName()); 
+    TClass * cl = gROOT -> GetClass(k->GetClassName());
     if (!cl->InheritsFrom("TTree")) continue; 
 
     TTree * t = (TTree*) k->ReadObj(); 
@@ -118,29 +118,21 @@ static void fillPaths(std::vector<path> & pathList, int anita)
     // At the time of writing, the flight trees are:
     // AADTree, USAPFlightRestrTree, USAPFlightUnrestrTree
     Int_t isFlight = 0;
-    if(source.Contains("AAD") || source.Contains("Flight")){
-      isFlight = 1;
-    }
+    if (source.Contains("AAD") || source.Contains("Flight")) isFlight = 1;
 
-    // well,  I guess these trees are not as nicely normalized as the others.
-    t->SetBranchAddress("callSign",callsign_buf); 
-    if (!t->GetBranch("fullLong")) //this tree has no position data. ignore it
-    {
-      continue ; 
-    }
+    t->SetBranchAddress("callSign", callsign_buf);
 
+    // well, I guess these trees are not as nicely normalized as the others.
+    if (!t->GetBranch("fullLong")) continue;  // If this tree has no position data, ignore it.
 
-    t->SetBranchAddress("fullLong",&lon); 
-    t->SetBranchAddress("fullLat",&lat); 
-    t->SetBranchAddress("timeUTC",&time); 
+    t->SetBranchAddress("fullLong", & lon); 
+    t->SetBranchAddress("fullLat", & lat); 
+    t->SetBranchAddress("timeUTC", & time); 
 
-    if (t->GetBranch("altitude")) // the traverse has no altitude data. Have no fear, we can fill it in ourselves. 
-    {
-      t->SetBranchAddress("altitude",&alt); 
-    }
+    if (t->GetBranch("altitude")) t->SetBranchAddress("altitude", & alt);  // The traverse has no altitude data. Have no fear, we can fill it in ourselves.
 
-    for (int i = 0; i < t->GetEntries(); i++) 
-    {
+    for (int i = 0; i < t->GetEntries(); i++) {
+    
       t->GetEntry(i); 
       TString callsign = callsign_buf;
 
@@ -148,90 +140,142 @@ static void fillPaths(std::vector<path> & pathList, int anita)
       UInt_t unsignedTime = time;
       Double_t doubleAlt = alt;
 
-      if(lat >= -90){ // skip unphysical error values
+      if (lat >= -90){ // skip unphysical error values
 
 	path tempPath(TString(callsign.Data()), source, 1, &lat, &lon, &doubleAlt, &unsignedTime);
+	
 	tempPath.isFlight = isFlight;
+	
 	std::vector<path>::iterator it = std::find_if(pathList.begin(), pathList.end(), tempPath);
-	if(it != pathList.end()){
+	if (it != pathList.end()) {
+	
 	  it->ts.push_back(tempPath.ts.at(0));
 	  it->ps.push_back(tempPath.ps.at(0));
-	}
-	else{
-	  pathList.push_back(tempPath);
-	}
+
+	} else pathList.push_back(tempPath);
 	// std::cout << lon << "\t" << lat << "\t" << callsign.Data() << std::endl;
       }
     }
   }
+  
   fpath.Close();
   gDirectory->cd(oldPwd);
-  
 }
+
+
+//  When including paths with time dependence isn't contriubting significantly to clustering, instead include the waypoints as static bases.
+
+static void fillPathsAsBases(std::vector<base> & pathList, int anita) {
+
+  TString fname;  
+  fname.Form("%s/share/anitaCalib/transientListRestrictedA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
+  TString oldPwd = gDirectory->GetPath();
+  TFile fbase(fname.Data()); 
+
+  if (!fbase.IsOpen())
+  {
+    fprintf(stderr,"Couldn't load base list for ANITA %d. Sorry :(\n", anita);
+    
+    return;
+  }
+
+  //now load each tree 
+
+  TIter iter(fbase.GetListOfKeys()); 
+  TKey *k; 
+
+  while ((k = (TKey *) iter())) {
+
+    //only read in TTrees 
+    TClass * cl = gROOT->GetClass(k->GetClassName()); 
+    if (!cl->InheritsFrom("TTree")) continue; 
+
+    TTree * t = (TTree*) k->ReadObj(); 
+    TString source = t->GetName(); 
+
+    std::string * str_name = 0; 
+    double lon; 
+    double lat; 
+    double alt; 
+
+    t->SetBranchAddress("name",&str_name); 
+    t->SetBranchAddress("fullLat",&lat); 
+    t->SetBranchAddress("fullLong",&lon); 
+    t->SetBranchAddress("alt",&alt);
+
+    for (int i = 0; i < t->GetEntries(); i++) {
+    
+      t->GetEntry(i); 
+      baseList.push_back(base(TString(*str_name), source, lat,lon,alt)); 
+    }
+  }
+  
+  fbase.Close();
+  gDirectory->cd(oldPwd);
+}
+
 
 // some annoying intermediate classes to be able to use magic statics 
 
 static std::vector<base> no_bases; 
 static std::vector<path> no_paths; 
 
-struct baselist_impl 
-{
+
+struct baselist_impl {
+
   baselist_impl(int anita) 
   {
     fillBases(bases, anita); 
   }
+  
   std::vector<base> bases; 
-
 }; 
 
-struct pathlist_impl 
-{
-  pathlist_impl(int anita) 
+
+struct pathlist_impl {
+
+  pathlist_impl(int anita, bool as_bases) 
   {
-    fillPaths(paths, anita); 
+    if (as_bases) fillPathsAsBases(paths, anita); 
+    else fillPaths(paths, anita);
   }
+  
   std::vector<path> paths; 
-
 }; 
 
 
+static std::vector<base> & bases() {
 
-static std::vector<base> & bases()
-{
-  if (AnitaVersion::get() == 2) 
-  {
+  if (AnitaVersion::get() == 2) {
+  
     static baselist_impl bl(2); 
     return bl.bases; 
-  }
 
-  else if (AnitaVersion::get() == 3) 
-  {
+  } else if (AnitaVersion::get() == 3) {
+  
     static baselist_impl bl(3); 
-    return bl.bases; 
+    return bl.bases;
 
-  }
-  else if (AnitaVersion::get() == 4) 
-  {
+  } else if (AnitaVersion::get() == 4) {
+  
     static baselist_impl bl(4); 
     return bl.bases; 
   }
-
 
   fprintf(stderr,"Don't have bases for %d\n", AnitaVersion::get()); 
   return no_bases; 
 }
 
-static std::vector<path> & paths()
-{
 
-  if (AnitaVersion::get() == 3) 
-  {
+static std::vector<path> & paths() {
+
+  if (AnitaVersion::get() == 3) {
+  
     static pathlist_impl pl(3); 
     return pl.paths; 
 
-  }
-  else if (AnitaVersion::get() == 4) 
-  {
+  } else if (AnitaVersion::get() == 4) {
+  
     static pathlist_impl pl(4); 
     return pl.paths; 
   }
@@ -240,17 +284,20 @@ static std::vector<path> & paths()
   return no_paths; 
 }
 
+
 const BaseList::base& BaseList::getBase(UInt_t index){ 
 
   index = index < bases().size() ? index : 0;
   return bases().at(index);
 }
 
+
 const BaseList::path& BaseList::getPath(UInt_t index){
 
   index = index < paths().size() ? index : 0;
   return paths().at(index);
 }
+
 
 const BaseList::abstract_base& BaseList::getAbstractBase(UInt_t index){
 
@@ -263,26 +310,28 @@ size_t BaseList::getNumBases(){
   return bases().size();
 }
 
+
 size_t BaseList::getNumPaths() {
   return paths().size();
 }
+
 
 size_t BaseList::getNumAbstractBases(){
   return bases().size() + paths().size();
 }
 
 
+void BaseList::makeBaseList() {
 
-void BaseList::makeBaseList()
-{
   makeEmptyBaseList(); 
-  fillBases(bases(), AnitaVersion::get()); 
-  fillPaths(paths(), AnitaVersion::get()); 
+  fillBases(bases(), AnitaVersion::get());
+  if (as_bases) fillPathsAsBases(paths(), AnitaVersion::get());
+  else fillPaths(paths(), AnitaVersion::get());
 }
 
 
-void BaseList::makeEmptyBaseList()
-{
+void BaseList::makeEmptyBaseList() {
+
   bases().clear(); //DESTROY ALL THE BASES FOR SOME REASON  
 }
 
@@ -291,18 +340,14 @@ BaseList::path::path(const TString & name, TString & source,
                  int npoints, const double  * lat, const double * lon,
                  const double * alt,  const unsigned  * time)  
 
-
-  : name(name) , dataSource(source), ts(time, time + npoints) 
-{
+  : name(name) , dataSource(source), ts(time, time + npoints) {
 
   ps.reserve(npoints); 
-  for (int i = 0; i < npoints; i++) 
-  {
+  for (int i = 0; i < npoints; i++) {
+  
     ps.push_back(AntarcticCoord(AntarcticCoord::WGS84, lat[i], lon[i], alt[i]));
 //    ps[i].to(AntarcticCoord::CARTESIAN);  //save as cartesian
   }
-
-
 }
 
  
@@ -413,58 +458,54 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
 }
 
 
-
-
-int BaseList::findBases(const char * query, std::vector<int> * matches, bool include_paths) 
-{
+int BaseList::findBases(const char * query, std::vector<int> * matches, bool include_paths) {
 
   int first_found = -1; 
-  for (unsigned i = 0; i < include_paths ? getNumAbstractBases() : getNumBases(); i++)
-  {
+  for (unsigned i = 0; i < include_paths ? getNumAbstractBases() : getNumBases(); i++) {
+  
     const abstract_base & a = getAbstractBase(i); 
 
-    if (strcasestr(a.getName(), query))
-    {
-      if (first_found < 0) first_found = i; 
-      if (matches)
-      {
-        matches->push_back(i); 
-      }
+    if (strcasestr(a.getName(), query)) {
+    
+      if (first_found < 0) first_found = i;
+      
+      if (matches) matches->push_back(i);
       else break; 
     }
   }
+  
   return first_found; 
-
 } 
 
-void BaseList::base::Draw(const char * opt) const
-{
+
+void BaseList::base::Draw(const char * opt) const {
+
   AntarcticCoord stereo = position.as(AntarcticCoord::STEREOGRAPHIC); 
 
-  if (strchr(opt,'p'))
-  {
+  if (strchr(opt,'p')) {
+  
     TMarker * m = new TMarker(stereo.x, stereo.y, 2); 
     m->SetBit(kCanDelete); 
     m->AppendPad(); 
   }
 
-  if (strchr(opt,'t'))
-  {
+  if (strchr(opt,'t')) {
+  
     TText * t = new TText(stereo.x + 50e3, stereo.y, getName()); 
     t->SetBit(kCanDelete); 
     t->AppendPad(); 
   }
-
 } 
 
-void BaseList::path::Draw(const char * opt) const
-{
 
-  if (strchr(opt,'p') || strchr(opt,'l'))
-  {
+void BaseList::path::Draw(const char * opt) const {
+
+  if (strchr(opt,'p') || strchr(opt,'l')) {
+  
     TGraph * g = new TGraph; 
-    for (unsigned i = 0; i < ps.size(); i++)
-    {
+    
+    for (unsigned i = 0; i < ps.size(); i++) {
+    
       AntarcticCoord stereo = ps[i].as(AntarcticCoord::STEREOGRAPHIC); 
       g->SetPoint(i, stereo.x, stereo.y); 
     }
@@ -473,12 +514,11 @@ void BaseList::path::Draw(const char * opt) const
      g->AppendPad(opt); 
   }
 
-  if (strchr(opt,'t'))
-  {
+  if (strchr(opt,'t')) {
+  
     AntarcticCoord stereo = ps[0].as(AntarcticCoord::STEREOGRAPHIC); 
     TText * t = new TText(stereo.x+50e3, stereo.y, getName()); 
     t->SetBit(kCanDelete); 
     t->AppendPad(); 
   }
-
 }
