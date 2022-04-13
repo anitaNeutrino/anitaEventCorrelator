@@ -108,7 +108,7 @@ static void fillPaths(std::vector<path> & pathList, int anita) {
     TTree * t = (TTree*) k->ReadObj(); 
 
     TString source = t->GetName(); 
-    char callsign_buf[1024]; // 
+    char callsign_buf[1024];
     double lon; 
     double lat; 
     int alt = -1000; 
@@ -193,20 +193,20 @@ static void fillPathsAsBases(std::vector<base> & pathList, int anita) {
     TTree * t = (TTree*) k->ReadObj(); 
     TString source = t->GetName(); 
 
-    std::string * str_name = 0; 
+    std::string * callSign = 0; 
     double lon; 
     double lat; 
     double alt; 
 
-    t->SetBranchAddress("name",&str_name); 
-    t->SetBranchAddress("fullLat",&lat); 
-    t->SetBranchAddress("fullLong",&lon); 
-    t->SetBranchAddress("alt",&alt);
+    t->SetBranchAddress("callSign", & callSign); 
+    t->SetBranchAddress("fullLat", & lat); 
+    t->SetBranchAddress("fullLong", & lon); 
+    t->SetBranchAddress("alt", & alt);
 
     for (int i = 0; i < t->GetEntries(); i++) {
     
       t->GetEntry(i); 
-      baseList.push_back(base(TString(*str_name), source, lat,lon,alt)); 
+      baseList.push_back(base(TString(* callSign), source, lat,lon,alt)); 
     }
   }
   
