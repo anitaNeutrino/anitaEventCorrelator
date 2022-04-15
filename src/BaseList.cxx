@@ -276,7 +276,7 @@ void BaseList::makeBaseList() {
 
   makeEmptyBaseList(); 
   fillBases(bases(), AnitaVersion::get());
-  fillPathsAsBases(paths(), AnitaVersion::get(), as_bases);
+  fillPaths(paths(), AnitaVersion::get(), as_bases);
 }
 
 
