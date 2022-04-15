@@ -15,7 +15,6 @@
 
 using namespace BaseList;
 
-
 #ifndef DEG2RAD
 #define DEG2RAD M_PI / 180
 #endif
@@ -44,34 +43,35 @@ static void fillBases(std::vector<base> & baseList, int anita) {
 
     //only read in TTrees 
     TClass * cl = gROOT->GetClass(k->GetClassName()); 
-    if (!cl->InheritsFrom("TTree")) continue; 
+    if (!cl -> InheritsFrom("TTree")) continue; 
 
-    TTree * t = (TTree*) k->ReadObj(); 
-    TString source = t->GetName(); 
+    TTree * t = (TTree *) k -> ReadObj(); 
+    TString source = t -> GetName(); 
 
     std::string * str_name = 0; 
     double lon; 
     double lat; 
     double alt; 
 
-    t->SetBranchAddress("name",&str_name); 
-    t->SetBranchAddress("fullLat",&lat); 
-    t->SetBranchAddress("fullLong",&lon); 
-    t->SetBranchAddress("alt",&alt);
+    t->SetBranchAddress("name", & str_name); 
+    t->SetBranchAddress("fullLat", & lat); 
+    t->SetBranchAddress("fullLong", & lon); 
+    t->SetBranchAddress("alt", & alt);
 
     for (int i = 0; i < t->GetEntries(); i++) {
     
-      t->GetEntry(i); 
-      baseList.push_back(base(TString(*str_name), source, lat,lon,alt)); 
+      t -> GetEntry(i); 
+      baseList.push_back(base(TString(* str_name), source, lat, lon, alt)); 
     }
   }
   
   fbase.Close();
-  gDirectory->cd(oldPwd);
+  gDirectory -> cd(oldPwd);
 }
 
 
-static void fillPaths(std::vector<path> & pathList, int anita) {
+//  When including paths with time dependence isn't contriubting significantly to clustering, instead include the waypoints as static bases.
+static void fillPaths(std::vector<path> & pathList, int anita, bool as_bases = false) {
 
   TString fname; 
   fname.Form("%s/share/anitaCalib/transientListRestrictedA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
@@ -85,7 +85,7 @@ static void fillPaths(std::vector<path> & pathList, int anita) {
     fname.Form("%s/share/anitaCalib/transientListUnrestrictedA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
   }
   
-  TString oldPwd = gDirectory->GetPath();
+  TString oldPwd = gDirectory -> GetPath();
 
   TFile fpath(fname.Data()); 
 
@@ -102,7 +102,7 @@ static void fillPaths(std::vector<path> & pathList, int anita) {
   while ((k = (TKey *) iter())) {
   
     //only read in TTrees 
-    TClass * cl = gROOT -> GetClass(k->GetClassName());
+    TClass * cl = gROOT -> GetClass(k -> GetClassName());
     if (!cl->InheritsFrom("TTree")) continue; 
 
     TTree * t = (TTree*) k->ReadObj(); 
@@ -131,86 +131,38 @@ static void fillPaths(std::vector<path> & pathList, int anita) {
 
     if (t->GetBranch("altitude")) t->SetBranchAddress("altitude", & alt);  // The traverse has no altitude data. Have no fear, we can fill it in ourselves.
 
-    for (int i = 0; i < t->GetEntries(); i++) {
+    for (int i = 0; i < t -> GetEntries(); i++) {
     
-      t->GetEntry(i); 
+      t->GetEntry(i);
+
       TString callsign = callsign_buf;
 
-      // silly type conversion
-      UInt_t unsignedTime = time;
-      Double_t doubleAlt = alt;
+      if (!as_bases) {
+      
+        // silly type conversion
+        UInt_t unsignedTime = time;
+        Double_t doubleAlt = alt;
 
-      if (lat >= -90){ // skip unphysical error values
+        if (lat >= -90) { // skip unphysical error values
 
-	path tempPath(TString(callsign.Data()), source, 1, &lat, &lon, &doubleAlt, &unsignedTime);
-	
-	tempPath.isFlight = isFlight;
-	
-	std::vector<path>::iterator it = std::find_if(pathList.begin(), pathList.end(), tempPath);
-	if (it != pathList.end()) {
-	
-	  it->ts.push_back(tempPath.ts.at(0));
-	  it->ps.push_back(tempPath.ps.at(0));
+	  path tempPath(TString(callsign.Data()), source, 1, & lat, & lon, & doubleAlt, & unsignedTime);
+  	  
+	  tempPath.isFlight = isFlight;
+	  
+	  std::vector<path>::iterator it = std::find_if(pathList.begin(), pathList.end(), tempPath);
+	  if (it != pathList.end()) {
+  	  
+	    it->ts.push_back(tempPath.ts.at(0));
+	    it->ps.push_back(tempPath.ps.at(0));
 
-	} else pathList.push_back(tempPath);
-	// std::cout << lon << "\t" << lat << "\t" << callsign.Data() << std::endl;
-      }
+	  } else pathList.push_back(tempPath);
+	  // std::cout << lon << "\t" << lat << "\t" << callsign.Data() << std::endl;
+        }
+      } else pathList.push_back(base(callsign, source, lat, lon, alt));
     }
   }
   
   fpath.Close();
-  gDirectory->cd(oldPwd);
-}
-
-
-//  When including paths with time dependence isn't contriubting significantly to clustering, instead include the waypoints as static bases.
-
-static void fillPathsAsBases(std::vector<base> & pathList, int anita) {
-
-  TString fname;  
-  fname.Form("%s/share/anitaCalib/transientListRestrictedA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
-  TString oldPwd = gDirectory->GetPath();
-  TFile fbase(fname.Data()); 
-
-  if (!fbase.IsOpen())
-  {
-    fprintf(stderr,"Couldn't load base list for ANITA %d. Sorry :(\n", anita);
-    
-    return;
-  }
-
-  //now load each tree 
-
-  TIter iter(fbase.GetListOfKeys()); 
-  TKey *k; 
-
-  while ((k = (TKey *) iter())) {
-
-    //only read in TTrees 
-    TClass * cl = gROOT->GetClass(k->GetClassName()); 
-    if (!cl->InheritsFrom("TTree")) continue; 
-
-    TTree * t = (TTree*) k->ReadObj(); 
-    TString source = t->GetName(); 
-
-    std::string * callSign = 0; 
-    double lon; 
-    double lat; 
-    double alt; 
-
-    t->SetBranchAddress("callSign", & callSign); 
-    t->SetBranchAddress("fullLat", & lat); 
-    t->SetBranchAddress("fullLong", & lon); 
-    t->SetBranchAddress("alt", & alt);
-
-    for (int i = 0; i < t->GetEntries(); i++) {
-    
-      t->GetEntry(i); 
-      baseList.push_back(base(TString(* callSign), source, lat,lon,alt)); 
-    }
-  }
-  
-  fbase.Close();
   gDirectory->cd(oldPwd);
 }
 
@@ -236,8 +188,7 @@ struct pathlist_impl {
 
   pathlist_impl(int anita, bool as_bases) 
   {
-    if (as_bases) fillPathsAsBases(paths, anita); 
-    else fillPaths(paths, anita);
+    fillPaths(paths, anita, as_bases);
   }
   
   std::vector<path> paths; 
@@ -325,8 +276,7 @@ void BaseList::makeBaseList() {
 
   makeEmptyBaseList(); 
   fillBases(bases(), AnitaVersion::get());
-  if (as_bases) fillPathsAsBases(paths(), AnitaVersion::get());
-  else fillPaths(paths(), AnitaVersion::get());
+  fillPathsAsBases(paths(), AnitaVersion::get(), as_bases);
 }
 
 
