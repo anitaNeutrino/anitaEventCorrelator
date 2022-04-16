@@ -222,12 +222,12 @@ static std::vector<path> & paths() {
 
   if (AnitaVersion::get() == 3) {
   
-    static pathlist_impl pl(3); 
+    static pathlist_impl pl(3, as_bases); 
     return pl.paths; 
 
   } else if (AnitaVersion::get() == 4) {
   
-    static pathlist_impl pl(4); 
+    static pathlist_impl pl(4, as_bases); 
     return pl.paths; 
   }
 
