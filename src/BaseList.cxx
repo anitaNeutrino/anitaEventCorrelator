@@ -71,7 +71,7 @@ static void fillBases(std::vector<base> & baseList, int anita) {
 
 
 //  When including paths with time dependence isn't contriubting significantly to clustering, instead include the waypoints as static bases.
-static void fillPaths(std::vector<path> & pathList, int anita, bool as_bases = false) {
+static void fillPaths(std::vector<path> & pathList, int anita, bool asBases = false) {
 
   TString fname; 
   fname.Form("%s/share/anitaCalib/transientListRestrictedA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
@@ -137,7 +137,7 @@ static void fillPaths(std::vector<path> & pathList, int anita, bool as_bases = f
 
       TString callsign = callsign_buf;
 
-      if (!as_bases) {
+      if (!asBases) {
       
         // silly type conversion
         UInt_t unsignedTime = time;
@@ -186,9 +186,9 @@ struct baselist_impl {
 
 struct pathlist_impl {
 
-  pathlist_impl(int anita, bool as_bases) 
+  pathlist_impl(int anita, bool asBases) 
   {
-    fillPaths(paths, anita, as_bases);
+    fillPaths(paths, anita, asBases);
   }
   
   std::vector<path> paths; 
@@ -222,12 +222,12 @@ static std::vector<path> & paths() {
 
   if (AnitaVersion::get() == 3) {
   
-    static pathlist_impl pl(3, as_bases); 
+    static pathlist_impl pl(3, asBases); 
     return pl.paths; 
 
   } else if (AnitaVersion::get() == 4) {
   
-    static pathlist_impl pl(4, as_bases); 
+    static pathlist_impl pl(4, asBases); 
     return pl.paths; 
   }
 
@@ -272,11 +272,11 @@ size_t BaseList::getNumAbstractBases(){
 }
 
 
-void BaseList::makeBaseList() {
+void BaseList::makeBaseList(bool asBases) {
 
   makeEmptyBaseList(); 
   fillBases(bases(), AnitaVersion::get());
-  fillPaths(paths(), AnitaVersion::get(), as_bases);
+  fillPaths(paths(), AnitaVersion::get(), asBases);
 }
 
 

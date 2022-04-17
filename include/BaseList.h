@@ -18,14 +18,14 @@ namespace BaseList {
       virtual bool isValid(unsigned time) const { (void) time; return true; }
 
       virtual ~abstract_base() { ; } 
-      virtual void Draw(const char *opt = "m")  const= 0; 
+      virtual void Draw(const char *opt = "m")  const = 0; 
   }; 
 
   class base : public abstract_base {
   public:
-    base(const TString& theName, const TString& source, double lat, double lon, double alt=0)
+    base(const TString & theName, const TString& source, double lat, double lon, double alt=0)
       : name(theName), dataSource(source), position(AntarcticCoord::WGS84, lat, lon, alt) {;}
-    base(const TString& theName, double lat, double lon, double alt=0)
+    base(const TString & theName, double lat, double lon, double alt = 0)
       : name(theName), dataSource(""), position(AntarcticCoord::WGS84, lat, lon, alt) {;}
 
     virtual ~base() { ; } 
@@ -82,7 +82,7 @@ namespace BaseList {
   /** Return the ith base or path. This function knows about the ANITA version */ 
   const abstract_base & getAbstractBase(UInt_t i); //  both 
 
-  void makeBaseList();  //  refills base lists if empty. This does both paths and bases.
+  void makeBaseList(bool asBases = false);  //  refills base lists if empty. This does both paths and bases.
   void makeEmptyBaseList();  //  makes base/path lists empty. Not sure why you would ever do this, but this is called somewhere... 
   
   /** Returns the number of stationary bases. ANITA-version aware */
