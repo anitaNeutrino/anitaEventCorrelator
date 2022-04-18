@@ -285,16 +285,16 @@ static std::vector<base> & bases() {
 }
 
 
-static std::vector<path> & paths(bool asBases) {
+static std::vector<path> & paths() {
 
   if (AnitaVersion::get() == 3) {
   
-    static pathlist_impl pl(3, asBases); 
+    static pathlist_impl pl(3); 
     return pl.paths; 
 
   } else if (AnitaVersion::get() == 4) {
   
-    static pathlist_impl pl(4, asBases); 
+    static pathlist_impl pl(4); 
     return pl.paths; 
   }
 
@@ -366,7 +366,8 @@ void BaseList::makeBaseList(bool asBases) {
 
   makeEmptyBaseList(); 
   fillBases(bases(), AnitaVersion::get());
-  fillPaths(paths(), AnitaVersion::get(), asBases);
+  if (!asBases) fillPaths(paths(), AnitaVersion::get());
+  else fillPathsAsBases(pathsAsBases(), AnitaVersion::get());
 }
 
 
