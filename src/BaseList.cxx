@@ -71,7 +71,7 @@ static void fillBases(std::vector<base> & baseList, int anita) {
 
 
 //  When including paths with time dependence isn't contriubting significantly to clustering, instead include the waypoints as static bases.
-static void fillPaths(std::vector<path> & pathList, int anita, bool asBases = false) {
+static void fillPaths(std::vector<path> & pathList, int anita) {
 
   TString fname; 
   fname.Form("%s/share/anitaCalib/transientListRestrictedA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
@@ -136,34 +136,90 @@ static void fillPaths(std::vector<path> & pathList, int anita, bool asBases = fa
       t->GetEntry(i);
 
       TString callsign = callsign_buf;
-
-      if (!asBases) {
       
-        // silly type conversion
-        UInt_t unsignedTime = time;
-        Double_t doubleAlt = alt;
+      // silly type conversion
+      UInt_t unsignedTime = time;
+      Double_t doubleAlt = alt;
 
-        if (lat >= -90) { // skip unphysical error values
+      if (lat >= -90) { // skip unphysical error values
 
-	  path tempPath(TString(callsign.Data()), source, 1, & lat, & lon, & doubleAlt, & unsignedTime);
+	path tempPath(TString(callsign.Data()), source, 1, & lat, & lon, & doubleAlt, & unsignedTime);
   	  
-	  tempPath.isFlight = isFlight;
+	tempPath.isFlight = isFlight;
 	  
-	  std::vector<path>::iterator it = std::find_if(pathList.begin(), pathList.end(), tempPath);
-	  if (it != pathList.end()) {
+	std::vector<path>::iterator it = std::find_if(pathList.begin(), pathList.end(), tempPath);
+	if (it != pathList.end()) {
   	  
-	    it->ts.push_back(tempPath.ts.at(0));
-	    it->ps.push_back(tempPath.ps.at(0));
+	  it->ts.push_back(tempPath.ts.at(0));
+	  it->ps.push_back(tempPath.ps.at(0));
 
-	  } else pathList.push_back(tempPath);
+	} else pathList.push_back(tempPath);
 	  // std::cout << lon << "\t" << lat << "\t" << callsign.Data() << std::endl;
-        }
-      } else pathList.push_back(base(callsign, source, lat, lon, alt));
+      }
     }
   }
   
   fpath.Close();
   gDirectory->cd(oldPwd);
+}
+
+
+static void fillPathsAsBases(std::vector<base> & pathsAsBasesList, int anita) {
+
+  TString fname; 
+  // fname.Form("%s/share/anitaCalib/baseListA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
+  fname.Form("%s/share/anitaCalib/transientListRestrictedA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
+  TString oldPwd = gDirectory->GetPath();
+  TFile fbase(fname.Data()); 
+
+  if (!fbase.IsOpen()) {
+  
+    fprintf(stderr,"Couldn't load transient list for ANITA %d. Sorry :(\n", anita);
+    
+    return;
+  }
+
+  //now load each tree 
+  TIter iter(fbase.GetListOfKeys()); 
+  TKey *k; 
+
+  while ((k = (TKey *) iter())) {
+
+    //only read in TTrees 
+    TClass * cl = gROOT->GetClass(k->GetClassName()); 
+    if (!cl -> InheritsFrom("TTree")) continue; 
+
+    TTree * t = (TTree *) k -> ReadObj(); 
+    TString source = t -> GetName(); 
+
+    std::string * callSign = 0; 
+//  std::string * str_name = 0; 
+    double lon; 
+    double lat; 
+    double alt;
+//    char callsign_buf[1024];
+
+    t->SetBranchAddress("callSign", callSign);
+//    t->SetBranchAddress("callSign", callsign_buf);
+
+    // well, I guess these trees are not as nicely normalized as the others.
+    if (!t->GetBranch("fullLong")) continue;  // If this tree has no position data, ignore it.
+
+    t->SetBranchAddress("name", & str_name); 
+        
+    t->SetBranchAddress("fullLat", & lat); 
+    t->SetBranchAddress("fullLong", & lon); 
+    t->SetBranchAddress("alt", & alt);
+
+    for (int i = 0; i < t->GetEntries(); i++) {
+    
+      t -> GetEntry(i); 
+      pathsAsBaseList.push_back(base(TString(* callSign), source, lat, lon, alt)); 
+    }
+  }
+  
+  fbase.Close();
+  gDirectory -> cd(oldPwd);
 }
 
 
@@ -218,7 +274,7 @@ static std::vector<base> & bases() {
 }
 
 
-static std::vector<path> & paths() {
+static std::vector<path> & paths(bool asBases) {
 
   if (AnitaVersion::get() == 3) {
   
