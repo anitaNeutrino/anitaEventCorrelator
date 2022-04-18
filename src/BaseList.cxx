@@ -164,7 +164,7 @@ static void fillPaths(std::vector<path> & pathList, int anita) {
 }
 
 
-static void fillPathsAsBases(std::vector<base> & pathsAsBasesList, int anita) {
+static void fillPathsAsBases(std::vector<base> & pathsAsBaseList, int anita) {
 
   TString fname; 
   // fname.Form("%s/share/anitaCalib/baseListA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
@@ -205,7 +205,7 @@ static void fillPathsAsBases(std::vector<base> & pathsAsBasesList, int anita) {
     // well, I guess these trees are not as nicely normalized as the others.
     if (!t->GetBranch("fullLong")) continue;  // If this tree has no position data, ignore it.
 
-    t->SetBranchAddress("name", & str_name); 
+//    t->SetBranchAddress("name", & str_name); 
         
     t->SetBranchAddress("fullLat", & lat); 
     t->SetBranchAddress("fullLong", & lon); 
