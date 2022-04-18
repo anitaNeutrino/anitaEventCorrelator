@@ -227,7 +227,7 @@ static void fillPathsAsBases(std::vector<base> & pathsAsBasesList, int anita) {
 
 static std::vector<base> no_bases; 
 static std::vector<path> no_paths; 
-
+static std::vector<base> no_pathsAsBases; 
 
 struct baselist_impl {
 
@@ -242,13 +242,24 @@ struct baselist_impl {
 
 struct pathlist_impl {
 
-  pathlist_impl(int anita, bool asBases) 
+  pathlist_impl(int anita) 
   {
-    fillPaths(paths, anita, asBases);
+    fillPaths(paths, anita);
   }
   
   std::vector<path> paths; 
-}; 
+};
+
+
+struct pathsAsBaselist_impl {
+
+  pathsAsBaselist_impl(int anita) 
+  {
+    fillPathsAsBases(pathsAsBases, anita); 
+  }
+  
+  std::vector<base> pathsAsBases; 
+};
 
 
 static std::vector<base> & bases() {
@@ -289,6 +300,29 @@ static std::vector<path> & paths(bool asBases) {
 
   fprintf(stderr,"Don't have paths for %d\n", AnitaVersion::get()); 
   return no_paths; 
+}
+
+
+static std::vector<base> & pathsAsBases() {
+
+  if (AnitaVersion::get() == 2) {
+  
+    static pathsAsBaselist_impl bl(2); 
+    return bl.bases; 
+
+  } else if (AnitaVersion::get() == 3) {
+  
+    static pathsAsBaselist_impl bl(3); 
+    return bl.bases;
+
+  } else if (AnitaVersion::get() == 4) {
+  
+    static pathsAsBaselist_impl bl(4); 
+    return bl.bases; 
+  }
+
+  fprintf(stderr,"Don't have paths for %d\n", AnitaVersion::get()); 
+  return no_pathsAsBases; 
 }
 
 
