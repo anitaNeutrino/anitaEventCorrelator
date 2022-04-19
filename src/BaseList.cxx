@@ -307,18 +307,18 @@ static std::vector<base> & pathsAsBases() {
 
   if (AnitaVersion::get() == 2) {
   
-    static pathsAsBaselist_impl bl(2); 
-    return bl.bases; 
+    static pathsAsBaselist_impl baspl(2); 
+    return baspl.bases; 
 
   } else if (AnitaVersion::get() == 3) {
   
-    static pathsAsBaselist_impl bl(3); 
-    return bl.bases;
+    static pathsAsBaselist_impl baspl(3); 
+    return baspl.bases;
 
   } else if (AnitaVersion::get() == 4) {
   
-    static pathsAsBaselist_impl bl(4); 
-    return bl.bases; 
+    static pathsAsBaselist_impl baspl(4); 
+    return baspl.bases; 
   }
 
   fprintf(stderr,"Don't have paths for %d\n", AnitaVersion::get()); 
@@ -326,21 +326,28 @@ static std::vector<base> & pathsAsBases() {
 }
 
 
-const BaseList::base& BaseList::getBase(UInt_t index){ 
+const BaseList::base & BaseList::getBase(UInt_t index){ 
 
   index = index < bases().size() ? index : 0;
   return bases().at(index);
 }
 
 
-const BaseList::path& BaseList::getPath(UInt_t index){
+const BaseList::path & BaseList::getPath(UInt_t index){
 
   index = index < paths().size() ? index : 0;
   return paths().at(index);
 }
 
 
-const BaseList::abstract_base& BaseList::getAbstractBase(UInt_t index){
+const BaseList::base & BaseList::getPathAsBase(UInt_t index){ 
+
+  index = index < pathsAsBases().size() ? index : 0;
+  return pathsAsBases().at(index);
+}
+
+
+const BaseList::abstract_base & BaseList::getAbstractBase(UInt_t index, bool asBases){
 
   if (index > bases().size() + paths().size()) index = 0; 
   return index < bases().size() ? (const BaseList::abstract_base &)  bases().at(index) : (const BaseList::abstract_base &) paths().at(index-bases().size()); 
@@ -357,8 +364,8 @@ size_t BaseList::getNumPaths() {
 }
 
 
-size_t BaseList::getNumAbstractBases(){
-  return bases().size() + paths().size();
+size_t BaseList::getNumAbstractBases(bool asBases){
+  return !asBases ? bases().size() + paths().size() : bases().size() + pathsAsBases();
 }
 
 
