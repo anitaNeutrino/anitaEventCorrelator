@@ -365,7 +365,7 @@ size_t BaseList::getNumPaths() {
 
 
 size_t BaseList::getNumAbstractBases(bool asBases){
-  return !asBases ? bases().size() + paths().size() : bases().size() + pathsAsBases();
+  return !asBases ? bases().size() + paths().size() : bases().size() + pathsAsBases().size();
 }
 
 
