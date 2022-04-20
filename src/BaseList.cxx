@@ -305,12 +305,7 @@ static std::vector<path> & paths() {
 
 static std::vector<base> & pathsAsBases() {
 
-  if (AnitaVersion::get() == 2) {
-  
-    static pathsAsBaselist_impl baspl(2); 
-    return baspl.bases; 
-
-  } else if (AnitaVersion::get() == 3) {
+  if (AnitaVersion::get() == 3) {
   
     static pathsAsBaselist_impl baspl(3); 
     return baspl.bases;
@@ -349,8 +344,15 @@ const BaseList::base & BaseList::getPathAsBase(UInt_t index){
 
 const BaseList::abstract_base & BaseList::getAbstractBase(UInt_t index, bool asBases){
 
-  if (index > bases().size() + paths().size()) index = 0; 
-  return index < bases().size() ? (const BaseList::abstract_base &)  bases().at(index) : (const BaseList::abstract_base &) paths().at(index-bases().size()); 
+  UInt_t pathSize = !asBases ? paths().size() : pathsAsBases().size();
+
+  if (index > bases().size() + pathSize) index = 0;
+  
+  if (index < bases().size()) return (const BaseList::abstract_base &) bases().at(index);
+  else if (!asBases) return (const BaseList::abstract_base &) paths().at(index - pathSize);
+  else return (const BaseList::abstract_base &) pathsAsBases().at(index - pathSize);
+  
+//  return index < bases().size() ? (const BaseList::abstract_base &)  bases().at(index) : (const BaseList::abstract_base &) paths().at(index-bases().size());
 }
 
 
