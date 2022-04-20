@@ -308,12 +308,12 @@ static std::vector<base> & pathsAsBases() {
   if (AnitaVersion::get() == 3) {
   
     static pathsAsBaselist_impl baspl(3); 
-    return baspl.bases;
+    return baspl.pathsAsBases;
 
   } else if (AnitaVersion::get() == 4) {
   
     static pathsAsBaselist_impl baspl(4); 
-    return baspl.bases; 
+    return baspl.pathsAsBases; 
   }
 
   fprintf(stderr,"Don't have paths for %d\n", AnitaVersion::get()); 
