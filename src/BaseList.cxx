@@ -511,7 +511,8 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
 int BaseList::findBases(const char * query, std::vector<int> * matches, bool include_paths, bool asBases) {
 
   int first_found = -1; 
-  for (unsigned i = 0; i < include_paths ? getNumAbstractBases() : getNumBases(); i++) {
+    
+  for (unsigned i = 0; i < include_paths ? getNumAbstractBases(asBases) : getNumBases(); i++) {
   
     const abstract_base & a = getAbstractBase(i); 
 
