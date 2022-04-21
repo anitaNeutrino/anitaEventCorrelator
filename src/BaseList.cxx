@@ -216,7 +216,7 @@ static void fillPathsAsBases(std::vector<base> & pathsAsBaseList, int anita) {
     
       t -> GetEntry(i);
       
-      TString callsign(callsign_buf);
+      TString callSign(callsign_buf);
       
       pathsAsBaseList.push_back(base(callSign, source, lat, lon, alt)); 
     }
