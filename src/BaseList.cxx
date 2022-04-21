@@ -209,7 +209,8 @@ static void fillPathsAsBases(std::vector<base> & pathsAsBaseList, int anita) {
         
     t->SetBranchAddress("fullLat", & lat); 
     t->SetBranchAddress("fullLong", & lon); 
-    t->SetBranchAddress("alt", & alt);
+
+    if (t->GetBranch("altitude")) t->SetBranchAddress("altitude", & alt);  // The traverse has no altitude data. Have no fear, we can fill it in ourselves.
 
     for (int i = 0; i < t->GetEntries(); i++) {
     
