@@ -23,7 +23,7 @@ namespace BaseList {
 
   class base : public abstract_base {
   public:
-    base(const TString & theName, const TString& source, double lat, double lon, double alt=0)
+    base(const TString & theName, const TString& source, double lat, double lon, double alt = 0)
       : name(theName), dataSource(source), position(AntarcticCoord::WGS84, lat, lon, alt) {;}
     base(const TString & theName, double lat, double lon, double alt = 0)
       : name(theName), dataSource(""), position(AntarcticCoord::WGS84, lat, lon, alt) {;}

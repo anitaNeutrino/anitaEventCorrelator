@@ -111,7 +111,7 @@ static void fillPaths(std::vector<path> & pathList, int anita) {
     char callsign_buf[1024];
     double lon; 
     double lat; 
-    int alt = -1000; 
+    double alt = -1000; 
     int time; 
 
     // Try to figure out whether or not this is a flight, from the tree name.
@@ -192,15 +192,15 @@ static void fillPathsAsBases(std::vector<base> & pathsAsBaseList, int anita) {
     TTree * t = (TTree *) k -> ReadObj(); 
     TString source = t -> GetName(); 
 
-    std::string * callSign = 0; 
+//    std::string * callSign = 0; 
 //  std::string * str_name = 0; 
     double lon; 
     double lat; 
     double alt;
-//    char callsign_buf[1024];
+    char callsign_buf[1024];
 
-    t->SetBranchAddress("callSign", callSign);
-//    t->SetBranchAddress("callSign", callsign_buf);
+//    t->SetBranchAddress("callSign", callSign);
+    t->SetBranchAddress("callSign", callsign_buf);
 
     // well, I guess these trees are not as nicely normalized as the others.
     if (!t->GetBranch("fullLong")) continue;  // If this tree has no position data, ignore it.
@@ -214,8 +214,11 @@ static void fillPathsAsBases(std::vector<base> & pathsAsBaseList, int anita) {
 
     for (int i = 0; i < t->GetEntries(); i++) {
     
-      t -> GetEntry(i); 
-      pathsAsBaseList.push_back(base(TString(* callSign), source, lat, lon, alt)); 
+      t -> GetEntry(i);
+      
+      TString callsign(callsign_buf);
+      
+      pathsAsBaseList.push_back(base(callSign, source, lat, lon, alt)); 
     }
   }
   
