@@ -196,7 +196,7 @@ static void fillPathsAsBases(std::vector<base> & pathsAsBaseList, int anita) {
 //  std::string * str_name = 0; 
     double lon; 
     double lat; 
-    double alt;
+//    double alt;
     char callsign_buf[1024];
 
 //    t->SetBranchAddress("callSign", callSign);
@@ -210,7 +210,7 @@ static void fillPathsAsBases(std::vector<base> & pathsAsBaseList, int anita) {
     t->SetBranchAddress("fullLat", & lat); 
     t->SetBranchAddress("fullLong", & lon); 
 
-    if (t->GetBranch("altitude")) t->SetBranchAddress("altitude", & alt);  // The traverse has no altitude data. Have no fear, we can fill it in ourselves.
+//    if (t->GetBranch("altitude")) t->SetBranchAddress("altitude", & alt);  // The traverse has no altitude data. Have no fear, we can fill it in ourselves.
 
     for (int i = 0; i < t->GetEntries(); i++) {
     
@@ -218,7 +218,7 @@ static void fillPathsAsBases(std::vector<base> & pathsAsBaseList, int anita) {
       
       TString callSign(callsign_buf);
       
-      pathsAsBaseList.push_back(base(callSign, source, lat, lon, alt)); 
+      pathsAsBaseList.push_back(base(callSign, source, lat, lon)); //  Use default position of ground.
     }
   }
   
