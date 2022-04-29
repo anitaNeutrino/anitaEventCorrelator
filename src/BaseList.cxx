@@ -21,8 +21,7 @@ using namespace BaseList;
 #endif
 
 
-static void fillBases(std::vector<base> & baseList, int anita) 
-{
+static void fillBases(std::vector<base> & baseList, int anita) {
 
   TString fname; 
   // fname.Form("%s/share/anitaCalib/baseListA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
@@ -42,8 +41,7 @@ static void fillBases(std::vector<base> & baseList, int anita)
   TIter iter(fbase.GetListOfKeys()); 
   TKey *k; 
 
-  while ((k = (TKey *) iter()))
-  {
+  while ((k = (TKey *) iter())) {
 
     //only read in TTrees 
     TClass * cl = gROOT->GetClass(k->GetClassName()); 
@@ -62,44 +60,44 @@ static void fillBases(std::vector<base> & baseList, int anita)
     t->SetBranchAddress("fullLong",&lon); 
     t->SetBranchAddress("alt",&alt);
 
-    for (int i = 0; i < t->GetEntries(); i++) 
-    {
+    for (int i = 0; i < t->GetEntries(); i++) {
+    
       t->GetEntry(i); 
       baseList.push_back(base(TString(*str_name), source, lat,lon,alt)); 
     }
   }
+  
   fbase.Close();
   gDirectory->cd(oldPwd);
 }
 
 
-static void fillPaths(std::vector<path> & pathList, int anita) 
-{
+static void fillPaths(std::vector<path> & pathList, int anita) {
 
   TString fname; 
   fname.Form("%s/share/anitaCalib/transientListRestrictedA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
 
   //see if we have the restricted list
 
-  if (access(fname.Data(),R_OK))
-  {
+  if (access(fname.Data(),R_OK)) {
+  
     fprintf(stderr,"Couldn't find restricted list for ANITA %d (%s).  Will try to load unrestricted list. \n", anita, fname.Data()); 
     fname.Form("%s/share/anitaCalib/transientListUnrestrictedA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
   }
+  
   TString oldPwd = gDirectory->GetPath();
 
   TFile fpath(fname.Data()); 
 
-  if (!fpath.IsOpen())
-  {
+  if (!fpath.IsOpen()) {
+  
     fprintf(stderr,"Couldn't find unrestricted list for ANITA %d (%s).  Sorry :( \n", anita,  fname.Data()); 
     return; 
   }
 
   TIter iter(fpath.GetListOfKeys()); 
   TKey *k; 
-  while ((k = (TKey *) iter()))
-  {
+  while ((k = (TKey *) iter())) {
   
     //only read in TTrees 
     TClass * cl = gROOT->GetClass(k->GetClassName()); 
@@ -118,29 +116,19 @@ static void fillPaths(std::vector<path> & pathList, int anita)
     // At the time of writing, the flight trees are:
     // AADTree, USAPFlightRestrTree, USAPFlightUnrestrTree
     Int_t isFlight = 0;
-    if(source.Contains("AAD") || source.Contains("Flight")){
-      isFlight = 1;
-    }
+    if(source.Contains("AAD") || source.Contains("Flight")) isFlight = 1;
 
     // well,  I guess these trees are not as nicely normalized as the others.
     t->SetBranchAddress("callSign",callsign_buf); 
-    if (!t->GetBranch("fullLong")) //this tree has no position data. ignore it
-    {
-      continue ; 
-    }
-
+    if (!t->GetBranch("fullLong")) continue;  //this tree has no position data. ignore it
 
     t->SetBranchAddress("fullLong",&lon); 
     t->SetBranchAddress("fullLat",&lat); 
     t->SetBranchAddress("timeUTC",&time); 
 
-    if (t->GetBranch("altitude")) // the traverse has no altitude data. Have no fear, we can fill it in ourselves. 
-    {
-      t->SetBranchAddress("altitude",&alt); 
-    }
+    if (t->GetBranch("altitude")) t->SetBranchAddress("altitude",&alt);  // the traverse has no altitude data. Have no fear, we can fill it in ourselves. 
 
-    for (int i = 0; i < t->GetEntries(); i++) 
-    {
+    for (int i = 0; i < t->GetEntries(); i++) {
       t->GetEntry(i); 
       TString callsign = callsign_buf;
 
@@ -148,25 +136,24 @@ static void fillPaths(std::vector<path> & pathList, int anita)
       UInt_t unsignedTime = time;
       Double_t doubleAlt = alt;
 
-      if(lat >= -90){ // skip unphysical error values
+      if (lat >= -90) { // skip unphysical error values
 
 	path tempPath(TString(callsign.Data()), source, 1, &lat, &lon, &doubleAlt, &unsignedTime);
 	tempPath.isFlight = isFlight;
 	std::vector<path>::iterator it = std::find_if(pathList.begin(), pathList.end(), tempPath);
-	if(it != pathList.end()){
+	if(it != pathList.end()) {
+	
 	  it->ts.push_back(tempPath.ts.at(0));
 	  it->ps.push_back(tempPath.ps.at(0));
 	}
-	else{
-	  pathList.push_back(tempPath);
-	}
+	else pathList.push_back(tempPath);
 	// std::cout << lon << "\t" << lat << "\t" << callsign.Data() << std::endl;
       }
     }
   }
+  
   fpath.Close();
   gDirectory->cd(oldPwd);
-  
 }
 
 // some annoying intermediate classes to be able to use magic statics 
