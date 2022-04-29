@@ -233,13 +233,13 @@ const BaseList::base& BaseList::getBase(UInt_t index){
   return bases().at(index);
 }
 
-const BaseList::path& BaseList::getPath(UInt_t index){
+const BaseList::path& BaseList::getPath(UInt_t index, bool asWaypoints){
 
   index = index < paths().size() ? index : 0;
   return paths().at(index);
 }
 
-const BaseList::abstract_base& BaseList::getAbstractBase(UInt_t index){
+const BaseList::abstract_base& BaseList::getAbstractBase(UInt_t index, bool asWaypoints){
 
   if (index > bases().size() + paths().size()) index = 0; 
   return index < bases().size() ? (const BaseList::abstract_base &)  bases().at(index) : (const BaseList::abstract_base &) paths().at(index-bases().size()); 
@@ -250,11 +250,11 @@ size_t BaseList::getNumBases(){
   return bases().size();
 }
 
-size_t BaseList::getNumPaths() {
+size_t BaseList::getNumPaths(bool asWaypoints) {
   return paths().size();
 }
 
-size_t BaseList::getNumAbstractBases(){
+size_t BaseList::getNumAbstractBases(bool asWaypoints){
   return bases().size() + paths().size();
 }
 
@@ -402,13 +402,13 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
 
 
 
-int BaseList::findBases(const char * query, std::vector<int> * matches, bool include_paths) 
+int BaseList::findBases(const char * query, std::vector<int> * matches, bool include_paths, bool asWaypoints) 
 {
 
   int first_found = -1; 
-  for (unsigned i = 0; i < include_paths ? getNumAbstractBases() : getNumBases(); i++)
+  for (unsigned i = 0; i < include_paths ? getNumAbstractBases(asWaypoints) : getNumBases(); i++)
   {
-    const abstract_base & a = getAbstractBase(i); 
+    const abstract_base & a = getAbstractBase(i, asWaypoints); 
 
     if (strcasestr(a.getName(), query))
     {
