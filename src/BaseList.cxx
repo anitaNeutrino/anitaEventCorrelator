@@ -15,7 +15,6 @@
 
 using namespace BaseList;
 
-
 #ifndef DEG2RAD
 #define DEG2RAD M_PI / 180
 #endif
@@ -37,7 +36,6 @@ static void fillBases(std::vector<base> & baseList, int anita) {
 
   //now load each tree 
 
-
   TIter iter(fbase.GetListOfKeys()); 
   TKey *k; 
 
@@ -55,15 +53,15 @@ static void fillBases(std::vector<base> & baseList, int anita) {
     double lat; 
     double alt; 
 
-    t->SetBranchAddress("name",&str_name); 
-    t->SetBranchAddress("fullLat",&lat); 
-    t->SetBranchAddress("fullLong",&lon); 
-    t->SetBranchAddress("alt",&alt);
+    t->SetBranchAddress("name", & str_name); 
+    t->SetBranchAddress("fullLat", & lat); 
+    t->SetBranchAddress("fullLong", & lon); 
+    t->SetBranchAddress("alt", & alt);
 
     for (int i = 0; i < t->GetEntries(); i++) {
     
       t->GetEntry(i); 
-      baseList.push_back(base(TString(*str_name), source, lat,lon,alt)); 
+      baseList.push_back(base(TString(*str_name), source, lat, lon, alt)); 
     }
   }
   
@@ -122,13 +120,14 @@ static void fillPaths(std::vector<path> & pathList, int anita) {
     t->SetBranchAddress("callSign",callsign_buf); 
     if (!t->GetBranch("fullLong")) continue;  //this tree has no position data. ignore it
 
-    t->SetBranchAddress("fullLong",&lon); 
-    t->SetBranchAddress("fullLat",&lat); 
-    t->SetBranchAddress("timeUTC",&time); 
+    t->SetBranchAddress("fullLong", & lon); 
+    t->SetBranchAddress("fullLat", & lat); 
+    t->SetBranchAddress("timeUTC", & time); 
 
-    if (t->GetBranch("altitude")) t->SetBranchAddress("altitude",&alt);  // the traverse has no altitude data. Have no fear, we can fill it in ourselves. 
+    if (t->GetBranch("altitude")) t->SetBranchAddress("altitude", & alt);  // the traverse has no altitude data. Have no fear, we can fill it in ourselves. 
 
     for (int i = 0; i < t->GetEntries(); i++) {
+
       t->GetEntry(i); 
       TString callsign = callsign_buf;
 
@@ -138,15 +137,16 @@ static void fillPaths(std::vector<path> & pathList, int anita) {
 
       if (lat >= -90) { // skip unphysical error values
 
-	path tempPath(TString(callsign.Data()), source, 1, &lat, &lon, &doubleAlt, &unsignedTime);
+	path tempPath(TString(callsign.Data()), source, 1, & lat, & lon, & doubleAlt, & unsignedTime);
 	tempPath.isFlight = isFlight;
 	std::vector<path>::iterator it = std::find_if(pathList.begin(), pathList.end(), tempPath);
-	if(it != pathList.end()) {
+
+	if (it != pathList.end()) {
 	
 	  it->ts.push_back(tempPath.ts.at(0));
 	  it->ps.push_back(tempPath.ps.at(0));
-	}
-	else pathList.push_back(tempPath);
+
+	} else pathList.push_back(tempPath);
 	// std::cout << lon << "\t" << lat << "\t" << callsign.Data() << std::endl;
       }
     }
@@ -156,69 +156,65 @@ static void fillPaths(std::vector<path> & pathList, int anita) {
   gDirectory->cd(oldPwd);
 }
 
+
 // some annoying intermediate classes to be able to use magic statics 
 
 static std::vector<base> no_bases; 
-static std::vector<path> no_paths; 
+static std::vector<path> no_paths, no_pathsAsWaypoints;
 
-struct baselist_impl 
-{
-  baselist_impl(int anita) 
-  {
-    fillBases(bases, anita); 
-  }
+struct baselist_impl {
+
+  baselist_impl(int anita) { fillBases(bases, anita); }
   std::vector<base> bases; 
-
 }; 
 
-struct pathlist_impl 
-{
-  pathlist_impl(int anita) 
-  {
-    fillPaths(paths, anita); 
-  }
+
+struct pathlist_impl {
+
+  pathlist_impl(int anita) { fillPaths(paths, anita); }
   std::vector<path> paths; 
+};
 
-}; 
 
+struct pathAsWaypointslist_impl {
+
+  pathAsWaypointslist_impl(int anita) { fillPaths(pathsAsWaypoints, anita); }
+  std::vector<path> pathsAsWaypoints; 
+};
 
 
 static std::vector<base> & bases()
 {
-  if (AnitaVersion::get() == 2) 
-  {
+  if (AnitaVersion::get() == 2) {
+
     static baselist_impl bl(2); 
     return bl.bases; 
-  }
 
-  else if (AnitaVersion::get() == 3) 
-  {
+  } else if (AnitaVersion::get() == 3) {
+
     static baselist_impl bl(3); 
-    return bl.bases; 
+    return bl.bases;
 
-  }
-  else if (AnitaVersion::get() == 4) 
-  {
+  } else if (AnitaVersion::get() == 4) {
+
     static baselist_impl bl(4); 
     return bl.bases; 
   }
-
 
   fprintf(stderr,"Don't have bases for %d\n", AnitaVersion::get()); 
   return no_bases; 
 }
 
-static std::vector<path> & paths()
-{
 
-  if (AnitaVersion::get() == 3) 
-  {
+static std::vector<path> & paths() {
+
+  if (AnitaVersion::get() == 3) {
+
     static pathlist_impl pl(3); 
-    return pl.paths; 
+    return pl.paths;
 
-  }
-  else if (AnitaVersion::get() == 4) 
-  {
+  } else if (AnitaVersion::get() == 4) {
+
     static pathlist_impl pl(4); 
     return pl.paths; 
   }
@@ -227,17 +223,20 @@ static std::vector<path> & paths()
   return no_paths; 
 }
 
-const BaseList::base& BaseList::getBase(UInt_t index){ 
+
+const BaseList::base & BaseList::getBase(UInt_t index){ 
 
   index = index < bases().size() ? index : 0;
   return bases().at(index);
 }
 
-const BaseList::path& BaseList::getPath(UInt_t index, bool asWaypoints){
+
+const BaseList::path & BaseList::getPath(UInt_t index, bool asWaypoints){
 
   index = index < paths().size() ? index : 0;
   return paths().at(index);
 }
+
 
 const BaseList::abstract_base& BaseList::getAbstractBase(UInt_t index, bool asWaypoints){
 
@@ -246,30 +245,34 @@ const BaseList::abstract_base& BaseList::getAbstractBase(UInt_t index, bool asWa
 }
 
 
-size_t BaseList::getNumBases(){
+size_t BaseList::getNumBases() {
+
   return bases().size();
 }
 
+
 size_t BaseList::getNumPaths(bool asWaypoints) {
+
   return paths().size();
 }
 
-size_t BaseList::getNumAbstractBases(bool asWaypoints){
+
+size_t BaseList::getNumAbstractBases(bool asWaypoints) {
+
   return bases().size() + paths().size();
 }
 
 
+void BaseList::makeBaseList() {
 
-void BaseList::makeBaseList()
-{
   makeEmptyBaseList(); 
   fillBases(bases(), AnitaVersion::get()); 
   fillPaths(paths(), AnitaVersion::get()); 
 }
 
 
-void BaseList::makeEmptyBaseList()
-{
+void BaseList::makeEmptyBaseList() {
+
   bases().clear(); //DESTROY ALL THE BASES FOR SOME REASON  
 }
 
@@ -278,18 +281,14 @@ BaseList::path::path(const TString & name, TString & source,
                  int npoints, const double  * lat, const double * lon,
                  const double * alt,  const unsigned  * time)  
 
-
-  : name(name) , dataSource(source), ts(time, time + npoints) 
-{
+  : name(name) , dataSource(source), ts(time, time + npoints) {
 
   ps.reserve(npoints); 
-  for (int i = 0; i < npoints; i++) 
-  {
+  for (int i = 0; i < npoints; i++) {
+
     ps.push_back(AntarcticCoord(AntarcticCoord::WGS84, lat[i], lon[i], alt[i]));
 //    ps[i].to(AntarcticCoord::CARTESIAN);  //save as cartesian
   }
-
-
 }
 
  
@@ -298,11 +297,11 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
   if (!isValid(t)) return AntarcticCoord(AntarcticCoord::WGS84, 90, 0, 0); // North pole is about as far as we can get! 
 
   //  Components to interpolate with.
-  int l = TMath::BinarySearch(ts.size(), & ts [0], t); 
+  int l = TMath::BinarySearch(ts.size(), & ts[0], t); 
   int u = l + 1; 
-  double low_frac = double(t - ts [l]) / double(ts [u] - ts [l]);  //  Lower fractional interpolative step.
-  AntarcticCoord cl = ps [l];  //  Components in WGS84 coordinates.
-  AntarcticCoord cu = ps [u];
+  double low_frac = double(t - ts[l]) / double(ts[u] - ts[l]);  //  Lower fractional interpolative step.
+  AntarcticCoord cl = ps[l];  //  Components in WGS84 coordinates.
+  AntarcticCoord cu = ps[u];
   //  For later use; in case either altitude component isn't defined or negative. RampdemReader convention has longitude listed first, then latitude.
   double gndl = RampdemReader::SurfaceAboveGeoid(cl.y, cl.x, RampdemReader::surface);
   double gndu = RampdemReader::SurfaceAboveGeoid(cu.y, cu.x, RampdemReader::surface);
@@ -400,29 +399,26 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
 }
 
 
+int BaseList::findBases(const char * query, std::vector<int> * matches, bool include_paths, bool asWaypoints) {
 
+  int first_found = -1;
 
-int BaseList::findBases(const char * query, std::vector<int> * matches, bool include_paths, bool asWaypoints) 
-{
-
-  int first_found = -1; 
-  for (unsigned i = 0; i < include_paths ? getNumAbstractBases(asWaypoints) : getNumBases(); i++)
-  {
+  for (unsigned i = 0; i < include_paths ? getNumAbstractBases(asWaypoints) : getNumBases(); i++) {
+  
     const abstract_base & a = getAbstractBase(i, asWaypoints); 
 
-    if (strcasestr(a.getName(), query))
-    {
+    if (strcasestr(a.getName(), query)) {
+    
       if (first_found < 0) first_found = i; 
-      if (matches)
-      {
-        matches->push_back(i); 
-      }
+
+      if (matches) matches->push_back(i); 
       else break; 
     }
   }
-  return first_found; 
 
-} 
+  return first_found;
+}
+
 
 void BaseList::base::Draw(const char * opt) const
 {
