@@ -176,9 +176,9 @@ struct pathlist_impl {
 };
 
 
-struct pathAsWaypointslist_impl {
+struct pathsAsWaypointslist_impl {
 
-  pathAsWaypointslist_impl(int anita) { fillPaths(pathsAsWaypoints, anita); }
+  pathsAsWaypointslist_impl(int anita) { fillPaths(pathsAsWaypoints, anita); }
   std::vector<path> pathsAsWaypoints; 
 };
 
@@ -224,6 +224,24 @@ static std::vector<path> & paths() {
 }
 
 
+static std::vector<path> & pathsAsWaypoints() {
+
+  if (AnitaVersion::get() == 3) {
+
+    static pathsAsWaypointslist_impl pwl(3); 
+    return pwl.pathsAsWaypoints;
+
+  } else if (AnitaVersion::get() == 4) {
+
+    static pathsAsWaypointslist_impl pwl(4); 
+    return pwl.pathsAsWaypoints; 
+  }
+
+  fprintf(stderr,"Don't have paths for %d\n", AnitaVersion::get()); 
+  return no_pathsAsWaypoints; 
+}
+
+
 const BaseList::base & BaseList::getBase(UInt_t index){ 
 
   index = index < bases().size() ? index : 0;
@@ -233,15 +251,23 @@ const BaseList::base & BaseList::getBase(UInt_t index){
 
 const BaseList::path & BaseList::getPath(UInt_t index, bool asWaypoints){
 
-  index = index < paths().size() ? index : 0;
-  return paths().at(index);
+  UInt_t pathSize = !asWaypoints ? paths().size() : pathsAsWaypoints().size();
+
+  index = index < pathSize ? index : 0;
+  
+  return !asWaypoints ? paths().at(index) : pathsAsWaypoints().at(index);
 }
 
 
-const BaseList::abstract_base& BaseList::getAbstractBase(UInt_t index, bool asWaypoints){
+const BaseList::abstract_base & BaseList::getAbstractBase(UInt_t index, bool asWaypoints){
 
-  if (index > bases().size() + paths().size()) index = 0; 
-  return index < bases().size() ? (const BaseList::abstract_base &)  bases().at(index) : (const BaseList::abstract_base &) paths().at(index-bases().size()); 
+  UInt_t pathSize = !asWaypoints ? paths().size() : pathsAsWaypoints().size();
+
+  if (index > bases().size() + pathSize) index = 0;
+  
+  if (index < bases().size()) return (const BaseList::abstract_base &) bases().at(index);
+  else if (!asWaypoints) return (const BaseList::abstract_base &) paths().at(index - pathSize);
+  else return (const BaseList::abstract_base &) pathsAsWaypoints().at(index - pathSize); 
 }
 
 

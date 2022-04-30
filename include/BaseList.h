@@ -48,7 +48,7 @@ namespace BaseList {
     public:
       path(const TString & name, TString & source, 
                  int npoints, const double  * lat, const double * lon,
-                 const double * alt,  const unsigned * time); 
+                 const double * alt, const unsigned * time); 
       virtual ~path() { ; } 
 
     TString name; 
@@ -100,8 +100,7 @@ namespace BaseList {
    * if a pointer to the a vector of indices is passed, then will fill tha twith all matching bases. 
    *
    **/ 
-  int findBases(const char * query, std::vector<int> * all_matches = 0, bool include_paths = false, bool asWaypoints = false); 
-
+  int findBases(const char * query, std::vector<int> * all_matches = 0, bool include_paths = false, bool asWaypoints = false);
 };
 
 
