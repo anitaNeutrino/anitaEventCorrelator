@@ -279,13 +279,15 @@ size_t BaseList::getNumBases() {
 
 size_t BaseList::getNumPaths(bool asWaypoints) {
 
-  return paths().size();
+  return !asWaypoints ? paths().size() : pathsAsWaypoints().size();
 }
 
 
 size_t BaseList::getNumAbstractBases(bool asWaypoints) {
 
-  return bases().size() + paths().size();
+  UInt_t pathSize = !asWaypoints ? paths().size() : pathsAsWaypoints().size();
+
+  return bases().size() + pathSize;
 }
 
 
@@ -446,34 +448,32 @@ int BaseList::findBases(const char * query, std::vector<int> * matches, bool inc
 }
 
 
-void BaseList::base::Draw(const char * opt) const
-{
+void BaseList::base::Draw(const char * opt) const {
+
   AntarcticCoord stereo = position.as(AntarcticCoord::STEREOGRAPHIC); 
 
-  if (strchr(opt,'p'))
-  {
+  if (strchr(opt,'p')) {
+  
     TMarker * m = new TMarker(stereo.x, stereo.y, 2); 
     m->SetBit(kCanDelete); 
     m->AppendPad(); 
   }
 
-  if (strchr(opt,'t'))
-  {
+  if (strchr(opt,'t')) {
+  
     TText * t = new TText(stereo.x + 50e3, stereo.y, getName()); 
     t->SetBit(kCanDelete); 
     t->AppendPad(); 
   }
-
 } 
 
-void BaseList::path::Draw(const char * opt) const
-{
+void BaseList::path::Draw(const char * opt) const {
 
-  if (strchr(opt,'p') || strchr(opt,'l'))
-  {
+  if (strchr(opt,'p') || strchr(opt,'l')) {
+  
     TGraph * g = new TGraph; 
-    for (unsigned i = 0; i < ps.size(); i++)
-    {
+    for (unsigned i = 0; i < ps.size(); i++) {
+    
       AntarcticCoord stereo = ps[i].as(AntarcticCoord::STEREOGRAPHIC); 
       g->SetPoint(i, stereo.x, stereo.y); 
     }
@@ -482,12 +482,11 @@ void BaseList::path::Draw(const char * opt) const
      g->AppendPad(opt); 
   }
 
-  if (strchr(opt,'t'))
-  {
+  if (strchr(opt,'t')) {
+  
     AntarcticCoord stereo = ps[0].as(AntarcticCoord::STEREOGRAPHIC); 
-    TText * t = new TText(stereo.x+50e3, stereo.y, getName()); 
+    TText * t = new TText(stereo.x + 50e3, stereo.y, getName()); 
     t->SetBit(kCanDelete); 
     t->AppendPad(); 
   }
-
 }
