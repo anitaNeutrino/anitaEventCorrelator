@@ -15,6 +15,7 @@ namespace BaseList {
       virtual const char * getName() const = 0; 
       virtual const char * getSource() const = 0; 
       virtual AntarcticCoord  getPosition(unsigned time) const = 0;
+      virtual AntarcticCoord getPosition(double lat, double lon, double alt) const = 0;
       virtual bool isValid(unsigned time) const { (void) time; return true; }
 
       virtual ~abstract_base() { ; } 
@@ -36,6 +37,12 @@ namespace BaseList {
 
     virtual AntarcticCoord getPosition(unsigned t) const {
       (void) t;
+      return position.as(AntarcticCoord::WGS84);
+    }
+    virtual AntarcticCoord getPosition(double lat, double lon, double alt) const {
+      (void) lat;
+      (void) lon;
+      (void) alt;
       return position.as(AntarcticCoord::WGS84);
     }
     virtual const char * getName() const { return name.Data(); } 
@@ -60,7 +67,8 @@ namespace BaseList {
 
     virtual const char * getSource() const { return dataSource.Data(); } 
     virtual const char * getName() const { return name.Data(); }
-    virtual AntarcticCoord  getPosition(unsigned time) const; 
+    virtual AntarcticCoord  getPosition(unsigned time) const;
+    virtual AntarcticCoord getPosition(double lat, double lon, double alt) const;
     virtual bool isValid(unsigned time) const { return time >= ts[0] && time < ts[ts.size()-1] ; } 
     virtual void Draw(const char * opt = "lp") const; 
 

@@ -517,6 +517,39 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
 }
 
 
+AntarcticCoord BaseList::path::getPosition(double lat, double lon, double alt) const {
+
+  //  Define altitude relative to surface.
+  if (alt < 0) alt = RampdemReader::SurfaceAboveGeoid(lon, lat, RampdemReader::surface);
+  
+  AntarcticCoord pathCoords = AntarcticCoord(AntarcticCoord::WGS84, lat, lon, alt);
+  pathCoords.to(AntarcticCoord::CARTESIAN);
+  
+  AntarcticCoord c = ps[0].as(AntarcticCoord::CARTESIAN);
+  
+  double minDistSq = pow(c.x - pathCoords.x, 2) + pow(c.y - pathCoords.y, 2) + pow(c.z - pathCoords.z, 2);
+  
+  int minDistIdx = 0;
+  
+  for (int i = 1; i < ps.size(); ++i) {
+  
+    AntarcticCoord cTest = ps[i].as(AntarcticCoord::CARTESIAN);
+    
+    double minDistSqTest = pow(cTest.x - pathCoords.x, 2) + pow(cTest.y - pathCoords.y, 2) + pow(cTest.z - pathCoords.z, 2);
+    
+    if (minDistSqTest < minDistSq) {
+    
+      minDistSq = minDistSqTest;
+      minDistIdx = i;
+    }
+  }
+  
+  c = ps[minDistIdx].as(AntarcticCoord::WGS84);
+  
+  return c;
+}
+
+
 int BaseList::findBases(const char * query, std::vector<int> * matches, bool include_paths, bool asBases) {
 
   int first_found = -1; 
