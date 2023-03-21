@@ -23,16 +23,26 @@ using namespace BaseList;
 static void fillBases(std::vector<base> & baseList, int anita) {
 
   TString fname; 
-  // fname.Form("%s/share/anitaCalib/baseListA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
   fname.Form("%s/share/anitaCalib/baseListRestrictedA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
-  TString oldPwd = gDirectory->GetPath();
+
+  //see if we have the restricted list
+
+  if (access(fname.Data(), R_OK)) {
+  
+    fprintf(stderr,"Couldn't find restricted list for ANITA %d (%s).  Will try to load unrestricted list. \n", anita, fname.Data());
+    
+    fname.Form("%s/share/anitaCalib/baseListA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
+  }
+  
+  TString oldPwd = gDirectory -> GetPath();
+
   TFile fbase(fname.Data()); 
 
   if (!fbase.IsOpen()) {
   
-    fprintf(stderr,"Couldn't load base list for ANITA %d. Sorry :(\n", anita);
+    fprintf(stderr,"Couldn't find unresticted list for ANITA %d (%s).  Sorry :( \n", anita,  fname.Data());
     
-    return;
+    return; 
   }
 
   //now load each tree 
