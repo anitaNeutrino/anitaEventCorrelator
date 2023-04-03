@@ -23,14 +23,26 @@ using namespace BaseList;
 static void fillBases(std::vector<base> & baseList, int anita) {
 
   TString fname; 
-  // fname.Form("%s/share/anitaCalib/baseListA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
-  fname.Form("%s/share/anitaCalib/baseListRestrictedA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
-  TString oldPwd = gDirectory->GetPath();
-  TFile fbase(fname.Data()); 
 
-  if (!fbase.IsOpen())
-  {
-    fprintf(stderr,"Couldn't load base list for ANITA %d. Sorry :(\n", anita); 
+  fname.Form("%s/share/anitaCalib/baseListRestrictedA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
+
+  //  See if we have the restricted list.
+  
+  if (access(fname.Data(), R_OK)) {
+  
+    fprintf(stderr,"Couldn't find restricted base list for ANITA %d (%s). Will try to load unrestricted list. \n", anita, fname.Data());
+  
+    fname.Form("%s/share/anitaCalib/baseListA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita);
+  }
+
+  TString oldPwd = gDirectory->GetPath();
+
+  TFile fbase(fname.Data());
+
+  if (!fbase.IsOpen()) {
+  
+    fprintf(stderr,"Couldn't find unrestricted base list for ANITA %d. Sorry :(\n", anita);
+    
     return;
   }
 
@@ -79,7 +91,7 @@ static void fillPaths(std::vector<path> & pathList, int anita) {
 
   if (access(fname.Data(),R_OK)) {
   
-    fprintf(stderr,"Couldn't find restricted list for ANITA %d (%s).  Will try to load unrestricted list. \n", anita, fname.Data()); 
+    fprintf(stderr,"Couldn't find restricted path list for ANITA %d (%s).  Will try to load unrestricted list. \n", anita, fname.Data()); 
     fname.Form("%s/share/anitaCalib/transientListUnrestrictedA%d.root", getenv("ANITA_UTIL_INSTALL_DIR"), anita); 
   }
   
@@ -89,7 +101,8 @@ static void fillPaths(std::vector<path> & pathList, int anita) {
 
   if (!fpath.IsOpen()) {
   
-    fprintf(stderr,"Couldn't find unrestricted list for ANITA %d (%s).  Sorry :( \n", anita,  fname.Data()); 
+    fprintf(stderr,"Couldn't find unrestricted path list for ANITA %d (%s).  Sorry :( \n", anita,  fname.Data());
+    
     return; 
   }
 
