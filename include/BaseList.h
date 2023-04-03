@@ -75,10 +75,10 @@ namespace BaseList {
   const base & getBase(UInt_t i);
 
   /** Return the ith path. This function knows about the ANITA version */ 
-  const path & getPath(UInt_t i, bool asWaypoints = false);
+  const path & getPath(UInt_t i);
 
   /** Return the ith base or path. This function knows about the ANITA version */ 
-  const abstract_base & getAbstractBase(UInt_t i, bool asWaypoints = false); //both 
+  const abstract_base & getAbstractBase(UInt_t i); //both 
 
   void makeBaseList();      //refills base lists if empty. This does both paths and bases.
   void makeEmptyBaseList(); //makes base/path lists empty. Not sure why you would ever do this, but this is called somewhere... 
@@ -87,10 +87,10 @@ namespace BaseList {
   size_t getNumBases();
 
   /** Returns the number of flights/ traverses. ANITA-version aware */
-  size_t getNumPaths(bool asWaypoints = false);
+  size_t getNumPaths();
 
   /** Returns the number of flights/ traverses + bases. ANITA-version aware */
-  size_t getNumAbstractBases(bool asWaypoints = false); 
+  size_t getNumAbstractBases(); 
 
   /** Ever wanted to locate a base inedex? now you can! 
    * This just does a strcasestr... no regexes or anything like that sadly. 
@@ -100,7 +100,7 @@ namespace BaseList {
    * if a pointer to the a vector of indices is passed, then will fill tha twith all matching bases. 
    *
    **/ 
-  int findBases(const char * query, std::vector<int> * all_matches = 0, bool include_paths = false, bool asWaypoints = false);
+  int findBases(const char * query, std::vector<int> * all_matches = 0, bool include_paths = false);
 };
 
 
