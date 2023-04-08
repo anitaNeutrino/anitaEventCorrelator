@@ -230,7 +230,6 @@ static std::vector<path> & paths() {
 }
 
 
-
 const BaseList::base & BaseList::getBase(UInt_t index){ 
 
   index = index < bases().size() ? index : 0;
