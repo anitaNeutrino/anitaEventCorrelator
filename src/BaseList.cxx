@@ -173,7 +173,7 @@ static void fillPaths(std::vector<path> & pathList, int anita) {
 // some annoying intermediate classes to be able to use magic statics 
 
 static std::vector<base> no_bases; 
-static std::vector<path> no_paths, no_pathsAsWaypoints;
+static std::vector<path> no_paths;
 
 struct baselist_impl {
 
@@ -186,13 +186,6 @@ struct pathlist_impl {
 
   pathlist_impl(int anita) { fillPaths(paths, anita); }
   std::vector<path> paths; 
-};
-
-
-struct pathsAsWaypointslist_impl {
-
-  pathsAsWaypointslist_impl(int anita) { fillPaths(pathsAsWaypoints, anita); }
-  std::vector<path> pathsAsWaypoints; 
 };
 
 
@@ -237,23 +230,6 @@ static std::vector<path> & paths() {
 }
 
 
-static std::vector<path> & pathsAsWaypoints() {
-
-  if (AnitaVersion::get() == 3) {
-
-    static pathsAsWaypointslist_impl pwl(3); 
-    return pwl.pathsAsWaypoints;
-
-  } else if (AnitaVersion::get() == 4) {
-
-    static pathsAsWaypointslist_impl pwl(4); 
-    return pwl.pathsAsWaypoints; 
-  }
-
-  fprintf(stderr,"Don't have paths for %d\n", AnitaVersion::get()); 
-  return no_pathsAsWaypoints; 
-}
-
 
 const BaseList::base & BaseList::getBase(UInt_t index){ 
 
@@ -262,25 +238,24 @@ const BaseList::base & BaseList::getBase(UInt_t index){
 }
 
 
-const BaseList::path & BaseList::getPath(UInt_t index, bool asWaypoints){
+const BaseList::path & BaseList::getPath(UInt_t index){
 
-  UInt_t pathSize = !asWaypoints ? paths().size() : pathsAsWaypoints().size();
+  UInt_t pathSize = paths().size();
 
   index = index < pathSize ? index : 0;
   
-  return !asWaypoints ? paths().at(index) : pathsAsWaypoints().at(index);
+  return paths().at(index);
 }
 
 
-const BaseList::abstract_base & BaseList::getAbstractBase(UInt_t index, bool asWaypoints){
+const BaseList::abstract_base & BaseList::getAbstractBase(UInt_t index){
 
-  UInt_t pathSize = !asWaypoints ? paths().size() : pathsAsWaypoints().size();
+  UInt_t pathSize = paths().size();
 
   if (index > bases().size() + pathSize) index = 0;
   
   if (index < bases().size()) return (const BaseList::abstract_base &) bases().at(index);
-  else if (!asWaypoints) return (const BaseList::abstract_base &) paths().at(index - pathSize);
-  else return (const BaseList::abstract_base &) pathsAsWaypoints().at(index - pathSize); 
+  else return (const BaseList::abstract_base &) paths().at(index - pathSize);
 }
 
 
@@ -290,15 +265,15 @@ size_t BaseList::getNumBases() {
 }
 
 
-size_t BaseList::getNumPaths(bool asWaypoints) {
+size_t BaseList::getNumPaths() {
 
-  return !asWaypoints ? paths().size() : pathsAsWaypoints().size();
+  return paths().size();
 }
 
 
-size_t BaseList::getNumAbstractBases(bool asWaypoints) {
+size_t BaseList::getNumAbstractBases() {
 
-  UInt_t pathSize = !asWaypoints ? paths().size() : pathsAsWaypoints().size();
+  UInt_t pathSize = paths().size();
 
   return bases().size() + pathSize;
 }
@@ -440,13 +415,13 @@ AntarcticCoord BaseList::path::getPosition(unsigned t) const {
 }
 
 
-int BaseList::findBases(const char * query, std::vector<int> * matches, bool include_paths, bool asWaypoints) {
+int BaseList::findBases(const char * query, std::vector<int> * matches, bool include_paths) {
 
   int first_found = -1;
 
-  for (unsigned i = 0; i < include_paths ? getNumAbstractBases(asWaypoints) : getNumBases(); i++) {
+  for (unsigned i = 0; i < include_paths ? getNumAbstractBases() : getNumBases(); i++) {
   
-    const abstract_base & a = getAbstractBase(i, asWaypoints); 
+    const abstract_base & a = getAbstractBase(i); 
 
     if (strcasestr(a.getName(), query)) {
     
