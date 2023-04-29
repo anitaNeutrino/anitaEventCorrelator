@@ -6,6 +6,9 @@
 
 ClassImp(PayloadParameters); 
 
+#ifdef USE_GEOGRAPHIC_LIB
+#include <GeographicLib/GeodesicLine.hpp>
+#endif
 
 PayloadParameters::PayloadParameters(const Adu5Pat * gps, const AntarcticCoord & source_pos, const Refraction::Model * refract) 
   : payload(AntarcticCoord::WGS84, gps->latitude, gps->longitude, gps->altitude), 

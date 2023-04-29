@@ -167,7 +167,8 @@ endif()
 option ( USE_GEOGRAPHIC_LIB "Use GeographicLib for geodesic calculations" ) 
 if (USE_GEOGRAPHIC_LIB)
   add_definitions  (-DUSE_GEOGRAPHIC_LIB )
-  target_link_libraries (${libname} Geographic )
+  find_package(GeographicLib REQUIRED) 
+  target_link_libraries (${libname} ${GeographicLib_LIBRARIES} )
 endif()
 
 
