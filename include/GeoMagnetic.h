@@ -74,7 +74,7 @@ class FieldPoint : public TArrow {
   TVector3 getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave);
 
   const double n_air = 1;
-  const double n_ice = 1.31; // might need to check this
+  const double n_ice = 1.35; //  Changed from 1.31, as 1.35 is what Gorham and Besson find with radio. Lowers Brewster angle by a couple of degrees.
 
 
   TVector3 specularReflection(const TVector3& reflectionPointToSource, const TVector3& surfaceNormal);
