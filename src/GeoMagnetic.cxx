@@ -292,7 +292,7 @@ void lonLatAltToSpherical(double lon, double lat, double alt, double& r, double&
 
   r = TMath::Sqrt(x*x + y*y + z*z);
   theta = r > 0 ? TMath::ACos(z/r) : 0;
-  phi = -TMath::ATan2(y, x) + 0.5*TMath::Pi();
+  phi = -TMath::ATan2(y, x) + TMath::PiOver2();
   phi = phi >= TMath::Pi() ?  phi - TMath::TwoPi() : phi;
 
   // std::cout << lon <<  "\t" << lat << "\t" << alt  << std::endl;
