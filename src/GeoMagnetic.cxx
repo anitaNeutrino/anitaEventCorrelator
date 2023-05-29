@@ -147,7 +147,7 @@ void getGaussCoefficients(){
       if(g_or_h == "g"){
 
         it = g_vs_time.find(year);
-        if(it!=g_vs_time.end()){
+        if(it != g_vs_time.end()){
           it->second.at(index) = atof(thisRow.at(col).Data());
         }
         else{
@@ -499,7 +499,8 @@ double evalSchmidtQuasiNormalisedAssociatedLegendre(int n, int m, double x){
  * 
  * @return 
  */
-double GeoMagnetic::getPotentialAtSpherical(UInt_t unixTime, double r, double theta, double phi){
+double GeoMagnetic::getPotentialAtSpherical(UInt_t unixTime, double r, double theta, double phi) {
+
   prepareGeoMagnetics();
 //  TDatime t2(unixTime);
 //  int year = t2.GetYear();
@@ -507,29 +508,26 @@ double GeoMagnetic::getPotentialAtSpherical(UInt_t unixTime, double r, double th
   double V = 0; // the potential
 
   // sum over the legendre polynomials normalised by the Gauss coefficients g and h
-  for(int n=1;  n < numPoly; n++){
-    for(int m=0;  m <= n;  m++){
-      double mPhi = m*phi;
+  for(int n = 1; n < numPoly; n++) {
+    for(int m=0;  m <= n;  m++) {
+    
+      double mPhi = m * phi;
       double part = 0;
 
       double this_g = GeoMagnetic::g(unixTime, n, m);
-      if(this_g != 0){
-        part += this_g*TMath::Cos(mPhi);
-      }
+      if (this_g) part += this_g * TMath::Cos(mPhi);
+      
       double this_h = GeoMagnetic::h(unixTime, n, m);
-      if(this_h){
-        part += this_h*TMath::Sin(mPhi);
-      }
+      if (this_h) part += this_h * TMath::Sin(mPhi);
 
-      if(part != 0){
+      if (part) {
+      
         double cosTheta = TMath::Cos(theta);
         double P_n_m = evalSchmidtQuasiNormalisedAssociatedLegendre(n, m, cosTheta);
-        part *= earth_radius*pow(earth_radius/r, n+1)*P_n_m;
+        part *= earth_radius*pow(earth_radius/r, n+1) * P_n_m;
         V += part;
 
-        if(TMath::IsNaN(part)){
-          std::cout << earth_radius << "\t" << r << "\t" << pow(earth_radius/r, n+1) << "\t" << this_g << "\t" << cos(mPhi) << "\t" <<  this_h << "\t" << sin(mPhi) << "\t" << P_n_m << std::endl;
-        }
+        if (TMath::IsNaN(part)) std::cout << earth_radius << "\t" << r << "\t" << pow(earth_radius / r, n+1) << "\t" << this_g << "\t" << cos(mPhi) << "\t" <<  this_h << "\t" << sin(mPhi) << "\t" << P_n_m << std::endl;
       }
     }
   }
@@ -597,11 +595,45 @@ double GeoMagnetic::X_atLonLatAlt(UInt_t unixTime, double lon, double lat, doubl
  * @return 
  */
 
-double GeoMagnetic::X_atSpherical(UInt_t unixTime, double r, double theta, double phi){  
+double GeoMagnetic::X_atSpherical(UInt_t unixTime, double r, double theta, double phi) {
+  
   prepareGeoMagnetics();
-  double V0 = getPotentialAtSpherical(unixTime, r, theta, phi);
-  double V1 = getPotentialAtSpherical(unixTime, r, theta+dTheta, phi);
-  double BX = (V1-V0)/(dTheta*r);
+
+  double BX = 0;
+
+  // sum over the legendre polynomials normalised by the Gauss coefficients g and h
+  for (int n = 1; n < numPoly; n++) {
+    for (int m = 0; m <= n; m++) {
+
+      double mPhi = m * phi;
+      double part = 0;
+
+      double this_g = GeoMagnetic::g(unixTime, n, m);
+      if (this_g) part += this_g * TMath::Cos(mPhi);
+      
+      double this_h = GeoMagnetic::h(unixTime, n, m);
+      if (this_h) part += this_h * TMath::Sin(mPhi);
+
+      if (part) {
+      
+        double cosTheta = TMath::Cos(theta);
+        double tanTheta = TMath::Tan(theta);
+        
+        double P_n_m = evalSchmidtQuasiNormalisedAssociatedLegendre(n, m, cosTheta);
+        double P_n_mPlus1 = evalSchmidtQuasiNormalisedAssociatedLegendre(n, m + 1, cosTheta);
+        
+        part *= pow(earth_radius / r, n + 2) * (m * P_n_m / tanTheta + P_n_mPlus1);
+        BX += part;
+
+        if (TMath::IsNaN(part)) std::cout << earth_radius << "\t" << r << "\t" << pow(earth_radius / r, n + 2) << "\t" << this_g << "\t" << cos(mPhi) << "\t" <<  this_h << "\t" << sin(mPhi) << "\t" << P_n_m << std::endl;
+      }
+    }
+  }
+
+//  double V0 = getPotentialAtSpherical(unixTime, r, theta, phi);
+//  double V1 = getPotentialAtSpherical(unixTime, r, theta+dTheta, phi);
+//  double BX = (V1-V0)/(dTheta*r);
+
   return BX;
 }
 
@@ -636,11 +668,45 @@ double GeoMagnetic::Y_atLonLatAlt(UInt_t unixTime, double lon,  double lat, doub
  * 
  * @return 
  */
-double GeoMagnetic::Y_atSpherical(UInt_t unixTime, double r,  double theta, double phi){
+double GeoMagnetic::Y_atSpherical(UInt_t unixTime, double r,  double theta, double phi) {
+
   prepareGeoMagnetics();
-  double V0 = getPotentialAtSpherical(unixTime, r, theta, phi);
-  double V1 = getPotentialAtSpherical(unixTime, r, theta, phi+dPhi);
-  double BY = -(V1-V0)/(dPhi*r*TMath::Sin(theta));
+
+  double BY = 0;
+  
+  // sum over the legendre polynomials normalised by the Gauss coefficients g and h
+  for (int n = 1; n < numPoly; n++) {
+    for (int m = 0; m <= n; m++) {
+    
+      double mPhi = m * phi;
+      double part = 0;
+
+      double this_g = GeoMagnetic::g(unixTime, n, m);
+      if (this_g) part -= this_g * m * TMath::Sin(mPhi);  //  Minus sign is from differentiating cos(m * Phi).
+      
+      double this_h = GeoMagnetic::h(unixTime, n, m);
+      if (this_h) part += this_h * m * TMath::Cos(mPhi);
+
+      if (part) {
+      
+        double cosTheta = TMath::Cos(theta);
+        double sinTheta = TMath::Sin(theta);
+        double P_n_m = evalSchmidtQuasiNormalisedAssociatedLegendre(n, m, cosTheta);
+        
+        part *= pow(earth_radius / r, n + 2) * P_n_m / sinTheta;
+        BY = part;
+
+        if (TMath::IsNaN(part)) std::cout << earth_radius << "\t" << r << "\t" << pow(earth_radius / r, n + 2) << "\t" << this_g << "\t" << cos(mPhi) << "\t" <<  this_h << "\t" << sin(mPhi) << "\t" << P_n_m << std::endl;
+      }
+    }
+  }
+
+  BY *= -1;  //  Minus sign is from negative of gradient.
+  
+//  double V0 = getPotentialAtSpherical(unixTime, r, theta, phi);
+//  double V1 = getPotentialAtSpherical(unixTime, r, theta, phi+dPhi);
+//  double BY = -(V1-V0)/(dPhi*r*TMath::Sin(theta));
+
   return BY;
 }
 
@@ -720,12 +786,42 @@ TCanvas* GeoMagnetic::plotFieldAtAltitude(UInt_t unixTime, double altitude){
  * 
  * @return Downwards component of geomagnetic field
  */
-double GeoMagnetic::Z_atSpherical(UInt_t unixTime, double r,  double theta, double phi){
+double GeoMagnetic::Z_atSpherical(UInt_t unixTime, double r,  double theta, double phi) {
+
   prepareGeoMagnetics();
   
-  double V0 = getPotentialAtSpherical(unixTime, r, theta, phi);
-  double V1 = getPotentialAtSpherical(unixTime, r+dr, theta, phi);
-  double BZ = (V1-V0)/dr; // negative of the gradient of the potential
+  double BZ = 0;
+
+  // sum over the legendre polynomials normalised by the Gauss coefficients g and h
+  for (int n = 1; n < numPoly; n++) {
+    for (int m = 0; m <= n; m++) {
+    
+      double mPhi = m * phi;
+      double part = 0;
+
+      double this_g = GeoMagnetic::g(unixTime, n, m);
+      if (this_g) part += this_g * TMath::Cos(mPhi);
+      
+      double this_h = GeoMagnetic::h(unixTime, n, m);
+      if (this_h) part += this_h * TMath::Sin(mPhi);
+
+      if (part) {
+      
+        double cosTheta = TMath::Cos(theta);
+        double P_n_m = evalSchmidtQuasiNormalisedAssociatedLegendre(n, m, cosTheta);
+
+        part *= -(n + 1) * pow(earth_radius / r, n + 2) * P_n_m;
+        BZ += part;
+
+        if (TMath::IsNaN(part)) std::cout << earth_radius << "\t" << r << "\t" << pow(earth_radius / r, n + 2) << "\t" << this_g << "\t" << cos(mPhi) << "\t" <<  this_h << "\t" << sin(mPhi) << "\t" << P_n_m << std::endl;
+      }
+    }
+  }
+  
+//  double V0 = getPotentialAtSpherical(unixTime, r, theta, phi);
+//  double V1 = getPotentialAtSpherical(unixTime, r+dr, theta, phi);
+//  double BZ = (V1-V0)/dr; // negative of the gradient of the potential
+
   return BZ;
 }
 
