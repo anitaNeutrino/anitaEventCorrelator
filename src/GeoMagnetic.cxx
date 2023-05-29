@@ -506,7 +506,7 @@ double GeoMagnetic::getPotentialAtSpherical(UInt_t unixTime, double r, double th
       if(this_g != 0){
         part += this_g*TMath::Cos(mPhi);
       }
-      double this_h = GeoMagnetic::h(year, n, m);
+      double this_h = GeoMagnetic::h(unixTime, n, m);
       if(this_h){
         part += this_h*TMath::Sin(mPhi);
       }
