@@ -245,24 +245,28 @@ double getFactorial(int i){
 
 
 /** 
- * Convert unixTime to fractional year with waaayyy too much precision
+ * Find year in which unixTime begins, then calculate fractional to next year
  * I think this should correctly handle leap years and other anomolies
  * 
  * @param unixTime is the seconds since 1970
  * 
  * @return year as a decimal quantity
  */
-double unixTimeToFractionalYear(UInt_t unixTime){
+double unixTimeToFractionalNextYear(UInt_t unixTime) {
+
   TDatime t2(unixTime);
   int thisYear = t2.GetYear();
+
   TDatime t1(thisYear, 0, 0, 0, 0, 0);
   UInt_t unixTimeYearStart = t1.Convert();
-  TDatime t3(thisYear+1, 0, 0, 0, 0, 0);
+
+  TDatime t3(thisYear + 1, 0, 0, 0, 0, 0);
   UInt_t unixTimeNextYear = t3.Convert();
-  double year = thisYear;
-  year += double(unixTime - unixTimeYearStart)/double(unixTimeNextYear - unixTimeYearStart);
+  
+  double fracNextyear = (double) (unixTime - unixTimeYearStart) / (unixTimeNextYear - unixTimeYearStart);
   // std::cout << unixTime << "\t" << thisYear << "\t" << unixTimeYearStart << "\t" << unixTimeNextYear << std::endl;
-  return year;
+
+  return fracNextYear;
 }
 
 
@@ -280,9 +284,11 @@ double unixTimeToFractionalYear(UInt_t unixTime){
  * @param phi is the the azimuthal angle (increasing east from Greenwich meridian)
  * @param theta is the elevation angle (theta = 0 points to north, theta = pi points south)
  */
-void lonLatAltToSpherical(double lon, double lat, double alt, double& r, double& theta, double& phi){
+void lonLatAltToSpherical(double lon, double lat, double alt, double& r, double& theta, double& phi) {
+
   double cartesian[3];
-  AnitaGeomTool::Instance()->getCartesianCoords(lat, lon, alt, cartesian);
+  AnitaGeomTool::Instance() -> getCartesianCoords(lat, lon, alt, cartesian);
+
   double x = cartesian[0];
   double y = cartesian[1];
   double z = cartesian[2];
@@ -311,11 +317,13 @@ void lonLatAltToSpherical(double lon, double lat, double alt, double& r, double&
  * 
  * @return 
  */
-TVector3 lonLatAltToVector(double lon, double lat, double alt){
+TVector3 lonLatAltToVector(double lon, double lat, double alt) {
+
   double r, theta, phi;
   lonLatAltToSpherical(lon, lat, alt, r, theta, phi);
   TVector3 v;
   v.SetMagThetaPhi(r, theta, phi);
+
   return v;
 }
 
@@ -333,7 +341,7 @@ TVector3 lonLatAltToVector(double lon, double lat, double alt){
  * @param theta is the elevation angle (radians), theta = 0 at the north pole, increases to pi at the south pole
  * @param phi is the azimuthal angle (radians), east is +ve, west is -ve.
  */
-void sphericalToLatLonAlt(double& lon, double& lat, double& alt, double r, double theta, double phi){
+void sphericalToLatLonAlt(double& lon, double& lat, double& alt, double r, double theta, double phi) {
 
   double x = r*TMath::Sin(phi)*TMath::Sin(theta);
   double y = r*TMath::Cos(phi)*TMath::Sin(theta);
@@ -406,13 +414,13 @@ void GeoMagnetic::setDebug(bool db){
 double GeoMagnetic::g(UInt_t unixTime, int n, int m){
 
   prepareGeoMagnetics();
-  TDatime datime(unixTime);
-  int year = datime.GetYear();
+//  TDatime datime(unixTime);
+//  int year = datime.GetYear();
 //  int year = 2015;
   int index = getIndex(n, m);
-  double fracNextYear = unixTimeToFractionalYear(unixTime) - year;
+  double fracNextYear = unixTimeToFractionalNextYear(unixTime);
   
-  return g_vs_time[year].at(index) + fracNextYear * g_vs_time[year + 1].at(index);
+  return g_vs_time[year].at(index) * (1 - fracNextYear) + g_vs_time[year + 1].at(index) * fracNextYear;
 }
 
 
@@ -433,13 +441,13 @@ double GeoMagnetic::g(UInt_t unixTime, int n, int m){
 double GeoMagnetic::h(UInt_t unixTime, int n, int m){
 
   prepareGeoMagnetics();
-  TDatime datime(unixTime);
-  int year = datime.GetYear();
+//  TDatime datime(unixTime);
+//  int year = datime.GetYear();
 //  int year = 2015;
   int index = getIndex(n, m);
-  double fracNextYear = unixTimeToFractionalYear(unixTime) - year;
+  double fracNextYear = unixTimeToFractionalNextYear(unixTime);
   
-  return h_vs_time[year].at(index) + + fracNextYear * h_vs_time[year + 1].at(index);
+  return h_vs_time[year].at(index) * (1 - fracNextYear) + h_vs_time[year + 1].at(index) * fracNextYear;
 }
 
 
