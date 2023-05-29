@@ -624,23 +624,38 @@ double GeoMagnetic::X_atSpherical(UInt_t unixTime, double r, double theta, doubl
       if (this_h) part += this_h * TMath::Sin(mPhi);
 
       if (part) {
-              
-        double P_n_m = evalSchmidtQuasiNormalisedAssociatedLegendre(n, m, cosTheta);
         
-        if (m < n) {
+        double P_n_mPlus1 = (m < n) ? evalSchmidtQuasiNormalisedAssociatedLegendre(n, m + 1, cosTheta) : 0;
         
-          double P_n_mPlus1 = evalSchmidtQuasiNormalisedAssociatedLegendre(n, m + 1, cosTheta);
+        part *= pow(earth_radius / r, n + 2);  //  Factor of r comes from differentiating w.r.t. theta.
         
-          part *= pow(earth_radius / r, n + 2) * (P_n_m * m / tanTheta + P_n_mPlus1);  //  Factor of r comes from differentiating w.r.t. theta.
+        //  With Schmidt quasi-normalization of associated Legendre polynomials, we have case-by-case recursion formulas for differentiation.
+        //  Generalizations of these are found under "Implementation of associated Legendre functions in GSL" (GSL-TR-001-20220827).
+        //  Based on documentation for ROOT::Math::assoc_legendre(), Condon-Shortley phase has been omitted.
+        if (n == 0 && m == 0) {
+        
+          part *= 0;
+        
+        } else if (n > 0 && m == 0) {
+        
+          part *= -sqrt(n * (n + 1) / 2) * P_n_mPlus1;  
+        
+        } else if (n > 0 && m > 0) {
+        
+          double P_n_mMinus1 = evalSchmidtQuasiNormalisedAssociatedLegendre(n, m - 1, cosTheta);
+          double mEq1Factor = (m == 1) ? sqrt(2) : 1;
           
-        } else {  //  If m > n, Legendre polynomial P_n_m = 0.
-        
-          part *= pow(earth_radius / r, n + 2) * P_n_m * m / tanTheta;
+          part *= 0.5 * (sqrt((n + m) * (n - m + 1)) * mEq1Factor * P_n_mMinus1 - sqrt((n + m + 1) * (n - m)) * P_n_mPlus1);
         }
           
         BX += part;
 
-        if (TMath::IsNaN(part)) std::cout << earth_radius << "\t" << r << "\t" << pow(earth_radius / r, n + 2) << "\t" << this_g << "\t" << cos(mPhi) << "\t" <<  this_h << "\t" << sin(mPhi) << "\t" << P_n_m << std::endl;
+        if (TMath::IsNaN(part)) {
+        
+          double P_n_m = evalSchmidtQuasiNormalisedAssociatedLegendre(n, m, cosTheta);
+        
+          std::cout << earth_radius << "\t" << r << "\t" << pow(earth_radius / r, n + 2) << "\t" << this_g << "\t" << cos(mPhi) << "\t" <<  this_h << "\t" << sin(mPhi) << "\t" << P_n_m << std::endl;
+        }
       }
     }
   }
