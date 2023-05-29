@@ -49,7 +49,7 @@ TF1* fExpAtmos;
 // --------------------------------------------------------------------------------------------------------------------------------------
 
 /** 
- * Maps the polynomials degree(n) and order (n) to an index for the vectors inside the g_vs_time, g_vs_time maps
+ * Maps the polynomials degree(n) and order (m) to an index for the vectors inside the g_vs_time, h_vs_time maps
  * 
  * @param n is the degree
  * @param m is the order
