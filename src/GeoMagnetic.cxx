@@ -256,7 +256,7 @@ double unixTimeToFractionalNextEpoch(UInt_t unixTime) {
 
   TDatime t2(unixTime);
   int thisYear = t2.GetYear();
-  int thisEpoc = 5 * (thisYear / 5);
+  int thisEpoch = 5 * (thisYear / 5);
 
   TDatime t1(thisEpoch, 0, 0, 0, 0, 0);
   UInt_t unixTimeEpochStart = t1.Convert();
@@ -450,7 +450,7 @@ double GeoMagnetic::h(UInt_t unixTime, int n, int m){
   int epoch = 5 * (year / 5);
 //  int year = 2015;
   int index = getIndex(n, m);
-  double fracNextYear = unixTimeToFractionalNextEpoch(unixTime);
+  double fracNextEpoch = unixTimeToFractionalNextEpoch(unixTime);
   
   return h_vs_time[epoch].at(index) * (1 - fracNextEpoch) + h_vs_time[epoch + 5].at(index) * fracNextEpoch;
 }
