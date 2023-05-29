@@ -263,7 +263,7 @@ double unixTimeToFractionalNextYear(UInt_t unixTime) {
   TDatime t3(thisYear + 1, 0, 0, 0, 0, 0);
   UInt_t unixTimeNextYear = t3.Convert();
   
-  double fracNextyear = (double) (unixTime - unixTimeYearStart) / (unixTimeNextYear - unixTimeYearStart);
+  double fracNextYear = (double) (unixTime - unixTimeYearStart) / (unixTimeNextYear - unixTimeYearStart);
   // std::cout << unixTime << "\t" << thisYear << "\t" << unixTimeYearStart << "\t" << unixTimeNextYear << std::endl;
 
   return fracNextYear;
@@ -414,8 +414,9 @@ void GeoMagnetic::setDebug(bool db){
 double GeoMagnetic::g(UInt_t unixTime, int n, int m){
 
   prepareGeoMagnetics();
-//  TDatime datime(unixTime);
-//  int year = datime.GetYear();
+  
+  TDatime datime(unixTime);
+  int year = datime.GetYear();
 //  int year = 2015;
   int index = getIndex(n, m);
   double fracNextYear = unixTimeToFractionalNextYear(unixTime);
@@ -441,8 +442,8 @@ double GeoMagnetic::g(UInt_t unixTime, int n, int m){
 double GeoMagnetic::h(UInt_t unixTime, int n, int m){
 
   prepareGeoMagnetics();
-//  TDatime datime(unixTime);
-//  int year = datime.GetYear();
+  TDatime datime(unixTime);
+  int year = datime.GetYear();
 //  int year = 2015;
   int index = getIndex(n, m);
   double fracNextYear = unixTimeToFractionalNextYear(unixTime);
