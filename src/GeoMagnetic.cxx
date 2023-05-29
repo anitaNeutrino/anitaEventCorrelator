@@ -700,10 +700,10 @@ double GeoMagnetic::Y_atSpherical(UInt_t unixTime, double r,  double theta, doub
       double part = 0;
 
       double this_g = GeoMagnetic::g(unixTime, n, m);
-      if (this_g) part -= this_g * m * TMath::Sin(mPhi);  //  Minus sign is from differentiating cos(m * Phi).
+      if (this_g) part += this_g * m * TMath::Sin(mPhi);
       
       double this_h = GeoMagnetic::h(unixTime, n, m);
-      if (this_h) part += this_h * m * TMath::Cos(mPhi);
+      if (this_h) part -= this_h * m * TMath::Cos(mPhi);
 
       if (part) {
       
@@ -716,8 +716,6 @@ double GeoMagnetic::Y_atSpherical(UInt_t unixTime, double r,  double theta, doub
       }
     }
   }
-
-  BY *= -1;  //  Minus sign is from negative of gradient.
   
 //  double V0 = getPotentialAtSpherical(unixTime, r, theta, phi);
 //  double V1 = getPotentialAtSpherical(unixTime, r, theta, phi+dPhi);
