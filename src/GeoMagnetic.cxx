@@ -424,7 +424,9 @@ double GeoMagnetic::g(UInt_t unixTime, int n, int m){
   int index = getIndex(n, m);
   double fracNextEpoch = unixTimeToFractionalNextEpoch(unixTime);
   
-  return g_vs_time[epoch].at(index) * (1 - fracNextEpoch) + g_vs_time[epoch + 5].at(index) * fracNextEpoch;
+  double gVal = (g_vs_time.count(epoch + 5)) ? g_vs_time[epoch].at(index) * (1 - fracNextEpoch) + g_vs_time[epoch + 5].at(index) * fracNextEpoch : g_vs_time[epoch].at(index);
+  
+  return gVal;
 }
 
 
@@ -452,7 +454,9 @@ double GeoMagnetic::h(UInt_t unixTime, int n, int m){
   int index = getIndex(n, m);
   double fracNextEpoch = unixTimeToFractionalNextEpoch(unixTime);
   
-  return h_vs_time[epoch].at(index) * (1 - fracNextEpoch) + h_vs_time[epoch + 5].at(index) * fracNextEpoch;
+  double hVal = (h_vs_time.count(epoch + 5)) ? h_vs_time[epoch].at(index) * (1 - fracNextEpoch) + h_vs_time[epoch + 5].at(index) * fracNextEpoch : h_vs_time[epoch].at(index);
+  
+  return hVal;
 }
 
 
