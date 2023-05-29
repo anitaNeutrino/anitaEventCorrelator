@@ -404,10 +404,15 @@ void GeoMagnetic::setDebug(bool db){
  * @return the time interpolated IGRF/DGRF g coefficient
  */
 double GeoMagnetic::g(UInt_t unixTime, int n, int m){
+
   prepareGeoMagnetics();
-  int year = 2015;
+  TDatime datime(unixTime);
+  int year = datime.GetYear();
+//  int year = 2015;
   int index = getIndex(n, m);
-  return g_vs_time[year].at(index);
+  double fracNextYear = unixTimeToFractionalYear(unixTime) - year;
+  
+  return g_vs_time[year].at(index) + fracNextYear * g_vs_time[year + 1].at(index);
 }
 
 
@@ -426,10 +431,15 @@ double GeoMagnetic::g(UInt_t unixTime, int n, int m){
  * @return the time interpolated IGRF h coefficient
  */
 double GeoMagnetic::h(UInt_t unixTime, int n, int m){
-  prepareGeoMagnetics();  
-  int year = 2015;
-  int index = getIndex(n, m);  
-  return h_vs_time[year].at(index);
+
+  prepareGeoMagnetics();
+  TDatime datime(unixTime);
+  int year = datime.GetYear();
+//  int year = 2015;
+  int index = getIndex(n, m);
+  double fracNextYear = unixTimeToFractionalYear(unixTime) - year;
+  
+  return h_vs_time[year].at(index) + + fracNextYear * h_vs_time[year + 1].at(index);
 }
 
 
@@ -481,7 +491,9 @@ double evalSchmidtQuasiNormalisedAssociatedLegendre(int n, int m, double x){
  */
 double GeoMagnetic::getPotentialAtSpherical(UInt_t unixTime, double r, double theta, double phi){
   prepareGeoMagnetics();
-  int year = 2015; // for now, should be a function of time
+  TDatime t2(unixTime);
+  int year = t2.GetYear();
+//  int year = 2015; // for now, should be a function of time
   double V = 0; // the potential
 
   // sum over the legendre polynomials normalised by the Gauss coefficients g and h
