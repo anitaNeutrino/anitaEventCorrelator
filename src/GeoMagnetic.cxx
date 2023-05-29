@@ -341,18 +341,18 @@ TVector3 lonLatAltToVector(double lon, double lat, double alt) {
  * @param theta is the elevation angle (radians), theta = 0 at the north pole, increases to pi at the south pole
  * @param phi is the azimuthal angle (radians), east is +ve, west is -ve.
  */
-void sphericalToLatLonAlt(double& lon, double& lat, double& alt, double r, double theta, double phi) {
+void sphericalToLatLonAlt(double & lon, double & lat, double & alt, double r, double theta, double phi) {
 
-  double x = r*TMath::Sin(phi)*TMath::Sin(theta);
-  double y = r*TMath::Cos(phi)*TMath::Sin(theta);
-  double z = r*TMath::Cos(theta);
-  double cartesian[3] = {x, y, z};
+  double cartesian[3];
+  cartesian[0] = r * TMath::Sin(phi) * TMath::Sin(theta);
+  cartesian[1] = r * TMath::Cos(phi) * TMath::Sin(theta);
+  cartesian[2] = r * TMath::Cos(theta);
 
-  AnitaGeomTool* g = AnitaGeomTool::Instance();
-  g->getLatLonAltFromCartesian(cartesian, lat, lon, alt);
+  AnitaGeomTool * g = AnitaGeomTool::Instance();
+  g -> getLatLonAltFromCartesian(cartesian, lat, lon, alt);
 
   // fml... 
-  lat = theta*TMath::RadToDeg() <= 90 ? -lat : lat;
+  lat = theta * TMath::RadToDeg() <= 90 ? -lat : lat;
 }
 
 
@@ -365,7 +365,8 @@ void sphericalToLatLonAlt(double& lon, double& lat, double& alt, double r, doubl
  * @param alt 
  * @param v 
  */
-void vectorToLonLatAlt(double& lon, double& lat, double& alt, const TVector3& v){
+void vectorToLonLatAlt(double & lon, double & lat, double & alt, const TVector3 & v) {
+
   sphericalToLatLonAlt(lon, lat, alt, v.Mag(), v.Theta(), v.Phi());
 }
 
