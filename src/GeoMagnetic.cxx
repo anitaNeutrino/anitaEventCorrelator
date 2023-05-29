@@ -491,8 +491,8 @@ double evalSchmidtQuasiNormalisedAssociatedLegendre(int n, int m, double x){
  */
 double GeoMagnetic::getPotentialAtSpherical(UInt_t unixTime, double r, double theta, double phi){
   prepareGeoMagnetics();
-  TDatime t2(unixTime);
-  int year = t2.GetYear();
+//  TDatime t2(unixTime);
+//  int year = t2.GetYear();
 //  int year = 2015; // for now, should be a function of time
   double V = 0; // the potential
 
