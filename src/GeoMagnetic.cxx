@@ -245,28 +245,29 @@ double getFactorial(int i){
 
 
 /** 
- * Find year in which unixTime begins, then calculate fractional to next year
+ * Find 5-year IGRF epoch in which unixTime begins, then calculate fractional to next epoch
  * I think this should correctly handle leap years and other anomolies
  * 
  * @param unixTime is the seconds since 1970
  * 
- * @return year as a decimal quantity
+ * @return fraction into next epoch
  */
-double unixTimeToFractionalNextYear(UInt_t unixTime) {
+double unixTimeToFractionalNextEpoch(UInt_t unixTime) {
 
   TDatime t2(unixTime);
   int thisYear = t2.GetYear();
+  int thisEpoc = 5 * (thisYear / 5);
 
-  TDatime t1(thisYear, 0, 0, 0, 0, 0);
-  UInt_t unixTimeYearStart = t1.Convert();
+  TDatime t1(thisEpoch, 0, 0, 0, 0, 0);
+  UInt_t unixTimeEpochStart = t1.Convert();
 
-  TDatime t3(thisYear + 1, 0, 0, 0, 0, 0);
-  UInt_t unixTimeNextYear = t3.Convert();
+  TDatime t3(thisEpoch + 5, 0, 0, 0, 0, 0);
+  UInt_t unixTimeNextEpoch = t3.Convert();
   
-  double fracNextYear = (double) (unixTime - unixTimeYearStart) / (unixTimeNextYear - unixTimeYearStart);
+  double fracNextEpoch = (double) (unixTime - unixTimeEpochStart) / (unixTimeNextEpoch - unixTimeEpochStart);
   // std::cout << unixTime << "\t" << thisYear << "\t" << unixTimeYearStart << "\t" << unixTimeNextYear << std::endl;
 
-  return fracNextYear;
+  return fracNextEpoch;
 }
 
 
@@ -418,11 +419,12 @@ double GeoMagnetic::g(UInt_t unixTime, int n, int m){
   
   TDatime datime(unixTime);
   int year = datime.GetYear();
+  int epoch = 5 * (year / 5);
 //  int year = 2015;
   int index = getIndex(n, m);
-  double fracNextYear = unixTimeToFractionalNextYear(unixTime);
+  double fracNextEpoch = unixTimeToFractionalNextEpoch(unixTime);
   
-  return g_vs_time[year].at(index) * (1 - fracNextYear) + g_vs_time[year + 1].at(index) * fracNextYear;
+  return g_vs_time[epoch].at(index) * (1 - fracNextYear) + g_vs_time[epoch + 5].at(index) * fracNextYear;
 }
 
 
@@ -445,11 +447,12 @@ double GeoMagnetic::h(UInt_t unixTime, int n, int m){
   prepareGeoMagnetics();
   TDatime datime(unixTime);
   int year = datime.GetYear();
+  int epoch = 5 * (year / 5);
 //  int year = 2015;
   int index = getIndex(n, m);
   double fracNextYear = unixTimeToFractionalNextYear(unixTime);
   
-  return h_vs_time[year].at(index) * (1 - fracNextYear) + h_vs_time[year + 1].at(index) * fracNextYear;
+  return h_vs_time[epoch].at(index) * (1 - fracNextYear) + h_vs_time[epoch + 5].at(index) * fracNextYear;
 }
 
 
