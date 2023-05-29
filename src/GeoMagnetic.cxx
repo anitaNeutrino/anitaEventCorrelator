@@ -628,9 +628,18 @@ double GeoMagnetic::X_atSpherical(UInt_t unixTime, double r, double theta, doubl
       if (part) {
               
         double P_n_m = evalSchmidtQuasiNormalisedAssociatedLegendre(n, m, cosTheta);
-        double P_n_mPlus1 = evalSchmidtQuasiNormalisedAssociatedLegendre(n, m + 1, cosTheta);
         
-        part *= pow(earth_radius / r, n + 2) * (P_n_m * m / tanTheta + P_n_mPlus1);
+        if (m < n) {
+        
+          double P_n_mPlus1 = evalSchmidtQuasiNormalisedAssociatedLegendre(n, m + 1, cosTheta);
+        
+          part *= pow(earth_radius / r, n + 2) * (P_n_m * m / tanTheta + P_n_mPlus1);
+          
+        } else {  //  If |m| > n, Legendre polynomial P_n_m = 0.
+        
+          part *= pow(earth_radius / r, n + 2) * P_n_m * m / tanTheta;
+        }
+          
         BX += part;
 
         if (TMath::IsNaN(part)) std::cout << earth_radius << "\t" << r << "\t" << pow(earth_radius / r, n + 2) << "\t" << this_g << "\t" << cos(mPhi) << "\t" <<  this_h << "\t" << sin(mPhi) << "\t" << P_n_m << std::endl;
