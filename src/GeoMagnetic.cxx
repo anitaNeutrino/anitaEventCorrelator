@@ -509,9 +509,7 @@ double evalSchmidtQuasiNormalisedAssociatedLegendre(int n, int m, double x){
 double GeoMagnetic::getPotentialAtSpherical(UInt_t unixTime, double r, double theta, double phi) {
 
   prepareGeoMagnetics();
-//  TDatime t2(unixTime);
-//  int year = t2.GetYear();
-//  int year = 2015; // for now, should be a function of time
+
   double V = 0; // the potential
   
   double cosTheta = TMath::Cos(theta);
@@ -607,7 +605,7 @@ double GeoMagnetic::X_atSpherical(UInt_t unixTime, double r, double theta, doubl
   
   prepareGeoMagnetics();
 
-  double BX = 0;
+  double BX = 0;  //  The x-component of the B-field.
 
   double cosTheta = TMath::Cos(theta);
   double tanTheta = TMath::Tan(theta);
@@ -633,9 +631,9 @@ double GeoMagnetic::X_atSpherical(UInt_t unixTime, double r, double theta, doubl
         
           double P_n_mPlus1 = evalSchmidtQuasiNormalisedAssociatedLegendre(n, m + 1, cosTheta);
         
-          part *= pow(earth_radius / r, n + 2) * (P_n_m * m / tanTheta + P_n_mPlus1);
+          part *= pow(earth_radius / r, n + 2) * (P_n_m * m / tanTheta + P_n_mPlus1);  //  Factor of r comes from differentiating w.r.t. theta.
           
-        } else {  //  If |m| > n, Legendre polynomial P_n_m = 0.
+        } else {  //  If m > n, Legendre polynomial P_n_m = 0.
         
           part *= pow(earth_radius / r, n + 2) * P_n_m * m / tanTheta;
         }
@@ -689,7 +687,7 @@ double GeoMagnetic::Y_atSpherical(UInt_t unixTime, double r,  double theta, doub
 
   prepareGeoMagnetics();
 
-  double BY = 0;
+  double BY = 0;  //  The y-component of the B-field.
   
   double cosTheta = TMath::Cos(theta);
   double sinTheta = TMath::Sin(theta);
@@ -711,8 +709,8 @@ double GeoMagnetic::Y_atSpherical(UInt_t unixTime, double r,  double theta, doub
       
         double P_n_m = evalSchmidtQuasiNormalisedAssociatedLegendre(n, m, cosTheta);
         
-        part *= pow(earth_radius / r, n + 2) * P_n_m / sinTheta;
-        BY = part;
+        part *= pow(earth_radius / r, n + 2) * P_n_m / sinTheta;  //  Factor of r * sinTheta comes from differentiating w.r.t. phi.
+        BY += part;
 
         if (TMath::IsNaN(part)) std::cout << earth_radius << "\t" << r << "\t" << pow(earth_radius / r, n + 2) << "\t" << this_g << "\t" << cos(mPhi) << "\t" <<  this_h << "\t" << sin(mPhi) << "\t" << P_n_m << std::endl;
       }
