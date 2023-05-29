@@ -424,7 +424,7 @@ double GeoMagnetic::g(UInt_t unixTime, int n, int m){
   int index = getIndex(n, m);
   double fracNextEpoch = unixTimeToFractionalNextEpoch(unixTime);
   
-  return g_vs_time[epoch].at(index) * (1 - fracNextYear) + g_vs_time[epoch + 5].at(index) * fracNextYear;
+  return g_vs_time[epoch].at(index) * (1 - fracNextEpoch) + g_vs_time[epoch + 5].at(index) * fracNextEpoch;
 }
 
 
@@ -450,9 +450,9 @@ double GeoMagnetic::h(UInt_t unixTime, int n, int m){
   int epoch = 5 * (year / 5);
 //  int year = 2015;
   int index = getIndex(n, m);
-  double fracNextYear = unixTimeToFractionalNextYear(unixTime);
+  double fracNextYear = unixTimeToFractionalNextEpoch(unixTime);
   
-  return h_vs_time[epoch].at(index) * (1 - fracNextYear) + h_vs_time[epoch + 5].at(index) * fracNextYear;
+  return h_vs_time[epoch].at(index) * (1 - fracNextEpoch) + h_vs_time[epoch + 5].at(index) * fracNextEpoch;
 }
 
 
