@@ -245,7 +245,7 @@ double getFactorial(int i){
 
 
 /** 
- * Find 5-year IGRF epoch in which unixTime begins, then calculate fractional to next epoch
+ * Find 5-year IGRF epoch in which unixTime begins, then calculate fraction into next epoch
  * I think this should correctly handle leap years and other anomolies
  * 
  * @param unixTime is the seconds since 1970
@@ -761,48 +761,6 @@ double GeoMagnetic::Z_atLonLatAlt(UInt_t unixTime, double lon, double lat, doubl
 
 
 
-/** 
- * Plots arrows representing the B field direction to visualise the magnetic field over Antarctica
- * 
- * The graphical objects have the kCanDelete bit set, so if you delete the canvas they are destroyed
- * 
- * @param unixTime is the time
- * @param altitude is the altitude at which to calculate the B-field
- * 
- * @return the canvas on which the plot is produced
- */
-TCanvas* GeoMagnetic::plotFieldAtAltitude(UInt_t unixTime, double altitude){
-
-  TCanvas* c = new TCanvas();
-  AntarcticaBackground* bg = new AntarcticaBackground();
-
-  int nx = bg->GetNbinsX();
-  int ny = bg->GetNbinsY();
-  bg->Draw();
-  bg->SetBit(kCanDelete);
-  
-  const int arrowEvery = 20;
-  for(int by=1; by <= ny; by+=arrowEvery){
-    double northing = bg->GetYaxis()->GetBinLowEdge(by);
-    for(int bx=1; bx <= nx; bx+=arrowEvery){
-      double easting = bg->GetXaxis()->GetBinLowEdge(bx);
-      double lon, lat;
-      RampdemReader::EastingNorthingToLonLat(easting, northing, lon, lat);
-      FieldPoint* f = new FieldPoint(unixTime, lon, lat, altitude);
-      f->SetBit(kMustCleanup);
-      f->SetBit(kCanDelete);
-      f->Draw();
-    }
-  }
-  return c;
-}
-
-
-
-
-
-
-
 
 /** 
  * Get the downwards facing component of the geomagnetic field
@@ -853,6 +811,44 @@ double GeoMagnetic::Z_atSpherical(UInt_t unixTime, double r,  double theta, doub
 //  double BZ = (V1-V0)/dr; // negative of the gradient of the potential
 
   return BZ;
+}
+
+
+
+/** 
+ * Plots arrows representing the B field direction to visualise the magnetic field over Antarctica
+ * 
+ * The graphical objects have the kCanDelete bit set, so if you delete the canvas they are destroyed
+ * 
+ * @param unixTime is the time
+ * @param altitude is the altitude at which to calculate the B-field
+ * 
+ * @return the canvas on which the plot is produced
+ */
+TCanvas* GeoMagnetic::plotFieldAtAltitude(UInt_t unixTime, double altitude){
+
+  TCanvas* c = new TCanvas();
+  AntarcticaBackground* bg = new AntarcticaBackground();
+
+  int nx = bg->GetNbinsX();
+  int ny = bg->GetNbinsY();
+  bg->Draw();
+  bg->SetBit(kCanDelete);
+  
+  const int arrowEvery = 20;
+  for(int by=1; by <= ny; by+=arrowEvery){
+    double northing = bg->GetYaxis()->GetBinLowEdge(by);
+    for(int bx=1; bx <= nx; bx+=arrowEvery){
+      double easting = bg->GetXaxis()->GetBinLowEdge(bx);
+      double lon, lat;
+      RampdemReader::EastingNorthingToLonLat(easting, northing, lon, lat);
+      FieldPoint* f = new FieldPoint(unixTime, lon, lat, altitude);
+      f->SetBit(kMustCleanup);
+      f->SetBit(kCanDelete);
+      f->Draw();
+    }
+  }
+  return c;
 }
 
 
