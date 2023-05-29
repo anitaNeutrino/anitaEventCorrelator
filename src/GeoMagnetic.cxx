@@ -605,7 +605,7 @@ double GeoMagnetic::X_atSpherical(UInt_t unixTime, double r, double theta, doubl
   
   prepareGeoMagnetics();
 
-  double BX = 0;  //  The x-component of the B-field.
+  double BX = 0;  //  The x-component of the B-field, (1 / r) * dV / dTheta.
 
   double cosTheta = TMath::Cos(theta);
   double tanTheta = TMath::Tan(theta);
@@ -687,7 +687,7 @@ double GeoMagnetic::Y_atSpherical(UInt_t unixTime, double r,  double theta, doub
 
   prepareGeoMagnetics();
 
-  double BY = 0;  //  The y-component of the B-field.
+  double BY = 0;  //  The y-component of the B-field, -(1 / (r * sinTheta)) * dV / dPhi.
   
   double cosTheta = TMath::Cos(theta);
   double sinTheta = TMath::Sin(theta);
@@ -806,7 +806,7 @@ double GeoMagnetic::Z_atSpherical(UInt_t unixTime, double r,  double theta, doub
 
   prepareGeoMagnetics();
   
-  double BZ = 0;
+  double BZ = 0;  //  The z-component of the B-field, dV / dr.
 
   double cosTheta = TMath::Cos(theta);
 
