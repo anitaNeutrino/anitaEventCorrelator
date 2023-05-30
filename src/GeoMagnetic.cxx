@@ -1077,6 +1077,7 @@ TCanvas* GeoMagnetic::plotFresnelReflection(){
 
 
 
+
 /** 
  * Applies a reflection to the fresnel coefficients
  * 
@@ -1264,6 +1265,26 @@ TVector3 GeoMagnetic::getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPa
 }
 
 
+/*
+ * Returns surface normal vector above ice relative to Earth's center.
+ * Using altitude as given by RampdemReader::SurfaceAboveGeoid(), create two vectors using using the
+ * resulting ECEF coordinate vector. The first vector differentiates the coordinate vector w.r.t. longitude,
+ * the second differentiates the coordinate w.r.t. latitude. The normal vector is the cross product of the
+ * first vector w.r.t. the second, then normalizing that (curvilinear coordinates surface normal).
+ * The altitude given by RampdemReader::SurfaceAboveGeoid() is evaluated pointwise with an angular resolution of
+ * 0.005 degrees in both longitude and latitude between adjacent points, so differentiation is done with finite difference method
+ * using central difference.
+ *
+ * @param lon is the longitude
+ * @param lat is the latitude
+ * 
+ * @return TVector3 representing curvilinear coordinates surface normal w.r.t. Earth's center
+ */
+TVector3 GeoMagnetic::getSurfaceNormal(double lon, double lat) {
+
+
+}
+
 
 
 
@@ -1276,9 +1297,7 @@ TVector3 GeoMagnetic::getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPa
  * 
  * @return 
  */
-
-double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave, 
-					    double xMax){
+double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave, double xMax){
 
   prepareGeoMagnetics();
   

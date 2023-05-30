@@ -72,14 +72,15 @@ class FieldPoint : public TArrow {
   double getExpectedPolarisationUpgoing(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave, double pathLength);
 
   TVector3 getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave);
+  
+  TVector3 getSurfaceNormal(double lon, double lat);
 
   const double n_air = 1;
   const double n_ice = 1.35; //  Changed from 1.31, as 1.35 is what Gorham and Besson find with radio. Lowers Brewster angle by a couple of degrees.
 
-
   TVector3 specularReflection(const TVector3& reflectionPointToSource, const TVector3& surfaceNormal);
   TVector3 fresnelReflection(const TVector3& sourceToReflection, const TVector3& surfaceNormal, TVector3& electricFieldVec, double n1=n_air, double n2=n_ice);
-  TCanvas* plotFresnelReflection();
+  TCanvas * plotFresnelReflection();
 
   double g(UInt_t unixTime, int n, int m);
   double h(UInt_t unixTime, int n, int m);
@@ -96,12 +97,12 @@ class FieldPoint : public TArrow {
   double Z_atLonLatAlt(UInt_t unixTime, double lon,  double lat, double alt);
   double Z_atSpherical(UInt_t unixTime, double r,  double theta, double phi);
 
-  TCanvas* plotFieldAtAltitude(UInt_t unixTime, double altitude);
-  TCanvas* plotAtmosphere();
+  TCanvas * plotFieldAtAltitude(UInt_t unixTime, double altitude);
+  TCanvas * plotAtmosphere();
 
   double getAtmosphericDensity(double altitude);
-  TVector3 getXMaxPosition(const TVector3& initialPosition, const TVector3& cosmicRayDirection, double xMax);
-  TVector3 getInitialPosition(const TVector3& destination, const TVector3& destinationToSource);
+  TVector3 getXMaxPosition(const TVector3 & initialPosition, const TVector3 & cosmicRayDirection, double xMax);
+  TVector3 getInitialPosition(const TVector3 & destination, const TVector3 & destinationToSource);
   void setDebug(bool db);
 
 
