@@ -432,7 +432,6 @@ double GeoMagnetic::g(UInt_t unixTime, int n, int m){
 
 
 
-
 /** 
  * Get the h Gauss coefficient in the IGRF/DGRF model
  *
@@ -458,11 +457,6 @@ double GeoMagnetic::h(UInt_t unixTime, int n, int m){
   
   return hVal;
 }
-
-
-
-
-
 
 
 
@@ -494,15 +488,14 @@ double evalSchmidtQuasiNormalisedAssociatedLegendre(int n, int m, double x){
 
 
 
-
 /** 
  * @brief Workhorse function for calculating the geomagnetic potential at any point above the earth spherical polar coordinates
  * Uses the GeoMagnetic model.
  *
+ * @param unixTime is the UNIX time in seconds, no longer an dummy variable
  * @param r is the radius from the Earth centre in metres
  * @param theta is the angle from the equator in radians, north is +ve
  * @param phi is the angle from the Greenwich maridian (lon=0) in radians
- * @param t is the time, currently just a dummy variable...
  * 
  * @return 
  */
@@ -540,11 +533,6 @@ double GeoMagnetic::getPotentialAtSpherical(UInt_t unixTime, double r, double th
   
   return V;
 }
-
-
-
-
-
 
 
 
@@ -589,18 +577,18 @@ double GeoMagnetic::X_atLonLatAlt(UInt_t unixTime, double lon, double lat, doubl
   return X_atSpherical(unixTime, r, theta, phi);
 }
 
+
 /** 
  * Get the northwards component of the geo-magnetic field,
  * 
  * 
- * @param unixTime 
- * @param lon 
- * @param lat 
- * @param alt 
+ * @param r is the radius from the Earth centre in metres
+ * @param theta is the angle from the equator in radians, north is +ve
+ * @param phi is the angle from the Greenwich maridian (lon=0) in radians
+ * @param unixTime is the UNIX time in seconds, no longer an dummy variable
  * 
  * @return 
  */
-
 double GeoMagnetic::X_atSpherical(UInt_t unixTime, double r, double theta, double phi) {
   
   prepareGeoMagnetics();
@@ -691,10 +679,10 @@ double GeoMagnetic::Y_atLonLatAlt(UInt_t unixTime, double lon,  double lat, doub
 /** 
  * Get the eastwards component of the geo-magnetic field,
  * 
- * @param unixTime 
- * @param lon 
- * @param lat 
- * @param alt 
+ * @param unixTime is the UNIX time in seconds, no longer an dummy variable
+ * @param r is the radius from the Earth centre in metres
+ * @param theta is the angle from the equator in radians, north is +ve
+ * @param phi is the angle from the Greenwich maridian (lon=0) in radians
  * 
  * @return 
  */
@@ -765,11 +753,10 @@ double GeoMagnetic::Z_atLonLatAlt(UInt_t unixTime, double lon, double lat, doubl
 /** 
  * Get the downwards facing component of the geomagnetic field
  * 
- * @param unixTime 
- * @param r 
- * @param theta 
- * @param phi 
- * @param double 
+ * @param unixTime is the UNIX time in seconds, no longer an dummy variable
+ * @param r is the radius from the Earth centre in metres
+ * @param theta is the angle from the equator in radians, north is +ve
+ * @param phi is the angle from the Greenwich maridian (lon=0) in radians
  * 
  * @return Downwards component of geomagnetic field
  */
@@ -882,7 +869,6 @@ void GeoMagnetic::FieldPoint::Draw(Option_t* opt){
 
 
 
-
 /** 
  * Constructor for the field point taking a TVector containing the cartesian position at which you want to evaluate the field
  * 
@@ -895,6 +881,7 @@ GeoMagnetic::FieldPoint::FieldPoint(UInt_t unixTime, const TVector3& position) :
   fUnixTime = unixTime;
   calculateFieldAtPosition();  
 }
+
 
 
 
