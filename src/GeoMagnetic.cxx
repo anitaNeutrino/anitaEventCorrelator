@@ -40,8 +40,8 @@ bool debug = false;
 //  const double dPhi = 0.01*TMath::DegToRad();
 
 //  For taking finite difference with surface above ice
-const double dLon = 0.01;  //  in degrees
-const double dLat = 0.01;  //  in degrees
+const double dLon = 5e-3;  //  in degrees
+const double dLat = 5e-3;  //  in degrees
 
 // Globals for the atmospheric model, currently just an exponential fit to some numbers
 // from a table in the Wikipedia
@@ -1304,28 +1304,28 @@ TVector3 GeoMagnetic::getSurfaceNormal(double lon, double lat) {
   double cosLat = TMath::Cos(latRad);
   double sinLat = TMath::Sin(latRad);
   double N = pow(GEOID_MAX, 2) / sqrt(pow(GEOID_MAX * cosLat, 2) + pow(GEOID_MIN * sinLat, 2));  //  Prime vertical radius of curvature, in meters.
-  double dNdLat = pow(N, 3) * (1 - pow(GEOID_MIN / GEOID_MAX, 2)) * cosLat * sinLat / pow(GEOID_MAX, 2);  //  Differentiating prime vertical radius w.r.t. latitude. Related to Earth's meridonal radius of curvature, M.
+  double dNdLat = cosLat * sinLat * (1 - pow(GEOID_MIN / GEOID_MAX, 2)) * pow(N, 3) / pow(GEOID_MAX, 2);  //  Differentiating prime vertical radius w.r.t. latitude. Related to Earth's meridonal radius of curvature, M.
   
   double h = RampdemReader::SurfaceAboveGeoid(lon, lat);   //  Elevation above geoid above surface of the ice.
   if (h == -9999) h = 0;  //  Where there is no surface defined, instead set to 0 (sea level).
 
   //  Find finite difference of h w.r.t. longitude.
-  double hLonHi = RampdemReader::SurfaceAboveGeoid(lon + 0.5 * dLon, lat);
+  double hLonHi = RampdemReader::SurfaceAboveGeoid(lon + dLon, lat);
   if (hLonHi == -9999) hLonHi = 0;
 
-  double hLonLo = RampdemReader::SurfaceAboveGeoid(lon - 0.5 * dLon, lat);
+  double hLonLo = RampdemReader::SurfaceAboveGeoid(lon - dLon, lat);
   if (hLonLo == -9999) hLonLo = 0;
 
-  double dhdLon = (hLonHi - hLonLo) / (TMath::DegToRad() * dLon);
+  double dhdLon = (hLonHi - hLonLo) / (TMath::DegToRad() * 2 * dLon);
   
   //  Find finite differnce of h w.r.t. latitude.
-  double hLatHi = RampdemReader::SurfaceAboveGeoid(lon, lat + 0.5 * dLat);
+  double hLatHi = RampdemReader::SurfaceAboveGeoid(lon, lat + dLat);
   if (hLatHi == -9999) hLatHi = 0;
 
-  double hLatLo = RampdemReader::SurfaceAboveGeoid(lon, lat - 0.5 * dLat);
+  double hLatLo = RampdemReader::SurfaceAboveGeoid(lon, lat - dLat);
   if (hLatLo == -9999) hLatLo = 0;
 
-  double dhdLat = (hLatHi - hLatLo) / (TMath::DegToRad() * dLat);
+  double dhdLat = (hLatHi - hLatLo) / (TMath::DegToRad() * 2 * dLat);
   
   //  First, create geoid surface normal (the n-vector, what was used before). Trig functions are ordered the same as in AnitaGeomTool::getCartesianCoords().
   TVector3 n(cosLon * cosLat, sinLon * cosLat, sinLat);
