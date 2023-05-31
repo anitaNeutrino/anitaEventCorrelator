@@ -32,12 +32,16 @@ const double earth_radius = 6371.2e3; // earth radius in meters for the magnetic
 TF1* fAssocLegendre[numPoly][numPoly] = {{NULL}}; // Associated Legendre polynomials
 bool debug = false;
 
-// for "differentiating" the potential (really it's a difference with small delta values)
-// I suppose I could differentiate the expression by hand and evaluate that... but that's work
-const double dr = 1;
-const double dTheta = 0.01*TMath::DegToRad();  
-const double dPhi = 0.01*TMath::DegToRad();
+//  The potential has now been differentiated by hand. But finite difference method still used for too of ice surface above geoid.
+//  // for "differentiating" the potential (really it's a difference with small delta values)
+//  // I suppose I could differentiate the expression by hand and evaluate that... but that's work
+//  const double dr = 1;
+//  const double dTheta = 0.01*TMath::DegToRad();  
+//  const double dPhi = 0.01*TMath::DegToRad();
 
+//  For taking finite difference with surface above ice
+const double dLon = 0.01;  //  in degrees
+const double dLat = 0.01;  //  in degrees
 
 // Globals for the atmospheric model, currently just an exponential fit to some numbers
 // from a table in the Wikipedia
@@ -915,9 +919,9 @@ void GeoMagnetic::FieldPoint::calculateFieldAtPosition(){
   double theta = fPosition.Theta();
   double phi = fPosition.Phi();
   
-  double X = X_atSpherical(fUnixTime, r,  theta, phi); // north
-  double Y = Y_atSpherical(fUnixTime, r,  theta, phi); // east
-  double Z = Z_atSpherical(fUnixTime, r,  theta, phi); // down
+  double X = X_atSpherical(fUnixTime, r, theta, phi); // north
+  double Y = Y_atSpherical(fUnixTime, r, theta, phi); // east
+  double Z = Z_atSpherical(fUnixTime, r, theta, phi); // down
 
   // now convert into proper spherical polar coordinates..
   
@@ -1172,7 +1176,8 @@ TVector3 GeoMagnetic::fresnelReflection(const TVector3& incidentPoyntingVector, 
  * @return TVector3 containing a unit vector pointing to thetaWave/phiWave away from ANITA
  */
 
-TVector3 GeoMagnetic::getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave){
+TVector3 GeoMagnetic::getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPat, double phiWave, double thetaWave) {
+
   prepareGeoMagnetics();
   
   TVector3 anitaPosition = lonLatAltToVector(usefulPat.longitude, usefulPat.latitude, usefulPat.altitude);
@@ -1273,16 +1278,73 @@ TVector3 GeoMagnetic::getUnitVectorAlongThetaWavePhiWave(UsefulAdu5Pat& usefulPa
  * first vector w.r.t. the second, then normalizing that (curvilinear coordinates surface normal).
  * The altitude given by RampdemReader::SurfaceAboveGeoid() is evaluated pointwise with an angular resolution of
  * 0.005 degrees in both longitude and latitude between adjacent points, so differentiation is done with finite difference method
- * using central difference.
+ * using central difference over 3 adjacent cells.
  *
- * @param lon is the longitude
- * @param lat is the latitude
+ * ECEF coordinates parameterized in longitude (lon), latitude (lat), and altitude (h),
+ * and equitorial radius (a) and polar radius (b) as
+ * x = (N + h) * cos(lon) * cos(lat),
+ * y = (N + h) * sin(lon) * cos(lat),
+ * z = ((b / a)^2 * N + h) * sin(lat),
+ * where
+ * N = a^2 / sqrt((a * cos(lat))^2 + (b * sin(lat))^2)
+ *
+ * @param lon is the longitude (in degrees)
+ * @param lat is the latitude (in degrees)
  * 
  * @return TVector3 representing curvilinear coordinates surface normal w.r.t. Earth's center
  */
 TVector3 GeoMagnetic::getSurfaceNormal(double lon, double lat) {
 
+  //  Calculate trig and other functions used in proceeding vectors.
+  double lonRad = TMath::DegToRad() * lon;
+  double latRad = TMath::DegToRad() * lat;
 
+  double cosLon = TMath::Cos(lonRad);
+  double sinLon = TMath::Sin(lonRad);
+  double cosLat = TMath::Cos(latRad);
+  double sinLat = TMath::Sin(latRad);
+  double N = pow(GEOID_MAX, 2) / sqrt(pow(GEOID_MAX * cosLat, 2) + pow(GEOID_MIN * sinLat, 2));  //  Prime vertical radius of curvature, in meters.
+  double dNdLat = pow(N, 3) * (1 - pow(GEOID_MIN / GEOID_MAX, 2)) * cosLat * sinLat / pow(GEOID_MAX, 2);  //  Differentiating prime vertical radius w.r.t. latitude. Related to Earth's meridonal radius of curvature, M.
+  
+  double h = RampdemReader::SurfaceAboveGeoid(lon, lat);   //  Elevation above geoid above surface of the ice.
+  if (h == -9999) h = 0;  //  Where there is no surface, instead set to 0 (sea level).
+
+  //  Find finite difference of h w.r.t. longitude.
+  double hLonHi = RampdemReader::SurfaceAboveGeoid(lon + 0.5 * dLon, lat);
+  if (hLonHi == -9999) hLonHi = 0;
+
+  double hLonLo = RampdemReader::SurfaceAboveGeoid(lon - 0.5 * dLon, lat);
+  if (hLonLo == -9999) hLonLo = 0;
+
+  double dhdLon = (hLonHi - hLonLo) / (TMath::DegToRad() * dLon);
+  
+  //  Find finite differnce of h w.r.t. latitude.
+  double hLatHi = RampdemReader::SurfaceAboveGeoid(lon, lat + 0.5 * dLat);
+  if (hLatHi == -9999) hLatHi = 0;
+
+  double hLatLo = RampdemReader::SurfaceAboveGeoid(lon, lat - 0.5 * dLat);
+  if (hLatLo == -9999) hLatLo = 0;
+
+  double dhdLat = (hLatHi - hLatLo) / (TMath::DegToRad() * dLat);
+  
+  //  First, create geoid surface normal (the n-vector, what was used before).
+  TVector3 n(cosLon * cosLat, sinLon * cosLat, sinLat);
+  
+  //  Next, state partial derivatives of ECEF position vector.
+  TVector3 dRdLon;
+  dRdLon[0] = dhdLon * n[0] - (N + h) * n[1];
+  dRdLon[1] = dhdLon * n[1] + (N + h) * n[0];
+  dRdLon[2] = dhdLon * n[2];
+  
+  TVector3 dRdLat;
+  dRdLat[0] = (dNdLat + dhdLat) * n[0] - (N + h) * cosLon * sinLat;
+  dRdLat[1] = (dNdLat + dhdLat) * n[1] - (N + h) * sinLon * sinLat;
+  dRdLat[2] = (pow(GEOID_MIN / GEOID_MAX, 2) * dNdLat + dhdLat) * n[2] + (pow(GEOID_MIN / GEOID_MAX, 2) * N + h) * cosLat;
+
+  //  Evaluate the cross-product of these vectors.
+  TVector3 dRCross = dRdLon.Cross(dRdLat);
+  
+  return dRCross.Unit();
 }
 
 
