@@ -81,7 +81,7 @@ void getGaussCoefficients(){
     std::cerr << "Error in " << __FILE__ << " unable to find " << fileName.Data() << std::endl;
   }
 
-  const int expectedTokens = 28;  
+  const int expectedTokens = 29;  
   std::vector<std::vector<TString> > igrfDataTableStrings;
   while(!coeffs.eof()){
     std::string line;
