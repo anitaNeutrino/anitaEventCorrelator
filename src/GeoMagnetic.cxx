@@ -276,9 +276,9 @@ double unixTimeToFractionalNextEpoch(UInt_t unixTime) {
   //  Some time stamps are corrupted, so here we set them based around the closest year start ANITA-II through ANITA-IV completed their flight.
   if (thisEpoch < 2005 || thisEpoch > 2015)  {
   
-  	if (AnitaVersion::get() == 2 && thisEpoch != 2005) fracNextEpoch = 4. / 5;  //  ANITA-II ended near start of 2009.
-  	if (AnitaVersion::get() == 3 && (thisEpoch < 2010 || thisEpoch > 2015)) fracNextEpoch = 1;  //  III ended near start of 2015.
-  	if (AnitaVersion::get() == 4 && thisEpoch != 2015) fracNextEpoch = 2. / 5;  //  IV ended near start of 2017.
+    if (AnitaVersion::get() == 2 && thisEpoch != 2005) fracNextEpoch = 4. / 5;  //  ANITA-II ended near start of 2009.
+    if (AnitaVersion::get() == 3 && (thisEpoch < 2010 || thisEpoch > 2015)) fracNextEpoch = 1;  //  III ended near start of 2015.
+    if (AnitaVersion::get() == 4 && thisEpoch != 2015) fracNextEpoch = 2. / 5;  //  IV ended near start of 2017.
   }
 
   return fracNextEpoch;
@@ -442,9 +442,7 @@ double GeoMagnetic::g(UInt_t unixTime, int n, int m){
   int index = getIndex(n, m);
   double fracNextEpoch = unixTimeToFractionalNextEpoch(unixTime);
   
-  double gVal = g_vs_time[epoch].at(index) * (1 - fracNextEpoch) + g_vs_time[epoch + 5].at(index) * fracNextEpoch;
-  
-  return gVal;
+  return g_vs_time[epoch].at(index) * (1 - fracNextEpoch) + g_vs_time[epoch + 5].at(index) * fracNextEpoch;
 }
 
 
@@ -476,9 +474,7 @@ double GeoMagnetic::h(UInt_t unixTime, int n, int m){
   int index = getIndex(n, m);
   double fracNextEpoch = unixTimeToFractionalNextEpoch(unixTime);
   
-  double hVal = h_vs_time[epoch].at(index) * (1 - fracNextEpoch) + h_vs_time[epoch + 5].at(index) * fracNextEpoch;
-  
-  return hVal;
+  return h_vs_time[epoch].at(index) * (1 - fracNextEpoch) + h_vs_time[epoch + 5].at(index) * fracNextEpoch;
 }
 
 
