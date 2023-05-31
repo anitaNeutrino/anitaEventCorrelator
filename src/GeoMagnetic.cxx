@@ -1,5 +1,6 @@
 #include "GeoMagnetic.h"
 
+#include "AnitaVersion.h"
 #include <iostream>
 #include <fstream>
 #include "TString.h"
@@ -16,7 +17,6 @@
 #include "UsefulAdu5Pat.h"
 #include "TGraphAntarctica.h"
 
-#include "TDatime.h"
 #include "TTimeStamp.h"
 #include "TCanvas.h"
 
@@ -261,17 +261,25 @@ double unixTimeToFractionalNextEpoch(UInt_t unixTime) {
 
   TTimeStamp t2(unixTime);
   UInt_t thisYear;
-  t2.GetDate(1, 0, thisYear);
+  t2.GetDate(1, 0, & thisYear);
   UInt_t thisEpoch = 5 * (thisYear / 5);
 
-  TDatime t1(thisEpoch, 0, 0, 0, 0, 0);
+  TTimeStamp t1(thisEpoch, 0, 0, 0, 0, 0);
   double unixTimeEpochStart = t1.AsDouble();
 
-  TDatime t3(thisEpoch + 5, 0, 0, 0, 0, 0);
+  TTimeStamp t3(thisEpoch + 5, 0, 0, 0, 0, 0);
   double unixTimeNextEpoch = t3.AsDouble();
   
   double fracNextEpoch = (unixTime - unixTimeEpochStart) / (unixTimeNextEpoch - unixTimeEpochStart);
   // std::cout << unixTime << "\t" << thisYear << "\t" << unixTimeYearStart << "\t" << unixTimeNextYear << std::endl;
+  
+  //  Some time stamps are corrupted, so here we set them based around the closest year start ANITA-II through ANITA-IV completed their flight.
+  if (thisEpoch < 2005 || thisEpoch > 2015)  {
+  
+  	if (AnitaVersion::get() == 2 && thisEpoch != 2005) fracNextEpoch = 4. / 5;  //  ANITA-II ended near start of 2009.
+  	if (AnitaVersion::get() == 3 && (thisEpoch < 2010 || thisEpoch > 2015)) fracNextEpoch = 1;  //  III ended near start of 2015.
+  	if (AnitaVersion::get() == 4 && thisEpoch != 2015) fracNextEpoch = 2. / 5;  //  IV ended near start of 2017.
+  }
 
   return fracNextEpoch;
 }
@@ -423,14 +431,18 @@ double GeoMagnetic::g(UInt_t unixTime, int n, int m){
 
   prepareGeoMagnetics();
   
-  TDatime datime(unixTime);
-  int year = datime.GetYear();
-  int epoch = 5 * (year / 5);
-//  int year = 2015;
+  TTimeStamp unixTimeStamp(unixTime);
+  UInt_t year;
+  unixTimeStamp.GetDate(1, 0, & year);
+  UInt_t epoch = 5 * (year / 5);
+  if (AnitaVersion::get() == 2 && epoch != 2005) epoch = 2005;  //  ANITA-II flew in the epoch starting in 2005.
+  if (AnitaVersion::get() == 3 && (epoch < 2010 || epoch > 2015)) epoch = 2010;  //  III flew between the epochs starting in 2010 and 2015.
+  if (AnitaVersion::get() == 4 && epoch != 2015) epoch = 2015;  //  IV flew in the epoch starting in 2015.
+    
   int index = getIndex(n, m);
   double fracNextEpoch = unixTimeToFractionalNextEpoch(unixTime);
   
-  double gVal = (g_vs_time.count(epoch + 5)) ? g_vs_time[epoch].at(index) * (1 - fracNextEpoch) + g_vs_time[epoch + 5].at(index) * fracNextEpoch : g_vs_time[epoch].at(index);
+  double gVal = g_vs_time[epoch].at(index) * (1 - fracNextEpoch) + g_vs_time[epoch + 5].at(index) * fracNextEpoch;
   
   return gVal;
 }
@@ -452,14 +464,19 @@ double GeoMagnetic::g(UInt_t unixTime, int n, int m){
 double GeoMagnetic::h(UInt_t unixTime, int n, int m){
 
   prepareGeoMagnetics();
-  TDatime datime(unixTime);
-  int year = datime.GetYear();
-  int epoch = 5 * (year / 5);
-//  int year = 2015;
+  
+  TTimeStamp unixTimeStamp(unixTime);
+  UInt_t year;
+  unixTimeStamp.GetDate(1, 0, & year);
+  UInt_t epoch = 5 * (year / 5);
+  if (AnitaVersion::get() == 2 && epoch != 2005) epoch = 2005;  //  ANITA-II flew in the epoch starting in 2005.
+  if (AnitaVersion::get() == 3 && (epoch < 2010 || epoch > 2015)) epoch = 2010;  //  III flew between the epochs starting in 2010 and 2015.
+  if (AnitaVersion::get() == 4 && epoch != 2015) epoch = 2015;  //  IV flew in the epoch starting in 2015.
+  
   int index = getIndex(n, m);
   double fracNextEpoch = unixTimeToFractionalNextEpoch(unixTime);
   
-  double hVal = (h_vs_time.count(epoch + 5)) ? h_vs_time[epoch].at(index) * (1 - fracNextEpoch) + h_vs_time[epoch + 5].at(index) * fracNextEpoch : h_vs_time[epoch].at(index);
+  double hVal = h_vs_time[epoch].at(index) * (1 - fracNextEpoch) + h_vs_time[epoch + 5].at(index) * fracNextEpoch;
   
   return hVal;
 }
@@ -602,7 +619,6 @@ double GeoMagnetic::X_atSpherical(UInt_t unixTime, double r, double theta, doubl
   double BX = 0;  //  The x-component of the B-field, (1 / r) * dV / dTheta.
 
   double cosTheta = TMath::Cos(theta);
-  double tanTheta = TMath::Tan(theta);
 
   // sum over the legendre polynomials normalised by the Gauss coefficients g and h
   for (int n = 1; n < numPoly; n++) {
