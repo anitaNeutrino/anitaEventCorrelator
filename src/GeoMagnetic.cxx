@@ -17,6 +17,7 @@
 #include "TGraphAntarctica.h"
 
 #include "TDatime.h"
+#include "TTimeStamp.h"
 #include "TCanvas.h"
 
 // --------------------------------------------------------------------------------------------------------------------------------------
@@ -258,17 +259,18 @@ double getFactorial(int i){
  */
 double unixTimeToFractionalNextEpoch(UInt_t unixTime) {
 
-  TDatime t2(unixTime);
-  int thisYear = t2.GetYear();
-  int thisEpoch = 5 * (thisYear / 5);
+  TTimeStamp t2(unixTime);
+  UInt_t thisYear;
+  t2.GetDate(1, 0, thisYear);
+  UInt_t thisEpoch = 5 * (thisYear / 5);
 
   TDatime t1(thisEpoch, 0, 0, 0, 0, 0);
-  UInt_t unixTimeEpochStart = t1.Convert();
+  double unixTimeEpochStart = t1.AsDouble();
 
   TDatime t3(thisEpoch + 5, 0, 0, 0, 0, 0);
-  UInt_t unixTimeNextEpoch = t3.Convert();
+  double unixTimeNextEpoch = t3.AsDouble();
   
-  double fracNextEpoch = (double) (unixTime - unixTimeEpochStart) / (unixTimeNextEpoch - unixTimeEpochStart);
+  double fracNextEpoch = (unixTime - unixTimeEpochStart) / (unixTimeNextEpoch - unixTimeEpochStart);
   // std::cout << unixTime << "\t" << thisYear << "\t" << unixTimeYearStart << "\t" << unixTimeNextYear << std::endl;
 
   return fracNextEpoch;
