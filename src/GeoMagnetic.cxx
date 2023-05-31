@@ -1307,7 +1307,7 @@ TVector3 GeoMagnetic::getSurfaceNormal(double lon, double lat) {
   double dNdLat = pow(N, 3) * (1 - pow(GEOID_MIN / GEOID_MAX, 2)) * cosLat * sinLat / pow(GEOID_MAX, 2);  //  Differentiating prime vertical radius w.r.t. latitude. Related to Earth's meridonal radius of curvature, M.
   
   double h = RampdemReader::SurfaceAboveGeoid(lon, lat);   //  Elevation above geoid above surface of the ice.
-  if (h == -9999) h = 0;  //  Where there is no surface, instead set to 0 (sea level).
+  if (h == -9999) h = 0;  //  Where there is no surface defined, instead set to 0 (sea level).
 
   //  Find finite difference of h w.r.t. longitude.
   double hLonHi = RampdemReader::SurfaceAboveGeoid(lon + 0.5 * dLon, lat);
@@ -1327,7 +1327,7 @@ TVector3 GeoMagnetic::getSurfaceNormal(double lon, double lat) {
 
   double dhdLat = (hLatHi - hLatLo) / (TMath::DegToRad() * dLat);
   
-  //  First, create geoid surface normal (the n-vector, what was used before).
+  //  First, create geoid surface normal (the n-vector, what was used before). Trig functions are ordered the same as in AnitaGeomTool::getCartesianCoords().
   TVector3 n(cosLon * cosLat, sinLon * cosLat, sinLat);
   
   //  Next, state partial derivatives of ECEF position vector.
@@ -1401,9 +1401,12 @@ double GeoMagnetic::getExpectedPolarisation(UsefulAdu5Pat& usefulPat, double phi
 
     reflectionToAnita = anitaPosition - destination; // from reflection to anita...
 
-    // here I find the normal to  the geoid surface by getting the vector difference between
-    // a point 1 m above the reflection and the reflection
-    surfaceNormal = (lonLatAltToVector(reflectionLon, reflectionLat, reflectionAlt + 1) - destination).Unit();
+    //  Evaluate the surface normal using the new function.
+    surfaceNormal = getSurfaceNormal(reflectionLon, reflectionLat);
+
+//    // here I find the normal to  the geoid surface by getting the vector difference between
+//    // a point 1 m above the reflection and the reflection
+//    surfaceNormal = (lonLatAltToVector(reflectionLon, reflectionLat, reflectionAlt + 1) - destination).Unit();
 
     // Reflect the incoming vector...
     TVector3 incomingVector = specularReflection(reflectionToAnita, surfaceNormal);
@@ -1531,7 +1534,10 @@ double GeoMagnetic::getExpectedPolarisationUpgoing(UsefulAdu5Pat& usefulPat, dou
     destinationToSource = getUnitVectorAlongThetaWavePhiWave(usefulPat, phiWave, thetaWave); // from ANITA to ice
   }
 
-  const TVector3 surfaceNormal = (lonLatAltToVector(reflectionLon, reflectionLat, reflectionAlt + 1) - destination).Unit();
+    //  Evaluate the surface normal using the new function.
+    const TVector3 surfaceNormal = getSurfaceNormal(reflectionLon, reflectionLat);
+
+//  const TVector3 surfaceNormal = (lonLatAltToVector(reflectionLon, reflectionLat, reflectionAlt + 1) - destination).Unit();
   
   //the cosmic ray is traveling in the opposite direction as the direction from ANITA to the ice
   const TVector3 cosmicRayDirection = -destinationToSource.Unit();
